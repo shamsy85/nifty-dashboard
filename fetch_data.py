@@ -19,12 +19,11 @@ def update_nifty_data():
     base_strike = round(spot_close / 50) * 50
     atm_strike = base_strike
     
-    # Default fallback values matching HTML layout
     ce_close, ce_high, ce_low = 79.10, 102.80, 55.40
     pe_close, pe_high, pe_low = 96.10, 124.90, 67.30
     expiry_date = "01-09-2026"
 
-    # 2. Extract Option Chain and find ATM using your idea: min |CE - PE|
+    # 2. Extract Option Chain and find ATM using min |CE - PE|
     try:
         expiries = nifty.options
         if expiries:
@@ -38,7 +37,6 @@ def update_nifty_data():
             min_diff = float('inf')
             best_atm = base_strike
 
-            # Find strike where abs(CE - PE) is smallest (Your custom equilibrium idea)
             for strike in candidate_strikes:
                 if strike in calls.index and strike in puts.index:
                     c_price = float(calls.loc[strike, 'lastPrice'])
@@ -51,54 +49,54 @@ def update_nifty_data():
 
             atm_strike = best_atm
 
-            # Extract full price data for the selected ATM strike
             if atm_strike in calls.index and atm_strike in puts.index:
                 ce_data = calls.loc[atm_strike]
                 pe_data = puts.loc[atm_strike]
 
                 ce_close = round(float(ce_data['lastPrice']), 2)
-                ce_high = round(float(ce_data.get('highPrice', ce_close * 1.30)), 2)
-                ce_low = round(float(ce_data.get('lowPrice', ce_close * 0.70)), 2)
+                ce_high = round(float(ce_data.get('high', ce_close * 1.30) or ce_close * 1.30), 2)
+                ce_low = round(float(ce_data.get('low', ce_close * 0.70) or ce_close * 0.70), 2)
 
                 pe_close = round(float(pe_data['lastPrice']), 2)
-                pe_high = round(float(pe_data.get('highPrice', pe_close * 1.30)), 2)
-                pe_low = round(float(pe_data.get('lowPrice', pe_close * 0.70)), 2)
+                pe_high = round(float(pe_data.get('high', pe_close * 1.30) or pe_close * 1.30), 2)
+                pe_low = round(float(pe_data.get('low', pe_close * 0.70) or pe_close * 0.70), 2)
 
     except Exception as e:
         print(f"Chain error, using calculated ATM defaults: {e}")
 
-    # 3. Dynamic Derived Calculations
+    # 3. Dynamic Derived HCL & Supply/Demand Calculations
     diff_val = round(abs(pe_close - ce_close), 2)
     straddle_val = round(ce_close + pe_close, 2)
 
-    min_supply = round(spot_close + (ce_close * 0.5), 2)
-    min_demand = round(spot_close - (pe_close * 0.5), 2)
-    max_supply = round(spot_close + straddle_val, 2)
-    max_demand = round(spot_close - straddle_val, 2)
+    # HLC 4+1 Level Formulas
+    min_supply = round(atm_strike + ce_close, 2)
+    min_demand = round(atm_strike - pe_close, 2)
+    max_supply = round(atm_strike + straddle_val, 2)
+    max_demand = round(atm_strike - straddle_val, 2)
 
-    # 4. Construct Full JSON Payload matching your HTML elements perfectly
+    # 4. Construct JSON Payload
     payload = {
-        "spotPrice": spot_close,
-        "spotHigh": spot_high,
-        "spotLow": spot_low,
-        "expiryDate": expiry_date,
-        "currentDate": today_str,
-        "atmStrike": atm_strike,
-        "bannerTotal": diff_val,
+        "spotPrice": float(spot_close),
+        "spotHigh": float(spot_high),
+        "spotLow": float(spot_low),
+        "expiryDate": str(expiry_date),
+        "currentDate": str(today_str),
+        "atmStrike": int(atm_strike),
+        "bannerTotal": float(diff_val),
         "ce": {
-            "high": ce_high,
-            "close": ce_close,
-            "low": ce_low
+            "high": float(ce_high),
+            "close": float(ce_close),
+            "low": float(ce_low)
         },
         "pe": {
-            "high": pe_high,
-            "close": pe_close,
-            "low": pe_low
+            "high": float(pe_high),
+            "close": float(pe_close),
+            "low": float(pe_low)
         },
-        "minSupply": min_supply,
-        "minDemand": min_demand,
-        "maxSupply": max_supply,
-        "maxDemand": max_demand,
+        "minSupply": float(min_supply),
+        "minDemand": float(min_demand),
+        "maxSupply": float(max_supply),
+        "maxDemand": float(max_demand),
         "wzSupply1": round(spot_close + 120.50, 2),
         "wzSupply2": round(spot_close + 250.00, 2),
         "wzDemand1": round(spot_close - 110.20, 2),
@@ -108,22 +106,22 @@ def update_nifty_data():
         "mzDemand1": round(spot_close - 380.00, 2),
         "mzDemand2": round(spot_close - 600.00, 2),
         "sniper1": {
-            "strike": atm_strike,
-            "ce": ce_close,
-            "pe": pe_close,
-            "otmCeStrike": atm_strike + 100,
+            "strike": int(atm_strike),
+            "ce": float(ce_close),
+            "pe": float(pe_close),
+            "otmCeStrike": int(atm_strike + 100),
             "otmCe": round(ce_close * 0.5, 2),
-            "otmPeStrike": atm_strike - 100,
+            "otmPeStrike": int(atm_strike - 100),
             "otmPe": round(pe_close * 0.5, 2),
             "val": round(diff_val * 1.5, 2)
         },
         "sniper2": {
-            "strike": atm_strike - 50,
+            "strike": int(atm_strike - 50),
             "ce": round(ce_close * 1.2, 2),
             "pe": round(pe_close * 0.8, 2),
-            "otmCeStrike": atm_strike + 50,
+            "otmCeStrike": int(atm_strike + 50),
             "otmCe": round(ce_close * 0.7, 2),
-            "otmPeStrike": atm_strike - 150,
+            "otmPeStrike": int(atm_strike - 150),
             "otmPe": round(pe_close * 0.4, 2),
             "val": round(diff_val * 1.2, 2)
         },
@@ -133,7 +131,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Updated data.json successfully using your min |CE - PE| logic. ATM Strike: {atm_strike}")
+    print(f"Successfully generated data.json payload. ATM: {atm_strike}")
 
 if __name__ == "__main__":
     update_nifty_data()
