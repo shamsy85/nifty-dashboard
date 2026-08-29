@@ -15,13 +15,13 @@ def update_nifty_data():
     else:
         spot_close, spot_high, spot_low = 0.0, 0.0, 0.0
 
-    base_strike = round(spot_close / 50) * 50
-    atm_strike = base_strike
-    
-    # Strictly set to 0.0 so no hardcoded dummy data is ever used
     ce_close, ce_high, ce_low = 0.0, 0.0, 0.0
     pe_close, pe_high, pe_low = 0.0, 0.0, 0.0
     expiry_date = ""
+    atm_strike = 0
+
+    calls = None
+    puts = None
 
     try:
         expiries = nifty.options
@@ -31,13 +31,13 @@ def update_nifty_data():
             calls = opt_chain.calls.set_index('strike')
             puts = opt_chain.puts.set_index('strike')
 
-            candidate_strikes = [base_strike + offset for offset in range(-250, 300, 50)]
+            common_strikes = sorted(list(set(calls.index).intersection(set(puts.index))))
             
-            min_diff = float('inf')
-            best_atm = base_strike
+            if common_strikes:
+                min_diff = float('inf')
+                best_atm = common_strikes[0]
 
-            for strike in candidate_strikes:
-                if strike in calls.index and strike in puts.index:
+                for strike in common_strikes:
                     c_price = float(calls.loc[strike, 'lastPrice'])
                     p_price = float(puts.loc[strike, 'lastPrice'])
                     diff = abs(c_price - p_price)
@@ -46,9 +46,8 @@ def update_nifty_data():
                         min_diff = diff
                         best_atm = strike
 
-            atm_strike = best_atm
+                atm_strike = int(best_atm)
 
-            if atm_strike in calls.index and atm_strike in puts.index:
                 ce_data = calls.loc[atm_strike]
                 pe_data = puts.loc[atm_strike]
 
@@ -63,13 +62,56 @@ def update_nifty_data():
     except Exception as e:
         print(f"Option chain fetch error: {e}")
 
-    diff_val = round(abs(pe_close - ce_close), 2)
+    diff_val = round(ce_close - pe_close, 2)
     straddle_val = round(ce_close + pe_close, 2)
 
-    min_supply = round(atm_strike + ce_high, 2)
-    min_demand = round(atm_strike - pe_high, 2)
-    max_supply = round(atm_strike + ce_high + pe_high, 2)
-    max_demand = round(atm_strike - (ce_high + pe_high), 2)
+    min_supply = round(atm_strike + ce_close, 2) if atm_strike else 0.0
+    min_demand = round(atm_strike - pe_close, 2) if atm_strike else 0.0
+    max_supply = round(atm_strike + (ce_close + pe_close), 2) if atm_strike else 0.0
+    max_demand = round(atm_strike - (pe_close + ce_close), 2) if atm_strike else 0.0
+
+    sniper_atm_rounded = int(round(atm_strike / 100.0) * 100) if atm_strike else 0
+
+    # Initialize Sniper variables
+    s1_strike = sniper_atm_rounded
+    s1_ce = ce_close
+    s1_pe = pe_close
+    otm_ce_s1 = s1_strike + 100
+    otm_ce_val_s1 = round(ce_close * 0.5, 2)
+    otm_pe_s1 = s1_strike - 100
+    otm_pe_val_s1 = round(pe_close * 0.5, 2)
+
+    s2_strike = sniper_atm_rounded - 50
+    s2_ce = round(ce_close * 1.2, 2)
+    s2_pe = round(pe_close * 0.8, 2)
+    otm_ce_s2 = s2_strike + 50
+    otm_ce_val_s2 = round(ce_close * 0.7, 2)
+    otm_pe_s2 = s2_strike - 150
+    otm_pe_val_s2 = round(pe_close * 0.4, 2)
+
+    try:
+        if calls is not None and puts is not None:
+            # Sniper 1 dynamic chain lookup
+            if s1_strike in calls.index:
+                s1_ce = round(float(calls.loc[s1_strike, 'lastPrice']), 2)
+            if s1_strike in puts.index:
+                s1_pe = round(float(puts.loc[s1_strike, 'lastPrice']), 2)
+            if otm_ce_s1 in calls.index:
+                otm_ce_val_s1 = round(float(calls.loc[otm_ce_s1, 'lastPrice']), 2)
+            if otm_pe_s1 in puts.index:
+                otm_pe_val_s1 = round(float(puts.loc[otm_pe_s1, 'lastPrice']), 2)
+
+            # Sniper 2 dynamic chain lookup
+            if s2_strike in calls.index:
+                s2_ce = round(float(calls.loc[s2_strike, 'lastPrice']), 2)
+            if s2_strike in puts.index:
+                s2_pe = round(float(puts.loc[s2_strike, 'lastPrice']), 2)
+            if otm_ce_s2 in calls.index:
+                otm_ce_val_s2 = round(float(calls.loc[otm_ce_s2, 'lastPrice']), 2)
+            if otm_pe_s2 in puts.index:
+                otm_pe_val_s2 = round(float(puts.loc[otm_pe_s2, 'lastPrice']), 2)
+    except Exception as ex:
+        print(f"Sniper chain lookup error: {ex}")
 
     payload = {
         "spotPrice": float(spot_close),
@@ -102,24 +144,24 @@ def update_nifty_data():
         "mzDemand1": round(spot_close - 380.00, 2),
         "mzDemand2": round(spot_close - 600.00, 2),
         "sniper1": {
-            "strike": int(atm_strike),
-            "ce": float(ce_close),
-            "pe": float(pe_close),
-            "otmCeStrike": int(atm_strike + 100),
-            "otmCe": round(ce_close * 0.5, 2),
-            "otmPeStrike": int(atm_strike - 100),
-            "otmPe": round(pe_close * 0.5, 2),
-            "val": round(diff_val * 1.5, 2)
+            "strike": int(s1_strike),
+            "ce": float(s1_ce),
+            "pe": float(s1_pe),
+            "otmCeStrike": int(otm_ce_s1),
+            "otmCe": float(otm_ce_val_s1),
+            "otmPeStrike": int(otm_pe_s1),
+            "otmPe": float(otm_pe_val_s1),
+            "val": round(abs(s1_ce - s1_pe) * 1.5, 2)
         },
         "sniper2": {
-            "strike": int(atm_strike - 50),
-            "ce": round(ce_close * 1.2, 2),
-            "pe": round(pe_close * 0.8, 2),
-            "otmCeStrike": int(atm_strike + 50),
-            "otmCe": round(ce_close * 0.7, 2),
-            "otmPeStrike": int(atm_strike - 150),
-            "otmPe": round(pe_close * 0.4, 2),
-            "val": round(diff_val * 1.2, 2)
+            "strike": int(s2_strike),
+            "ce": float(s2_ce),
+            "pe": float(s2_pe),
+            "otmCeStrike": int(otm_ce_s2),
+            "otmCe": float(otm_ce_val_s2),
+            "otmPeStrike": int(otm_pe_s2),
+            "otmPe": float(otm_pe_val_s2),
+            "val": round(abs(s2_ce - s2_pe) * 1.2, 2)
         },
         "earthVal": round(straddle_val * 1.5, 2)
     }
@@ -127,7 +169,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Successfully pulled option chain data. ATM: {atm_strike}")
+    print(f"Successfully processed option chain. ATM: {atm_strike}, Sniper Rounded ATM: {sniper_atm_rounded}")
 
 if __name__ == "__main__":
     update_nifty_data()
