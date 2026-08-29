@@ -16,6 +16,18 @@
     "close": 96.1,
     "low": 67.3
   },
+  "minSupply": 24215.2,
+  "minDemand": 24127.6,
+  "maxSupply": 24350.85,
+  "maxDemand": 24000.45,
+  "wzSupply1": 24296.15,
+  "wzSupply2": 24425.65,
+  "wzDemand1": 24065.45,
+  "wzDemand2": 23945.65,
+  "mzSupply1": 24575.65,
+  "mzSupply2": 24825.65,
+  "mzDemand1": 23795.65,
+  "mzDemand2": 23575.65,
   "sniper1": {
     "strike": 24200,
     "ce": 79.1,
@@ -23,7 +35,8 @@
     "otmCeStrike": 24300,
     "otmCe": 39.55,
     "otmPeStrike": 24100,
-    "otmPe": 48.05
+    "otmPe": 48.05,
+    "val": 25.5
   },
   "sniper2": {
     "strike": 24150,
@@ -32,6 +45,8 @@
     "otmCeStrike": 24250,
     "otmCe": 55.37,
     "otmPeStrike": 24050,
-    "otmPe": 38.44
-  }
+    "otmPe": 38.44,
+    "val": 20.4
+  },
+  "earthVal": 148.92
 }
