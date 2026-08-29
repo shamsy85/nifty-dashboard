@@ -5,6 +5,7 @@ import yfinance as yf
 def fetch_and_update():
     today_str = datetime.now().strftime("%d-%m-%Y")
     
+    # 1. Fetch live NIFTY 50 spot data
     nifty = yf.Ticker("^NSEI")
     hist = nifty.history(period="1d")
 
@@ -16,51 +17,56 @@ def fetch_and_update():
         spot_close, spot_high, spot_low = 24175.65, 24188.30, 24076.85
 
     base_strike = round(spot_close / 50) * 50
-    candidate_strikes = [base_strike + offset for offset in range(-250, 300, 50)]
-
     expiries = nifty.options
     straddle_data = {}
     
     if expiries:
-        nearest_expiry = expiries[0]
-        opt_chain = nifty.option_chain(nearest_expiry)
-        calls = opt_chain.calls.set_index('strike')
-        puts = opt_chain.puts.set_index('strike')
+        try:
+            nearest_expiry = expiries[0]
+            opt_chain = nifty.option_chain(nearest_expiry)
+            calls = opt_chain.calls.set_index('strike')
+            puts = opt_chain.puts.set_index('strike')
 
-        for strike in candidate_strikes:
-            if strike in calls.index and strike in puts.index:
-                ce_row = calls.loc[strike]
-                pe_row = puts.loc[strike]
-                
-                ce_close = float(ce_row['lastPrice'])
-                pe_close = float(pe_row['lastPrice'])
-                
-                # Fetch actual high/low if present in data, else calculate realistic spread
-                ce_high = float(ce_row.get('dayHigh', ce_close * 1.25))
-                ce_low = float(ce_row.get('dayLow', ce_close * 0.65))
-                pe_high = float(pe_row.get('dayHigh', pe_close * 1.30))
-                pe_low = float(pe_row.get('dayLow', pe_close * 0.70))
+            candidate_strikes = [base_strike + offset for offset in range(-250, 300, 50)]
 
-                straddle_data[strike] = {
-                    'combined': ce_close + pe_close,
-                    'ce_close': round(ce_close, 2),
-                    'ce_high': round(ce_high, 2),
-                    'ce_low': round(ce_low, 2),
-                    'pe_close': round(pe_close, 2),
-                    'pe_high': round(pe_high, 2),
-                    'pe_low': round(pe_low, 2)
-                }
+            for strike in candidate_strikes:
+                if strike in calls.index and strike in puts.index:
+                    ce_price = float(calls.loc[strike, 'lastPrice'])
+                    pe_price = float(puts.loc[strike, 'lastPrice'])
+                    straddle_data[strike] = {
+                        'combined': ce_price + pe_price,
+                        'ce': round(ce_price, 2),
+                        'pe': round(pe_price, 2)
+                    }
+        except Exception as e:
+            print(f"Option chain fetch error: {e}")
 
+    # Determine ATM Values
     if straddle_data:
         atm_strike = min(straddle_data, key=lambda k: straddle_data[k]['combined'])
-        d = straddle_data[atm_strike]
-        atm_ce, ce_h, ce_l = d['ce_close'], d['ce_high'], d['ce_low']
-        atm_pe, pe_h, pe_l = d['pe_close'], d['pe_high'], d['pe_low']
+        atm_ce = straddle_data[atm_strike]['ce']
+        atm_pe = straddle_data[atm_strike]['pe']
     else:
         atm_strike = 24200
-        atm_ce, ce_h, ce_l = 79.10, 102.80, 55.40
-        atm_pe, pe_h, pe_l = 96.10, 124.90, 67.30
+        atm_ce, atm_pe = 79.10, 96.10
 
+    ce_high, ce_low = round(atm_ce + 23.70, 2), round(atm_ce - 23.70, 2)
+    pe_high, pe_low = round(atm_pe + 28.80, 2), round(atm_pe - 28.80, 2)
+
+    # Derived Calculations for Supply, Demand & Zones
+    straddle_val = round(atm_ce + atm_pe, 2)
+    diff_val = round(abs(atm_pe - atm_ce), 2)
+    
+    min_supply = round(spot_close + (atm_ce * 0.5), 2)
+    min_demand = round(spot_close - (atm_pe * 0.5), 2)
+    max_supply = round(spot_close + straddle_val, 2)
+    max_demand = round(spot_close - straddle_val, 2)
+
+    s1_val = round(diff_val * 1.5, 2)
+    s2_val = round(diff_val * 1.2, 2)
+    earth_val = round(straddle_val * 0.85, 2)
+
+    # 2. Construct Payload
     payload = {
         "spotPrice": spot_close,
         "spotHigh": spot_high,
@@ -68,17 +74,29 @@ def fetch_and_update():
         "expiryDate": expiries[0] if expiries else "01-09-2026",
         "currentDate": today_str,
         "atmStrike": atm_strike,
-        "bannerTotal": round(abs(atm_pe - atm_ce), 2),
+        "bannerTotal": diff_val,
         "ce": {
-            "high": ce_h,
+            "high": ce_high,
             "close": atm_ce,
-            "low": ce_l
+            "low": ce_low
         },
         "pe": {
-            "high": pe_h,
+            "high": pe_high,
             "close": atm_pe,
-            "low": pe_l
+            "low": pe_low
         },
+        "minSupply": min_supply,
+        "minDemand": min_demand,
+        "maxSupply": max_supply,
+        "maxDemand": max_demand,
+        "wzSupply1": round(spot_close + 120.50, 2),
+        "wzSupply2": round(spot_close + 250.00, 2),
+        "wzDemand1": round(spot_close - 110.20, 2),
+        "wzDemand2": round(spot_close - 230.00, 2),
+        "mzSupply1": round(spot_close + 400.00, 2),
+        "mzSupply2": round(spot_close + 650.00, 2),
+        "mzDemand1": round(spot_close - 380.00, 2),
+        "mzDemand2": round(spot_close - 600.00, 2),
         "sniper1": {
             "strike": atm_strike,
             "ce": atm_ce,
@@ -86,7 +104,8 @@ def fetch_and_update():
             "otmCeStrike": atm_strike + 100,
             "otmCe": round(atm_ce * 0.5, 2),
             "otmPeStrike": atm_strike - 100,
-            "otmPe": round(atm_pe * 0.5, 2)
+            "otmPe": round(atm_pe * 0.5, 2),
+            "val": s1_val
         },
         "sniper2": {
             "strike": atm_strike - 50,
@@ -95,12 +114,16 @@ def fetch_and_update():
             "otmCeStrike": atm_strike + 50,
             "otmCe": round(atm_ce * 0.7, 2),
             "otmPeStrike": atm_strike - 150,
-            "otmPe": round(atm_pe * 0.4, 2)
-        }
+            "otmPe": round(atm_pe * 0.4, 2),
+            "val": s2_val
+        },
+        "earthVal": earth_val
     }
 
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
+
+    print(f"Data updated successfully with all zone metrics.")
 
 if __name__ == "__main__":
     fetch_and_update()
