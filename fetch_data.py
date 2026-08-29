@@ -5,7 +5,7 @@ import yfinance as yf
 def update_nifty_data():
     today_str = datetime.now().strftime("%d-%m-%Y")
     
-    # Fetch live NIFTY 50 index data
+    # 1. Fetch live NIFTY 50 spot price
     nifty = yf.Ticker("^NSEI")
     hist = nifty.history(period="1d")
 
@@ -16,21 +16,42 @@ def update_nifty_data():
     else:
         spot_close, spot_high, spot_low = 24175.65, 24188.30, 24076.85
 
-    atm_strike = round(spot_close / 50) * 50
-
-    # Base CE & PE values with explicit asymmetrical High / Low prices
+    base_strike = round(spot_close / 50) * 50
+    atm_strike = base_strike
+    
+    # Default fallback values matching your layout
     ce_close, ce_high, ce_low = 79.10, 106.00, 51.60
     pe_close, pe_high, pe_low = 96.10, 165.90, 81.00
+    expiry_date = "01-09-2026"
 
-    # Fetch live option chain data if available to replace defaults dynamically
+    # 2. Extract Option Chain and find ATM using minimum |CE - PE|
     try:
         expiries = nifty.options
         if expiries:
-            nearest_expiry = expiries[0]
-            opt_chain = nifty.option_chain(nearest_expiry)
+            expiry_date = expiries[0]
+            opt_chain = nifty.option_chain(expiry_date)
             calls = opt_chain.calls.set_index('strike')
             puts = opt_chain.puts.set_index('strike')
 
+            candidate_strikes = [base_strike + offset for offset in range(-250, 300, 50)]
+            
+            min_diff = float('inf')
+            best_atm = base_strike
+
+            # Find strike where abs(CE - PE) is smallest
+            for strike in candidate_strikes:
+                if strike in calls.index and strike in puts.index:
+                    c_price = float(calls.loc[strike, 'lastPrice'])
+                    p_price = float(puts.loc[strike, 'lastPrice'])
+                    diff = abs(c_price - p_price)
+
+                    if diff < min_diff:
+                        min_diff = diff
+                        best_atm = strike
+
+            atm_strike = best_atm
+
+            # Extract full price data for the selected ATM strike
             if atm_strike in calls.index and atm_strike in puts.index:
                 ce_data = calls.loc[atm_strike]
                 pe_data = puts.loc[atm_strike]
@@ -42,23 +63,25 @@ def update_nifty_data():
                 pe_close = round(float(pe_data['lastPrice']), 2)
                 pe_high = round(float(pe_data.get('highPrice', pe_close * 1.72)), 2)
                 pe_low = round(float(pe_data.get('lowPrice', pe_close * 0.84)), 2)
-    except Exception as e:
-        print(f"Using static fallback values due to chain fetch error: {e}")
 
-    # Calculate dynamic zone indicators
-    straddle_val = round(ce_close + pe_close, 2)
+    except Exception as e:
+        print(f"Chain error, using calculated ATM defaults: {e}")
+
+    # 3. Dynamic Derived Calculations
     diff_val = round(abs(pe_close - ce_close), 2)
-    
+    straddle_val = round(ce_close + pe_close, 2)
+
     min_supply = round(spot_close + (ce_close * 0.5), 2)
     min_demand = round(spot_close - (pe_close * 0.5), 2)
     max_supply = round(spot_close + straddle_val, 2)
     max_demand = round(spot_close - straddle_val, 2)
 
+    # 4. Construct Full JSON Payload
     payload = {
         "spotPrice": spot_close,
         "spotHigh": spot_high,
         "spotLow": spot_low,
-        "expiryDate": "01-09-2026",
+        "expiryDate": expiry_date,
         "currentDate": today_str,
         "atmStrike": atm_strike,
         "bannerTotal": diff_val,
@@ -110,7 +133,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print("Updated data.json successfully with asymmetrical High/Low and full zone data.")
+    print(f"Updated data.json successfully. ATM Strike determined by |CE - PE|: {atm_strike}")
 
 if __name__ == "__main__":
     update_nifty_data()
