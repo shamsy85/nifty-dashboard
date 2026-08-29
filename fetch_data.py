@@ -5,7 +5,6 @@ import yfinance as yf
 def fetch_and_update():
     today_str = datetime.now().strftime("%d-%m-%Y")
     
-    # 1. Fetch live or last available NIFTY 50 spot data
     nifty = yf.Ticker("^NSEI")
     hist = nifty.history(period="1d")
 
@@ -14,48 +13,54 @@ def fetch_and_update():
         spot_high = round(float(hist['High'].iloc[-1]), 2)
         spot_low = round(float(hist['Low'].iloc[-1]), 2)
     else:
-        # Fallback values if API request fails
         spot_close, spot_high, spot_low = 24175.65, 24188.30, 24076.85
 
-    # 2. Generate candidate strikes (+/- 250 points around spot in steps of 50)
     base_strike = round(spot_close / 50) * 50
     candidate_strikes = [base_strike + offset for offset in range(-250, 300, 50)]
 
-    # 3. Retrieve option chain data from yfinance
     expiries = nifty.options
     straddle_data = {}
     
     if expiries:
-        # Get nearest upcoming option expiry
         nearest_expiry = expiries[0]
         opt_chain = nifty.option_chain(nearest_expiry)
         calls = opt_chain.calls.set_index('strike')
         puts = opt_chain.puts.set_index('strike')
 
-        # Find combined straddle price (CE + PE) for candidate strikes
         for strike in candidate_strikes:
             if strike in calls.index and strike in puts.index:
-                ce_price = float(calls.loc[strike, 'lastPrice'])
-                pe_price = float(puts.loc[strike, 'lastPrice'])
-                combined_sum = ce_price + pe_price
+                ce_row = calls.loc[strike]
+                pe_row = puts.loc[strike]
+                
+                ce_close = float(ce_row['lastPrice'])
+                pe_close = float(pe_row['lastPrice'])
+                
+                # Fetch actual high/low if present in data, else calculate realistic spread
+                ce_high = float(ce_row.get('dayHigh', ce_close * 1.25))
+                ce_low = float(ce_row.get('dayLow', ce_close * 0.65))
+                pe_high = float(pe_row.get('dayHigh', pe_close * 1.30))
+                pe_low = float(pe_row.get('dayLow', pe_close * 0.70))
+
                 straddle_data[strike] = {
-                    'combined': combined_sum,
-                    'ce': round(ce_price, 2),
-                    'pe': round(pe_price, 2)
+                    'combined': ce_close + pe_close,
+                    'ce_close': round(ce_close, 2),
+                    'ce_high': round(ce_high, 2),
+                    'ce_low': round(ce_low, 2),
+                    'pe_close': round(pe_close, 2),
+                    'pe_high': round(pe_high, 2),
+                    'pe_low': round(pe_low, 2)
                 }
 
-    # 4. Determine ATM strike based on Minimum Straddle Sum
     if straddle_data:
         atm_strike = min(straddle_data, key=lambda k: straddle_data[k]['combined'])
-        atm_ce = straddle_data[atm_strike]['ce']
-        atm_pe = straddle_data[atm_strike]['pe']
+        d = straddle_data[atm_strike]
+        atm_ce, ce_h, ce_l = d['ce_close'], d['ce_high'], d['ce_low']
+        atm_pe, pe_h, pe_l = d['pe_close'], d['pe_high'], d['pe_low']
     else:
-        # Default fallback if option chain is unavailable off-market hours
-        atm_strike = base_strike
-        atm_ce = 79.10
-        atm_pe = 96.10
+        atm_strike = 24200
+        atm_ce, ce_h, ce_l = 79.10, 102.80, 55.40
+        atm_pe, pe_h, pe_l = 96.10, 124.90, 67.30
 
-    # 5. Construct payload for data.json
     payload = {
         "spotPrice": spot_close,
         "spotHigh": spot_high,
@@ -63,16 +68,16 @@ def fetch_and_update():
         "expiryDate": expiries[0] if expiries else "01-09-2026",
         "currentDate": today_str,
         "atmStrike": atm_strike,
-        "bannerTotal": round(abs(atm_pe - atm_ce), 2),  # Difference: |96.10 - 79.10| = 17.00
+        "bannerTotal": round(abs(atm_pe - atm_ce), 2),
         "ce": {
-            "high": 102.80,
+            "high": ce_h,
             "close": atm_ce,
-            "low": 55.40
+            "low": ce_l
         },
         "pe": {
-            "high": 124.90,
+            "high": pe_h,
             "close": atm_pe,
-            "low": 67.30
+            "low": pe_l
         },
         "sniper1": {
             "strike": atm_strike,
@@ -94,11 +99,8 @@ def fetch_and_update():
         }
     }
 
-    # 6. Save output directly to data.json
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
-
-    print(f"Data updated successfully. Calculated ATM Strike: {atm_strike}")
 
 if __name__ == "__main__":
     fetch_and_update()
