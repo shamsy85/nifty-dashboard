@@ -6,40 +6,41 @@
   <title>NIFTY Dashboard</title>
   <style>
     :root {
-      --bg-color: #0b0f19;
-      --card-bg: #111827;
-      --border-color: #1f2937;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --green: #10b981;
-      --red: #ef4444;
-      --yellow: #f59e0b;
-      --cyan: #06b6d4;
+      --bg-color: #06090e;
+      --card-bg: #0b101b;
+      --border-color: #172234;
+      --text-main: #e5e7eb;
+      --text-muted: #6b7280;
+      --green: #00e676;
+      --red: #ff3d57;
+      --yellow: #ffc107;
+      --cyan: #00e5ff;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace, sans-serif;
     }
 
     body {
       background-color: var(--bg-color);
       color: var(--text-main);
-      padding: 20px;
+      padding: 16px;
       display: flex;
       justify-content: center;
     }
 
     .container {
       width: 100%;
-      max-width: 800px;
+      max-width: 480px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
     }
 
+    /* Top Bar */
     .header-bar {
       display: flex;
       justify-content: space-between;
@@ -49,126 +50,125 @@
     .title-group {
       display: flex;
       align-items: baseline;
-      gap: 12px;
+      gap: 10px;
     }
 
     .title {
-      font-size: 32px;
+      font-size: 26px;
       font-weight: 800;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
     .spot-price {
-      font-size: 24px;
+      font-size: 20px;
       color: var(--text-main);
     }
 
-    .badge {
+    .exp-badge {
       border: 1px solid var(--cyan);
       color: var(--cyan);
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
     }
 
+    /* Main Banner */
     .banner-card {
       background-color: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 16px 24px;
+      border-radius: 10px;
+      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
     .sub-badge {
-      background-color: #1f2937;
+      background-color: #121c2d;
       color: var(--text-muted);
-      padding: 2px 8px;
+      padding: 2px 6px;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .atm-display {
-      margin-top: 8px;
-      font-size: 20px;
+      margin-top: 6px;
+      font-size: 18px;
       font-weight: bold;
     }
 
     .atm-label {
       color: var(--cyan);
-      font-size: 14px;
-      margin-right: 6px;
-    }
-
-    .banner-right {
-      text-align: right;
+      font-size: 12px;
+      margin-right: 4px;
     }
 
     .diff-value {
       color: var(--green);
-      font-size: 28px;
+      font-size: 24px;
       font-weight: bold;
+      text-align: right;
     }
 
     .ce-pe-line {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-muted);
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
-    .cards-grid {
+    /* Grid Layouts */
+    .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 12px;
     }
 
+    /* Option Cards */
     .option-card {
       background-color: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 16px;
-      position: relative;
+      border-radius: 10px;
+      padding: 12px;
     }
 
     .card-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .status-tag {
       border: 1px solid var(--yellow);
       color: var(--yellow);
-      padding: 2px 8px;
+      padding: 1px 6px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: bold;
     }
 
     .strike-header {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: bold;
     }
 
     .type-label {
       color: var(--cyan);
       font-weight: bold;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .card-body {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 16px 0;
+      margin: 12px 0;
     }
 
     .candle-container {
       width: 12px;
-      height: 90px;
+      height: 70px;
       position: relative;
       display: flex;
       justify-content: center;
@@ -203,57 +203,187 @@
 
     .price-details {
       text-align: right;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 14px;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
-    .val-close {
-      font-weight: bold;
-      font-size: 16px;
-    }
-
+    .val-close { font-weight: bold; }
     .ce-color { color: var(--yellow); }
     .pe-color { color: var(--red); }
 
     .card-footer {
       border-top: 1px dashed var(--border-color);
-      padding-top: 10px;
+      padding-top: 8px;
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
     }
 
-    .foot-val {
-      color: var(--cyan);
+    .foot-val-cyan { color: var(--cyan); }
+    .foot-val-red { color: var(--red); }
+
+    /* Supply & Demand Cards */
+    .metric-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
     }
 
-    .foot-val-red {
-      color: var(--red);
+    .metric-title {
+      color: var(--cyan);
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-val {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* Zone Cards */
+    .zone-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .zone-title {
+      color: var(--cyan);
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .zone-rows {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: bold;
+      line-height: 1.6;
+    }
+
+    .txt-red { color: var(--red); }
+    .txt-green { color: var(--green); }
+
+    /* Sniper Cards */
+    .sniper-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
+      position: relative;
+    }
+
+    .sniper-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .sniper-badge {
+      border: 1px solid #1a365d;
+      color: #38bdf8;
+      background-color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .sniper-badge.best {
+      border-color: #065f46;
+      color: var(--green);
+      background-color: #022c22;
+    }
+
+    .badge-sub {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .sniper-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sniper-details {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+
+    .sniper-val {
+      color: var(--cyan);
+      font-size: 22px;
+      font-weight: bold;
+      text-align: right;
+    }
+
+    .sniper-subtext {
+      font-size: 10px;
+      color: var(--cyan);
+      text-align: right;
+      letter-spacing: 0.5px;
+    }
+
+    /* Earth Card */
+    .earth-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--green);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .earth-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .earth-val {
+      color: var(--green);
+      font-size: 20px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
   <div class="container">
+    <!-- Header -->
     <div class="header-bar">
       <div class="title-group">
         <div class="title">NIFTY</div>
         <div class="spot-price" id="spotPrice">--</div>
       </div>
-      <div class="badge" id="expiryDate">EXP --</div>
+      <div class="exp-badge" id="expiryDate">EXP --</div>
     </div>
 
+    <!-- Main Banner -->
     <div class="banner-card">
-      <div class="banner-left">
+      <div>
         <span class="sub-badge" id="currentDate">--</span>
         <div class="atm-display">
           <span class="atm-label">ATM</span><span id="atmStrike">--</span>
         </div>
       </div>
-      <div class="banner-right">
+      <div>
         <div class="diff-value" id="bannerTotal">--</div>
         <div class="ce-pe-line">
           CE <span id="bannerCe">--</span> • PE <span id="bannerPe">--</span>
@@ -261,8 +391,8 @@
       </div>
     </div>
 
-    <div class="cards-grid">
-      <!-- CE Card -->
+    <!-- CE & PE Cards -->
+    <div class="grid-2">
       <div class="option-card">
         <div class="card-top">
           <span class="status-tag">NEUTRAL</span>
@@ -281,12 +411,11 @@
           </div>
         </div>
         <div class="card-footer">
-          <div>H-C <span class="foot-val" id="ceHC">--</span></div>
+          <div>H-C <span class="foot-val-cyan" id="ceHC">--</span></div>
           <div>C-L <span class="foot-val-red" id="ceCL">--</span></div>
         </div>
       </div>
 
-      <!-- PE Card -->
       <div class="option-card">
         <div class="card-top">
           <span class="status-tag">NEUTRAL</span>
@@ -305,63 +434,197 @@
           </div>
         </div>
         <div class="card-footer">
-          <div>H-C <span class="foot-val" id="peHC">--</span></div>
+          <div>H-C <span class="foot-val-cyan" id="peHC">--</span></div>
           <div>C-L <span class="foot-val-red" id="peCL">--</span></div>
         </div>
       </div>
     </div>
+
+    <!-- Minimum Supply & Demand -->
+    <div class="grid-2">
+      <div class="metric-card">
+        <div class="metric-title">MINIMUM SUPPLY</div>
+        <div class="metric-val txt-red" id="minSupply">0.00</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">MINIMUM DEMAND</div>
+        <div class="metric-val txt-green" id="minDemand">0.00</div>
+      </div>
+    </div>
+
+    <!-- Maximum Supply & Demand -->
+    <div class="grid-2">
+      <div class="metric-card">
+        <div class="metric-title">MAXIMUM SUPPLY</div>
+        <div class="metric-val txt-red" id="maxSupply">0.00</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">MAXIMUM DEMAND</div>
+        <div class="metric-val txt-green" id="maxDemand">0.00</div>
+      </div>
+    </div>
+
+    <!-- Weekly & Monthly Zones -->
+    <div class="grid-2">
+      <div class="zone-card">
+        <div class="zone-title">WEEKLY ZONE</div>
+        <div class="zone-rows">
+          <div>
+            <div class="txt-red" id="wzSupply1">0.00</div>
+            <div class="txt-red" id="wzSupply2">0.00</div>
+          </div>
+          <div>
+            <div class="txt-green" id="wzDemand1">0.00</div>
+            <div class="txt-green" id="wzDemand2">0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zone-card">
+        <div class="zone-title">MONTHLY ZONE</div>
+        <div class="zone-rows">
+          <div>
+            <div class="txt-red" id="mzSupply1">0.00</div>
+            <div class="txt-red" id="mzDemand1">0.00</div>
+          </div>
+          <div>
+            <div class="txt-green" id="mzSupply2">0.00</div>
+            <div class="txt-green" id="mzDemand2">0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sniper Best -->
+    <div class="sniper-card">
+      <div class="sniper-badge-wrap">
+        <span class="sniper-badge best">SNIPER ATM</span>
+        <span class="badge-sub">best</span>
+      </div>
+      <div class="sniper-content">
+        <div class="sniper-details">
+          <div><span id="s1Strike">--</span> CE <span id="s1Ce">--</span> • PE <span id="s1Pe">--</span></div>
+          <div>OTM <span id="s1OtmCeStrike">--</span> CE <span id="s1OtmCe">--</span> | <span id="s1OtmPeStrike">--</span> PE <span id="s1OtmPe">--</span></div>
+        </div>
+        <div>
+          <div class="sniper-val" id="s1Val">0.00</div>
+          <div class="sniper-subtext">SNIPER</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sniper Standard -->
+    <div class="sniper-card">
+      <div class="sniper-badge-wrap">
+        <span class="sniper-badge">SNIPER ATM</span>
+      </div>
+      <div class="sniper-content">
+        <div class="sniper-details">
+          <div><span id="s2Strike">--</span> CE <span id="s2Ce">--</span> • PE <span id="s2Pe">--</span></div>
+          <div>OTM <span id="s2OtmCeStrike">--</span> CE <span id="s2OtmCe">--</span> | <span id="s2OtmPeStrike">--</span> PE <span id="s2OtmPe">--</span></div>
+        </div>
+        <div>
+          <div class="sniper-val" id="s2Val">0.00</div>
+          <div class="sniper-subtext">SNIPER</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earth -->
+    <div class="earth-card">
+      <div class="earth-title">
+        <span>🌏</span> EARTH
+      </div>
+      <div class="earth-val" id="earthVal">0.00</div>
+    </div>
+
   </div>
 
   <script>
-    async function loadDashboard() {
+    async function loadData() {
       try {
-        const response = await fetch('data.json?t=' + new Date().getTime());
-        const data = await response.json();
+        const res = await fetch('data.json?t=' + Date.now());
+        const data = await res.json();
 
-        // Header info
-        document.getElementById('spotPrice').innerText = data.spotPrice.toLocaleString('en-IN', {minimumFractionDigits: 2});
-        document.getElementById('expiryDate').innerText = 'EXP ' + data.expiryDate;
-        document.getElementById('currentDate').innerText = data.currentDate;
-        document.getElementById('atmStrike').innerText = data.atmStrike;
+        // Spot & Exp
+        document.getElementById('spotPrice').innerText = data.spotPrice ? data.spotPrice.toFixed(2) : '--';
+        document.getElementById('expiryDate').innerText = 'EXP ' + (data.expiryDate || '--');
+        document.getElementById('currentDate').innerText = data.currentDate || '--';
+        document.getElementById('atmStrike').innerText = data.atmStrike || '--';
 
-        // CE and PE Close Prices
-        const ceClose = data.ce.close;
-        const peClose = data.pe.close;
-
-        // Top Banner Absolute Difference (|PE - CE|)
-        const absoluteDiff = Math.abs(peClose - ceClose).toFixed(2);
-        document.getElementById('bannerTotal').innerText = absoluteDiff;
+        // Banner
+        const ceClose = data.ce ? data.ce.close : 0;
+        const peClose = data.pe ? data.pe.close : 0;
+        document.getElementById('bannerTotal').innerText = Math.abs(peClose - ceClose).toFixed(2);
         document.getElementById('bannerCe').innerText = ceClose.toFixed(2);
         document.getElementById('bannerPe').innerText = peClose.toFixed(2);
 
-        // CE Details
-        document.getElementById('ceStrike').innerText = data.atmStrike;
-        document.getElementById('ceHigh').innerText = data.ce.high.toFixed(2);
+        // CE Card
+        document.getElementById('ceStrike').innerText = data.atmStrike || '--';
+        document.getElementById('ceHigh').innerText = data.ce ? data.ce.high.toFixed(2) : '--';
         document.getElementById('ceClose').innerText = ceClose.toFixed(2);
-        document.getElementById('ceLow').innerText = data.ce.low.toFixed(2);
-        
-        const ceHC = (data.ce.high - ceClose).toFixed(2);
-        const ceCL = (ceClose - data.ce.low).toFixed(2);
-        document.getElementById('ceHC').innerText = ceHC;
-        document.getElementById('ceCL').innerText = ceCL;
+        document.getElementById('ceLow').innerText = data.ce ? data.ce.low.toFixed(2) : '--';
+        document.getElementById('ceHC').innerText = data.ce ? (data.ce.high - ceClose).toFixed(2) : '--';
+        document.getElementById('ceCL').innerText = data.ce ? (ceClose - data.ce.low).toFixed(2) : '--';
 
-        // PE Details
-        document.getElementById('peStrike').innerText = data.atmStrike;
-        document.getElementById('peHigh').innerText = data.pe.high.toFixed(2);
+        // PE Card
+        document.getElementById('peStrike').innerText = data.atmStrike || '--';
+        document.getElementById('peHigh').innerText = data.pe ? data.pe.high.toFixed(2) : '--';
         document.getElementById('peClose').innerText = peClose.toFixed(2);
-        document.getElementById('peLow').innerText = data.pe.low.toFixed(2);
+        document.getElementById('peLow').innerText = data.pe ? data.pe.low.toFixed(2) : '--';
+        document.getElementById('peHC').innerText = data.pe ? (data.pe.high - peClose).toFixed(2) : '--';
+        document.getElementById('peCL').innerText = data.pe ? (peClose - data.pe.low).toFixed(2) : '--';
 
-        const peHC = (data.pe.high - peClose).toFixed(2);
-        const peCL = (peClose - data.pe.low).toFixed(2);
-        document.getElementById('peHC').innerText = peHC;
-        document.getElementById('peCL').innerText = peCL;
+        // Supply & Demand
+        document.getElementById('minSupply').innerText = (data.minSupply || 0).toFixed(2);
+        document.getElementById('minDemand').innerText = (data.minDemand || 0).toFixed(2);
+        document.getElementById('maxSupply').innerText = (data.maxSupply || 0).toFixed(2);
+        document.getElementById('maxDemand').innerText = (data.maxDemand || 0).toFixed(2);
+
+        // Zones
+        document.getElementById('wzSupply1').innerText = (data.wzSupply1 || 0).toFixed(2);
+        document.getElementById('wzSupply2').innerText = (data.wzSupply2 || 0).toFixed(2);
+        document.getElementById('wzDemand1').innerText = (data.wzDemand1 || 0).toFixed(2);
+        document.getElementById('wzDemand2').innerText = (data.wzDemand2 || 0).toFixed(2);
+
+        document.getElementById('mzSupply1').innerText = (data.mzSupply1 || 0).toFixed(2);
+        document.getElementById('mzSupply2').innerText = (data.mzSupply2 || 0).toFixed(2);
+        document.getElementById('mzDemand1').innerText = (data.mzDemand1 || 0).toFixed(2);
+        document.getElementById('mzDemand2').innerText = (data.mzDemand2 || 0).toFixed(2);
+
+        // Sniper 1
+        if (data.sniper1) {
+          document.getElementById('s1Strike').innerText = data.sniper1.strike;
+          document.getElementById('s1Ce').innerText = data.sniper1.ce.toFixed(2);
+          document.getElementById('s1Pe').innerText = data.sniper1.pe.toFixed(2);
+          document.getElementById('s1OtmCeStrike').innerText = data.sniper1.otmCeStrike;
+          document.getElementById('s1OtmCe').innerText = data.sniper1.otmCe.toFixed(2);
+          document.getElementById('s1OtmPeStrike').innerText = data.sniper1.otmPeStrike;
+          document.getElementById('s1OtmPe').innerText = data.sniper1.otmPe.toFixed(2);
+          document.getElementById('s1Val').innerText = (data.sniper1.val || 0).toFixed(2);
+        }
+
+        // Sniper 2
+        if (data.sniper2) {
+          document.getElementById('s2Strike').innerText = data.sniper2.strike;
+          document.getElementById('s2Ce').innerText = data.sniper2.ce.toFixed(2);
+          document.getElementById('s2Pe').innerText = data.sniper2.pe.toFixed(2);
+          document.getElementById('s2OtmCeStrike').innerText = data.sniper2.otmCeStrike;
+          document.getElementById('s2OtmCe').innerText = data.sniper2.otmCe.toFixed(2);
+          document.getElementById('s2OtmPeStrike').innerText = data.sniper2.otmPeStrike;
+          document.getElementById('s2OtmPe').innerText = data.sniper2.otmPe.toFixed(2);
+          document.getElementById('s2Val').innerText = (data.sniper2.val || 0).toFixed(2);
+        }
+
+        // Earth
+        document.getElementById('earthVal').innerText = (data.earthVal || 0).toFixed(2);
 
       } catch (err) {
         console.error("Error loading dashboard data:", err);
       }
     }
 
-    loadDashboard();
+    loadData();
   </script>
 </body>
 </html>
