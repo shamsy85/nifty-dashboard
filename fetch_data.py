@@ -5,7 +5,6 @@ import yfinance as yf
 def update_nifty_data():
     today_str = datetime.now().strftime("%d-%m-%Y")
     
-    # 1. Fetch live NIFTY 50 spot price
     nifty = yf.Ticker("^NSEI")
     hist = nifty.history(period="1d")
 
@@ -14,16 +13,16 @@ def update_nifty_data():
         spot_high = round(float(hist['High'].iloc[-1]), 2)
         spot_low = round(float(hist['Low'].iloc[-1]), 2)
     else:
-        spot_close, spot_high, spot_low = 24175.65, 24188.30, 24076.85
+        spot_close, spot_high, spot_low = 0.0, 0.0, 0.0
 
     base_strike = round(spot_close / 50) * 50
     atm_strike = base_strike
     
-    ce_close, ce_high, ce_low = 79.10, 102.80, 55.40
-    pe_close, pe_high, pe_low = 96.10, 124.90, 67.30
-    expiry_date = "01-09-2026"
+    # Strictly set to 0.0 so no hardcoded dummy data is ever used
+    ce_close, ce_high, ce_low = 0.0, 0.0, 0.0
+    pe_close, pe_high, pe_low = 0.0, 0.0, 0.0
+    expiry_date = ""
 
-    # 2. Extract Option Chain and find ATM using min |CE - PE|
     try:
         expiries = nifty.options
         if expiries:
@@ -54,27 +53,24 @@ def update_nifty_data():
                 pe_data = puts.loc[atm_strike]
 
                 ce_close = round(float(ce_data['lastPrice']), 2)
-                ce_high = round(float(ce_data.get('high', ce_close * 1.30) or ce_close * 1.30), 2)
-                ce_low = round(float(ce_data.get('low', ce_close * 0.70) or ce_close * 0.70), 2)
+                ce_high = round(float(ce_data.get('high', ce_close) or ce_close), 2)
+                ce_low = round(float(ce_data.get('low', ce_close) or ce_close), 2)
 
                 pe_close = round(float(pe_data['lastPrice']), 2)
-                pe_high = round(float(pe_data.get('high', pe_close * 1.30) or pe_close * 1.30), 2)
-                pe_low = round(float(pe_data.get('low', pe_close * 0.70) or pe_close * 0.70), 2)
+                pe_high = round(float(pe_data.get('high', pe_close) or pe_close), 2)
+                pe_low = round(float(pe_data.get('low', pe_close) or pe_close), 2)
 
     except Exception as e:
-        print(f"Chain error, using calculated ATM defaults: {e}")
+        print(f"Option chain fetch error: {e}")
 
-    # 3. Dynamic Derived HCL & Supply/Demand Calculations
     diff_val = round(abs(pe_close - ce_close), 2)
     straddle_val = round(ce_close + pe_close, 2)
 
-    # HLC 4+1 Level Formulas
-    min_supply = round(atm_strike + ce_close, 2)
-    min_demand = round(atm_strike - pe_close, 2)
-    max_supply = round(atm_strike + straddle_val, 2)
-    max_demand = round(atm_strike - straddle_val, 2)
+    min_supply = round(atm_strike + ce_high, 2)
+    min_demand = round(atm_strike - pe_high, 2)
+    max_supply = round(atm_strike + ce_high + pe_high, 2)
+    max_demand = round(atm_strike - (ce_high + pe_high), 2)
 
-    # 4. Construct JSON Payload
     payload = {
         "spotPrice": float(spot_close),
         "spotHigh": float(spot_high),
@@ -131,7 +127,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Successfully generated data.json payload. ATM: {atm_strike}")
+    print(f"Successfully pulled option chain data. ATM: {atm_strike}")
 
 if __name__ == "__main__":
     update_nifty_data()
