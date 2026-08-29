@@ -19,12 +19,12 @@ def update_nifty_data():
     base_strike = round(spot_close / 50) * 50
     atm_strike = base_strike
     
-    # Default fallback values matching your HTML layout
+    # Default fallback values matching HTML layout
     ce_close, ce_high, ce_low = 79.10, 102.80, 55.40
     pe_close, pe_high, pe_low = 96.10, 124.90, 67.30
     expiry_date = "01-09-2026"
 
-    # 2. Extract Option Chain and find ATM using minimum |CE - PE|
+    # 2. Extract Option Chain and find ATM using your idea: min |CE - PE|
     try:
         expiries = nifty.options
         if expiries:
@@ -38,7 +38,7 @@ def update_nifty_data():
             min_diff = float('inf')
             best_atm = base_strike
 
-            # Find strike where abs(CE - PE) is smallest
+            # Find strike where abs(CE - PE) is smallest (Your custom equilibrium idea)
             for strike in candidate_strikes:
                 if strike in calls.index and strike in puts.index:
                     c_price = float(calls.loc[strike, 'lastPrice'])
@@ -67,7 +67,7 @@ def update_nifty_data():
     except Exception as e:
         print(f"Chain error, using calculated ATM defaults: {e}")
 
-    # 3. Dynamic Derived Calculations matching HTML requirements
+    # 3. Dynamic Derived Calculations
     diff_val = round(abs(pe_close - ce_close), 2)
     straddle_val = round(ce_close + pe_close, 2)
 
@@ -76,7 +76,7 @@ def update_nifty_data():
     max_supply = round(spot_close + straddle_val, 2)
     max_demand = round(spot_close - straddle_val, 2)
 
-    # 4. Construct Full JSON Payload matching HTML field IDs exactly
+    # 4. Construct Full JSON Payload matching your HTML elements perfectly
     payload = {
         "spotPrice": spot_close,
         "spotHigh": spot_high,
@@ -133,7 +133,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Updated data.json successfully. ATM Strike: {atm_strike}")
+    print(f"Updated data.json successfully using your min |CE - PE| logic. ATM Strike: {atm_strike}")
 
 if __name__ == "__main__":
     update_nifty_data()
