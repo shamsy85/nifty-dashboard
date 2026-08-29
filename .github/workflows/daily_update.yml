@@ -1,0 +1,32 @@
+name: Daily NIFTY Update
+
+on:
+  schedule:
+    - cron: '15 10 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  build-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install yfinance
+
+      - name: Run Fetch Script
+        run: python fetch_data.py
+
+      - name: Commit Updated Data
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git commit -m "Automated daily market data update" || exit 0
+          git push
