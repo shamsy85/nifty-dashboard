@@ -42,7 +42,6 @@
     .option-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
     .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     
-    /* Dynamic status tag styles */
     .status-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; }
     .status-tag.neutral { border: 1px solid var(--orange); color: var(--orange); text-shadow: 0 0 6px rgba(255, 165, 0, 0.4); }
     .status-tag.buyer { border: 1px solid var(--green); color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
@@ -54,7 +53,6 @@
     .card-body { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
     .candle-container { width: 12px; height: 70px; position: relative; display: flex; justify-content: center; align-items: center; }
     
-    /* Candle element styling */
     .wick { position: absolute; width: 2px; height: 100%; }
     .node { position: absolute; width: 10px; height: 4px; top: 40%; }
     .body-box { position: absolute; width: 10px; top: 25%; height: 50%; }
@@ -124,9 +122,9 @@
             <div class="node" id="ceNode" style="background-color: var(--orange);"></div>
           </div>
           <div class="price-details">
-            <div>H <span id="ceHigh" style="color:#ffffff">102.80</span></div>
+            <div><span id="ceHighWrapper" style="color:var(--green)">H</span> <span id="ceHigh" style="color:var(--green)">102.80</span></div>
             <div id="ceCloseWrapper" style="color:var(--green)">C <span id="ceClose">79.10</span></div>
-            <div>L <span id="ceLow" style="color:#ffffff">55.40</span></div>
+            <div><span id="ceLowWrapper" style="color:var(--green)">L</span> <span id="ceLow" style="color:var(--green)">55.40</span></div>
           </div>
         </div>
         <div class="card-footer">
@@ -147,9 +145,9 @@
             <div class="body-box" id="peBody" style="background-color: var(--orange);"></div>
           </div>
           <div class="price-details">
-            <div>H <span id="peHigh" style="color:#ffffff">124.90</span></div>
+            <div><span id="peHighWrapper" style="color:var(--red)">H</span> <span id="peHigh" style="color:var(--red)">124.90</span></div>
             <div id="peCloseWrapper" style="color:var(--red)">C <span id="peClose">96.10</span></div>
-            <div>L <span id="peLow" style="color:#ffffff">67.30</span></div>
+            <div><span id="peLowWrapper" style="color:var(--red)">L</span> <span id="peLow" style="color:var(--red)">67.30</span></div>
           </div>
         </div>
         <div class="card-footer">
@@ -222,8 +220,8 @@
   </div>
 
   <script>
-    // Configures card styling, border color, label text, and candle properties based on state ('neutral' | 'buyer' | 'seller')
-    function updateCardTheme(cardId, tagId, labelId, wickId, nodeBodyId, hcValId, clValId, closeWrapperId, status) {
+    // Configures card styling, border color, labels, and price elements based on state ('neutral' | 'buyer' | 'seller')
+    function updateCardTheme(cardId, tagId, labelId, wickId, nodeBodyId, hcValId, clValId, highWrapperId, highValId, closeWrapperId, lowWrapperId, lowValId, status) {
       const card = document.getElementById(cardId);
       const tag = document.getElementById(tagId);
       const label = document.getElementById(labelId);
@@ -231,7 +229,11 @@
       const nodeBody = document.getElementById(nodeBodyId);
       const hcVal = document.getElementById(hcValId);
       const clVal = document.getElementById(clValId);
+      const highWrapper = document.getElementById(highWrapperId);
+      const highVal = document.getElementById(highValId);
       const closeWrapper = document.getElementById(closeWrapperId);
+      const lowWrapper = document.getElementById(lowWrapperId);
+      const lowVal = document.getElementById(lowValId);
 
       let color = 'var(--orange)';
       let className = 'neutral';
@@ -247,20 +249,22 @@
         textVal = 'SELLER';
       }
 
-      // Update card border & label colors
+      // Apply dynamic colors to card, status tag, labels, and price fields (H, C, L, H-C, C-L)
       if (card) card.style.borderColor = color;
       if (label) label.style.color = color;
+      if (highWrapper) highWrapper.style.color = color;
+      if (highVal) highVal.style.color = color;
       if (closeWrapper) closeWrapper.style.color = color;
+      if (lowWrapper) lowWrapper.style.color = color;
+      if (lowVal) lowVal.style.color = color;
       if (hcVal) hcVal.style.color = color;
       if (clVal) clVal.style.color = color;
 
-      // Update badge styling & text
       if (tag) {
         tag.className = `status-tag ${className}`;
         tag.innerText = textVal;
       }
 
-      // Update candle components colors
       if (wick) wick.style.backgroundColor = color;
       if (nodeBody) nodeBody.style.backgroundColor = color;
     }
@@ -301,8 +305,8 @@
         setTxt('peCLVal', data.pe ? (peClose - data.pe.low) : null, '28.80');
 
         // Apply dynamic statuses (data.ceStatus and data.peStatus can be 'neutral', 'buyer', or 'seller')
-        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHCVal', 'ceCLVal', 'ceCloseWrapper', data.ceStatus || 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHCVal', 'peCLVal', 'peCloseWrapper', data.peStatus || 'neutral');
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHCVal', 'ceCLVal', 'ceHighWrapper', 'ceHigh', 'ceCloseWrapper', 'ceLowWrapper', 'ceLow', data.ceStatus || 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHCVal', 'peCLVal', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', data.peStatus || 'neutral');
 
         setTxt('minSupply', data.minSupply, '24153.90');
         setTxt('minDemand', data.minDemand, '24127.60');
@@ -344,8 +348,8 @@
         setTxt('earthVal', data.earthVal, '148.92');
       } catch (err) {
         console.warn("Using default baseline parameters.");
-        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHCVal', 'ceCLVal', 'ceCloseWrapper', 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHCVal', 'peCLVal', 'peCloseWrapper', 'neutral');
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHCVal', 'ceCLVal', 'ceHighWrapper', 'ceHigh', 'ceCloseWrapper', 'ceLowWrapper', 'ceLow', 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHCVal', 'peCLVal', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', 'neutral');
       }
     }
 
