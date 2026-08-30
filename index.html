@@ -190,7 +190,7 @@
       <div class="sniper-content">
         <div class="sniper-details">
           <div><span id="s1Strike">24200</span> CE <span id="s1Ce" style="color:var(--green)">79.10</span> • PE <span id="s1Pe" style="color:var(--red)">96.10</span></div>
-          <div>OTM <span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" style="color:var(--green)">39.55</span> | <span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></div>
+          <div>OTM <span id="s1OtmCeStrike">24300</span> (+100) CE <span id="s1OtmCe" style="color:var(--green)">39.55</span> | <span id="s1OtmPeStrike">24100</span> (-100) PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s1Val">25.50</div>
@@ -204,7 +204,7 @@
       <div class="sniper-content">
         <div class="sniper-details">
           <div><span id="s2Strike">24150</span> CE <span id="s2Ce" style="color:var(--green)">94.92</span> • PE <span id="s2Pe" style="color:var(--red)">76.88</span></div>
-          <div>OTM <span id="s2OtmCeStrike">24250</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span id="s2OtmPeStrike">24050</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
+          <div>OTM <span id="s2OtmCeStrike">24150</span> (-50) CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span id="s2OtmPeStrike">24000</span> (-200) PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s2Val">20.40</div>
@@ -279,7 +279,6 @@
         const atm = data.atmStrike || 24200;
         setTxt('atmStrike', atm, '24200');
 
-        // Parse custom offsets if provided (defaulting to +100 for CE and -100 for PE based on prompt cues)
         const ceOffset = (data.ceOffset !== undefined) ? data.ceOffset : 100;
         const peOffset = (data.peOffset !== undefined) ? data.peOffset : -100;
 
@@ -329,24 +328,32 @@
         setTxt('mzDemand1', data.mzDemand1, '23795.65');
         setTxt('mzDemand2', data.mzDemand2, '23575.65');
 
+        // Sniper 1 (Using +100 and -100 offset relative to ATM)
+        const s1Atm = (data.sniper1 && data.sniper1.strike) ? data.sniper1.strike : atm;
+        const s1OtmCeStk = s1Atm + 100;
+        const s1OtmPeStk = s1Atm - 100;
         if (data.sniper1) {
-          setTxt('s1Strike', data.sniper1.strike, '24200');
+          setTxt('s1Strike', s1Atm, '24200');
           setTxt('s1Ce', data.sniper1.ce, '79.10');
           setTxt('s1Pe', data.sniper1.pe, '96.10');
-          setTxt('s1OtmCeStrike', data.sniper1.otmCeStrike, '24300');
+          document.getElementById('s1OtmCeStrike').innerText = s1OtmCeStk + ' (+100)';
           setTxt('s1OtmCe', data.sniper1.otmCe, '39.55');
-          setTxt('s1OtmPeStrike', data.sniper1.otmPeStrike, '24100');
+          document.getElementById('s1OtmPeStrike').innerText = s1OtmPeStk + ' (-100)';
           setTxt('s1OtmPe', data.sniper1.otmPe, '48.05');
           setTxt('s1Val', data.sniper1.val, '25.50');
         }
 
+        // Sniper 2 (Using -50 and -200 offset relative to ATM)
+        const s2Atm = (data.sniper2 && data.sniper2.strike) ? data.sniper2.strike : atm;
+        const s2OtmCeStk = s2Atm - 50;
+        const s2OtmPeStk = s2Atm - 200;
         if (data.sniper2) {
-          setTxt('s2Strike', data.sniper2.strike, '24150');
+          setTxt('s2Strike', s2Atm, '24150');
           setTxt('s2Ce', data.sniper2.ce, '94.92');
           setTxt('s2Pe', data.sniper2.pe, '76.88');
-          setTxt('s2OtmCeStrike', data.sniper2.otmCeStrike, '24250');
+          document.getElementById('s2OtmCeStrike').innerText = s2OtmCeStk + ' (-50)';
           setTxt('s2OtmCe', data.sniper2.otmCe, '55.37');
-          setTxt('s2OtmPeStrike', data.sniper2.otmPeStrike, '24050');
+          document.getElementById('s2OtmPeStrike').innerText = s2OtmPeStk + ' (-200)';
           setTxt('s2OtmPe', data.sniper2.otmPe, '38.44');
           setTxt('s2Val', data.sniper2.val, '20.40');
         }
