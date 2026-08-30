@@ -115,7 +115,7 @@
           <span class="status-tag neutral" id="ceStatusTag">NEUTRAL</span>
           <span class="type-label" id="ceTypeLabel" style="color:var(--green);">CE</span>
         </div>
-        <div class="strike-header"><span id="ceStrikeOffset" style="font-size:14px; margin-right:4px; opacity:0.8;">+100</span><span id="ceStrike">24300</span></div>
+        <div class="strike-header" id="ceStrike">24200</div>
         <div class="card-body">
           <div class="candle-container" id="ceCandleContainer">
             <div class="wick" id="ceWick" style="background-color: var(--orange);"></div>
@@ -138,7 +138,7 @@
           <span class="status-tag neutral" id="peStatusTag">NEUTRAL</span>
           <span class="type-label" id="peTypeLabel" style="color:var(--red);">PE</span>
         </div>
-        <div class="strike-header"><span id="peStrikeOffset" style="font-size:14px; margin-right:4px; opacity:0.8;">-100</span><span id="peStrike">24100</span></div>
+        <div class="strike-header" id="peStrike">24200</div>
         <div class="card-body">
           <div class="candle-container" id="peCandleContainer">
             <div class="wick" id="peWick" style="background-color: var(--orange);"></div>
@@ -190,7 +190,7 @@
       <div class="sniper-content">
         <div class="sniper-details">
           <div><span id="s1Strike">24200</span> CE <span id="s1Ce" style="color:var(--green)">79.10</span> • PE <span id="s1Pe" style="color:var(--red)">96.10</span></div>
-          <div>OTM <span id="s1OtmCeStrike">24300</span> (+100) CE <span id="s1OtmCe" style="color:var(--green)">39.55</span> | <span id="s1OtmPeStrike">24100</span> (-100) PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></div>
+          <div>OTM <span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" style="color:var(--green)">39.55</span> | <span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s1Val">25.50</div>
@@ -204,7 +204,7 @@
       <div class="sniper-content">
         <div class="sniper-details">
           <div><span id="s2Strike">24150</span> CE <span id="s2Ce" style="color:var(--green)">94.92</span> • PE <span id="s2Pe" style="color:var(--red)">76.88</span></div>
-          <div>OTM <span id="s2OtmCeStrike">24150</span> (-50) CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span id="s2OtmPeStrike">24000</span> (-200) PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
+          <div>OTM <span id="s2OtmCeStrike">24100</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span id="s2OtmPeStrike">23950</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s2Val">20.40</div>
@@ -275,21 +275,7 @@
 
         if (data.spotPrice) setTxt('spotPrice', data.spotPrice, '24175.65');
         if (data.expiryDate) document.getElementById('expiryDate').innerText = 'EXP ' + data.expiryDate;
-        
-        const atm = data.atmStrike || 24200;
-        setTxt('atmStrike', atm, '24200');
-
-        const ceOffset = (data.ceOffset !== undefined) ? data.ceOffset : 100;
-        const peOffset = (data.peOffset !== undefined) ? data.peOffset : -100;
-
-        const ceStrikeVal = atm + ceOffset;
-        const peStrikeVal = atm + peOffset;
-
-        setTxt('ceStrike', ceStrikeVal, '24300');
-        document.getElementById('ceStrikeOffset').innerText = (ceOffset > 0 ? '+' : '') + ceOffset;
-
-        setTxt('peStrike', peStrikeVal, '24100');
-        document.getElementById('peStrikeOffset').innerText = (peOffset > 0 ? '+' : '') + peOffset;
+        if (data.atmStrike) setTxt('atmStrike', data.atmStrike, '24200');
 
         const ceClose = (data.ce && data.ce.close) ? data.ce.close : 79.10;
         const peClose = (data.pe && data.pe.close) ? data.pe.close : 96.10;
@@ -298,12 +284,14 @@
         setTxt('bannerCe', ceClose, '79.10');
         setTxt('bannerPe', peClose, '96.10');
 
+        setTxt('ceStrike', data.atmStrike, '24200');
         setTxt('ceHigh', data.ce ? data.ce.high : null, '102.80');
         setTxt('ceClose', ceClose, '79.10');
         setTxt('ceLow', data.ce ? data.ce.low : null, '55.40');
         setTxt('ceHCVal', data.ce ? (data.ce.high - ceClose) : null, '23.70');
         setTxt('ceCLVal', data.ce ? (ceClose - data.ce.low) : null, '23.70');
 
+        setTxt('peStrike', data.atmStrike, '24200');
         setTxt('peHigh', data.pe ? data.pe.high : null, '124.90');
         setTxt('peClose', peClose, '96.10');
         setTxt('peLow', data.pe ? data.pe.low : null, '67.30');
@@ -328,32 +316,28 @@
         setTxt('mzDemand1', data.mzDemand1, '23795.65');
         setTxt('mzDemand2', data.mzDemand2, '23575.65');
 
-        // Sniper 1 (Using +100 and -100 offset relative to ATM)
-        const s1Atm = (data.sniper1 && data.sniper1.strike) ? data.sniper1.strike : atm;
-        const s1OtmCeStk = s1Atm + 100;
-        const s1OtmPeStk = s1Atm - 100;
+        // Sniper 1 (ATM + 100 and ATM - 100 absolute strike prices)
         if (data.sniper1) {
+          const s1Atm = data.sniper1.strike || 24200;
           setTxt('s1Strike', s1Atm, '24200');
           setTxt('s1Ce', data.sniper1.ce, '79.10');
           setTxt('s1Pe', data.sniper1.pe, '96.10');
-          document.getElementById('s1OtmCeStrike').innerText = s1OtmCeStk + ' (+100)';
+          setTxt('s1OtmCeStrike', s1Atm + 100, '24300');
           setTxt('s1OtmCe', data.sniper1.otmCe, '39.55');
-          document.getElementById('s1OtmPeStrike').innerText = s1OtmPeStk + ' (-100)';
+          setTxt('s1OtmPeStrike', s1Atm - 100, '24100');
           setTxt('s1OtmPe', data.sniper1.otmPe, '48.05');
           setTxt('s1Val', data.sniper1.val, '25.50');
         }
 
-        // Sniper 2 (Using -50 and -200 offset relative to ATM)
-        const s2Atm = (data.sniper2 && data.sniper2.strike) ? data.sniper2.strike : atm;
-        const s2OtmCeStk = s2Atm - 50;
-        const s2OtmPeStk = s2Atm - 200;
+        // Sniper 2 (ATM - 50 and ATM - 200 absolute strike prices)
         if (data.sniper2) {
+          const s2Atm = data.sniper2.strike || 24150;
           setTxt('s2Strike', s2Atm, '24150');
           setTxt('s2Ce', data.sniper2.ce, '94.92');
           setTxt('s2Pe', data.sniper2.pe, '76.88');
-          document.getElementById('s2OtmCeStrike').innerText = s2OtmCeStk + ' (-50)';
+          setTxt('s2OtmCeStrike', s2Atm - 50, '24100');
           setTxt('s2OtmCe', data.sniper2.otmCe, '55.37');
-          document.getElementById('s2OtmPeStrike').innerText = s2OtmPeStk + ' (-200)';
+          setTxt('s2OtmPeStrike', s2Atm - 200, '23950');
           setTxt('s2OtmPe', data.sniper2.otmPe, '38.44');
           setTxt('s2Val', data.sniper2.val, '20.40');
         }
