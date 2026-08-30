@@ -185,9 +185,8 @@
       </div>
     </div>
 
-    <!-- SNIPER 1 -->
     <div class="sniper-card">
-      <div class="sniper-badge-wrap"><span class="sniper-badge best">SNIPER ATM</span><span class="badge-sub">best</span></div>
+      <div class="sniper-badge-wrap"><span class="sniper-badge best">SNIPER <span id="s1BadgeStrike">24200</span></span><span class="badge-sub">best</span></div>
       <div class="sniper-content">
         <div class="sniper-details">
           <div><span id="s1Strike">24200</span> CE <span id="s1Ce" style="color:var(--green)">79.10</span> • PE <span id="s1Pe" style="color:var(--red)">96.10</span></div>
@@ -200,13 +199,12 @@
       </div>
     </div>
 
-    <!-- SNIPER 2 (Updated to accept dynamic configuration or distinct offset structure) -->
     <div class="sniper-card">
-      <div class="sniper-badge-wrap"><span class="sniper-badge" id="s2BadgeText">SNIPER 2</span></div>
+      <div class="sniper-badge-wrap"><span class="sniper-badge">SNIPER <span id="s2BadgeStrike">24150</span></span></div>
       <div class="sniper-content">
         <div class="sniper-details">
           <div><span id="s2Strike">24150</span> CE <span id="s2Ce" style="color:var(--green)">94.92</span> • PE <span id="s2Pe" style="color:var(--red)">76.88</span></div>
-          <div>OTM <span id="s2OtmCeStrike">24250</span> CE <span id="s2OtmCe" style="color:var(--green)">45.20</span> | <span id="s2OtmPeStrike">24050</span> PE <span id="s2OtmPe" style="color:var(--red)">52.10</span></div>
+          <div>OTM <span id="s2OtmCeStrike">24100</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span id="s2OtmPeStrike">23950</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s2Val">20.40</div>
@@ -322,29 +320,32 @@
         if (data.sniper1) {
           const s1Atm = data.sniper1.strike || 24200;
           setTxt('s1Strike', s1Atm, '24200');
+          setTxt('s1BadgeStrike', s1Atm, '24200');
           setTxt('s1Ce', data.sniper1.ce, '79.10');
           setTxt('s1Pe', data.sniper1.pe, '96.10');
-          setTxt('s1OtmCeStrike', data.sniper1.otmCeStrike || (s1Atm + 100), '24300');
+          setTxt('s1OtmCeStrike', s1Atm + 100, '24300');
           setTxt('s1OtmCe', data.sniper1.otmCe, '39.55');
-          setTxt('s1OtmPeStrike', data.sniper1.otmPeStrike || (s1Atm - 100), '24100');
+          setTxt('s1OtmPeStrike', s1Atm - 100, '24100');
           setTxt('s1OtmPe', data.sniper1.otmPe, '48.05');
           setTxt('s1Val', data.sniper1.val, '25.50');
+        } else {
+          setTxt('s1BadgeStrike', 24200, '24200');
         }
 
-        // Sniper 2 (Fully customizable via data.json or fallback structural defaults)
+        // Sniper 2
         if (data.sniper2) {
           const s2Atm = data.sniper2.strike || 24150;
           setTxt('s2Strike', s2Atm, '24150');
+          setTxt('s2BadgeStrike', s2Atm, '24150');
           setTxt('s2Ce', data.sniper2.ce, '94.92');
           setTxt('s2Pe', data.sniper2.pe, '76.88');
-          setTxt('s2OtmCeStrike', data.sniper2.otmCeStrike || (s2Atm + 100), '24250');
-          setTxt('s2OtmCe', data.sniper2.otmCe, '45.20');
-          setTxt('s2OtmPeStrike', data.sniper2.otmPeStrike || (s2Atm - 100), '24050');
-          setTxt('s2OtmPe', data.sniper2.otmPe, '52.10');
+          setTxt('s2OtmCeStrike', s2Atm - 50, '24100');
+          setTxt('s2OtmCe', data.sniper2.otmCe, '55.37');
+          setTxt('s2OtmPeStrike', s2Atm - 200, '23950');
+          setTxt('s2OtmPe', data.sniper2.otmPe, '38.44');
           setTxt('s2Val', data.sniper2.val, '20.40');
-          if (data.sniper2.badge) {
-            document.getElementById('s2BadgeText').innerText = data.sniper2.badge;
-          }
+        } else {
+          setTxt('s2BadgeStrike', 24150, '24150');
         }
 
         setTxt('earthVal', data.earthVal, '148.92');
