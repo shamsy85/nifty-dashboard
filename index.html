@@ -28,7 +28,7 @@
     .exp-badge { border: 1px solid var(--cyan); color: var(--cyan); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
 
     .banner-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-    .sub-badge { background-color: #0284c7; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-shadow: 0 0 6px rgba(255, 255, 255, 0.5); }
+    .sub-badge { background-color: transparent; border: 1px solid var(--cyan); color: var(--cyan); padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
     .atm-display { margin-top: 6px; font-size: 18px; font-weight: bold; color: #ffffff; }
     .atm-label { color: var(--cyan); font-size: 12px; margin-right: 4px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
     .diff-value { color: var(--green); font-size: 24px; font-weight: bold; text-align: right; text-shadow: 0 0 8px rgba(0, 255, 127, 0.5); }
@@ -52,8 +52,8 @@
     .ce-color { color: var(--yellow); text-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
     .pe-color { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
     .card-footer { border-top: 1px dashed var(--border-color); padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
-    .foot-val-cyan { color: var(--cyan); font-weight: bold; }
-    .foot-val-red { color: var(--red); font-weight: bold; }
+    .foot-val-cyan { color: var(--cyan); font-weight: bold; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
+    .foot-val-red { color: var(--red); font-weight: bold; text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
 
     .metric-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
     .metric-title { color: var(--cyan); font-size: 11px; font-weight: bold; margin-bottom: 8px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
@@ -94,7 +94,7 @@
 
     <div class="banner-card">
       <div>
-        <span class="sub-badge" id="currentDate">29-08-2026</span>
+        <span class="sub-badge" id="currentDate">30-08-2026</span>
         <div class="atm-display"><span class="atm-label">ATM</span><span id="atmStrike">24200</span></div>
       </div>
       <div>
@@ -214,7 +214,7 @@
 
         if (data.spotPrice) setTxt('spotPrice', data.spotPrice, '24175.65');
         if (data.expiryDate) document.getElementById('expiryDate').innerText = 'EXP ' + data.expiryDate;
-        if (data.currentDate) setTxt('currentDate', data.currentDate, '29-08-2026');
+        if (data.currentDate) setTxt('currentDate', data.currentDate, '30-08-2026');
         if (data.atmStrike) setTxt('atmStrike', data.atmStrike, '24200');
 
         const ceClose = (data.ce && data.ce.close) ? data.ce.close : 79.10;
