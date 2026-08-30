@@ -15,7 +15,9 @@
       --text-main: #ffffff;
       --text-muted: #9ca3af;
       --green: #00ff7f;
+      --green-bright: #33ff99;
       --red: #ff3355;
+      --red-bright: #ff5c77;
       --orange: #ffa500;
       --cyan: #00f0ff;
     }
@@ -34,7 +36,7 @@
     .sub-badge { background-color: transparent; border: 1px solid var(--cyan); color: var(--cyan); padding: 3px 8px; border-radius: 4px; font-size: 11px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
     .atm-display { margin-top: 6px; font-size: 18px; color: #ffffff; }
     .atm-label { color: var(--cyan); font-size: 12px; margin-right: 4px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
-    .diff-value { color: var(--green); font-size: 24px; text-align: right; text-shadow: 0 0 8px rgba(0, 255, 127, 0.5); font-weight: 600; }
+    .diff-value { color: var(--green-bright); font-size: 24px; text-align: right; text-shadow: 0 0 8px rgba(51, 255, 153, 0.6); font-weight: 600; }
     .ce-pe-line { font-size: 12px; color: var(--text-muted); margin-top: 2px; text-align: right; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -44,8 +46,8 @@
     
     .status-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; }
     .status-tag.neutral { border: 1px solid var(--orange); color: var(--orange); text-shadow: 0 0 6px rgba(255, 165, 0, 0.4); }
-    .status-tag.buyer { border: 1px solid var(--green); color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
-    .status-tag.seller { border: 1px solid var(--red); color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
+    .status-tag.buyer { border: 1px solid var(--green-bright); color: var(--green-bright); text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
+    .status-tag.seller { border: 1px solid var(--red-bright); color: var(--red-bright); text-shadow: 0 0 6px rgba(255, 92, 119, 0.6); }
 
     .strike-header { font-size: 20px; color: #ffffff; font-weight: 600; }
     .type-label { font-size: 13px; font-weight: 600; }
@@ -69,14 +71,14 @@
     .zone-title { color: var(--cyan); font-size: 11px; margin-bottom: 10px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); text-align: center; font-weight: 500; }
     .zone-rows { display: flex; justify-content: space-between; font-size: 13px; line-height: 1.6; font-weight: 500; }
 
-    .txt-red { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
-    .txt-green { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
+    .txt-red { color: var(--red-bright); text-shadow: 0 0 6px rgba(255, 92, 119, 0.6); }
+    .txt-green { color: var(--green-bright); text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
 
     .sniper-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; }
     .sniper-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
     .sniper-badge { border: 1px solid #1a365d; color: #38bdf8; background-color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 10px; letter-spacing: 0.5px; font-weight: 600; }
-    .sniper-badge.best { border-color: #065f46; color: var(--green); background-color: #022c22; }
-    .badge-sub { color: var(--green); font-size: 10px; font-weight: 600; text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
+    .sniper-badge.best { border-color: #065f46; color: var(--green-bright); background-color: #022c22; }
+    .badge-sub { color: var(--green-bright); font-size: 10px; font-weight: 600; text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
 
     .sniper-main-layout { display: flex; justify-content: space-between; align-items: center; }
     .sniper-left-col { display: flex; flex-direction: column; gap: 6px; width: calc(100% - 80px); }
@@ -93,9 +95,13 @@
     .sniper-val { color: var(--cyan); font-size: 22px; text-shadow: 0 0 8px rgba(0, 240, 255, 0.5); font-weight: 600; line-height: 1.1; }
     .sniper-subtext { font-size: 9px; color: var(--cyan); letter-spacing: 0.5px; margin-top: 2px; font-weight: 500; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
 
-    .earth-card { background-color: var(--card-bg); border: 1px solid var(--green); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 10px rgba(0, 255, 127, 0.15); }
+    .earth-card { background-color: var(--card-bg); border: 1px solid var(--green-bright); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 10px rgba(51, 255, 153, 0.25); }
     .earth-title { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #ffffff; font-weight: 500; }
-    .earth-val { color: var(--green); font-size: 20px; text-shadow: 0 0 8px rgba(0, 255, 127, 0.5); font-weight: 600; }
+    .earth-val { color: var(--green-bright); font-size: 20px; text-shadow: 0 0 8px rgba(51, 255, 153, 0.6); font-weight: 600; }
+
+    /* Bright Helper Classes */
+    .ce-bright { color: var(--green-bright) !important; text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
+    .pe-bright { color: var(--red-bright) !important; text-shadow: 0 0 6px rgba(255, 92, 119, 0.6); }
   </style>
 </head>
 <body>
@@ -116,7 +122,7 @@
       </div>
       <div>
         <div class="diff-value" id="bannerTotal">17.00</div>
-        <div class="ce-pe-line">CE <span id="bannerCe" style="color:var(--green)">79.10</span> • PE <span id="bannerPe" style="color:var(--red)">96.10</span></div>
+        <div class="ce-pe-line"><span class="ce-bright">CE</span> <span id="bannerCe" class="ce-bright">79.10</span> • <span class="pe-bright">PE</span> <span id="bannerPe" class="pe-bright">96.10</span></div>
       </div>
     </div>
 
@@ -124,7 +130,7 @@
       <div class="option-card" id="ceCard">
         <div class="card-top">
           <span class="status-tag neutral" id="ceStatusTag">NEUTRAL</span>
-          <span class="type-label" id="ceTypeLabel" style="color:var(--green);">CE</span>
+          <span class="type-label ce-bright" id="ceTypeLabel">CE</span>
         </div>
         <div class="strike-header" id="ceStrike">24200</div>
         <div class="card-body">
@@ -133,21 +139,21 @@
             <div class="node" id="ceNode" style="background-color: var(--orange);"></div>
           </div>
           <div class="price-details">
-            <div><span id="ceHighWrapper" style="color:var(--green)">H</span> <span id="ceHigh" style="color:var(--green)">102.80</span></div>
-            <div id="ceCloseWrapper" style="color:var(--green)">C <span id="ceClose">79.10</span></div>
-            <div><span id="ceLowWrapper" style="color:var(--green)">L</span> <span id="ceLow" style="color:var(--green)">55.40</span></div>
+            <div><span id="ceHighWrapper" class="ce-bright">H</span> <span id="ceHigh" class="ce-bright">102.80</span></div>
+            <div id="ceCloseWrapper" class="ce-bright">C <span id="ceClose">79.10</span></div>
+            <div><span id="ceLowWrapper" class="ce-bright">L</span> <span id="ceLow" class="ce-bright">55.40</span></div>
           </div>
         </div>
         <div class="card-footer">
-          <div><span style="color:var(--green);">H-C</span> <span id="ceHCVal" style="color:var(--green)">23.70</span></div>
-          <div><span style="color:var(--red);">C-L</span> <span id="ceCLVal" style="color:var(--red)">23.70</span></div>
+          <div><span class="ce-bright">H-C</span> <span id="ceHCVal" class="ce-bright">23.70</span></div>
+          <div><span class="pe-bright">C-L</span> <span id="ceCLVal" class="pe-bright">23.70</span></div>
         </div>
       </div>
 
       <div class="option-card" id="peCard">
         <div class="card-top">
           <span class="status-tag neutral" id="peStatusTag">NEUTRAL</span>
-          <span class="type-label" id="peTypeLabel" style="color:var(--red);">PE</span>
+          <span class="type-label pe-bright" id="peTypeLabel">PE</span>
         </div>
         <div class="strike-header" id="peStrike">24200</div>
         <div class="card-body">
@@ -156,14 +162,14 @@
             <div class="body-box" id="peBody" style="background-color: var(--orange);"></div>
           </div>
           <div class="price-details">
-            <div><span id="peHighWrapper" style="color:var(--red)">H</span> <span id="peHigh" style="color:var(--red)">124.90</span></div>
-            <div id="peCloseWrapper" style="color:var(--red)">C <span id="peClose">96.10</span></div>
-            <div><span id="peLowWrapper" style="color:var(--red)">L</span> <span id="peLow" style="color:var(--red)">67.30</span></div>
+            <div><span id="peHighWrapper" class="pe-bright">H</span> <span id="peHigh" class="pe-bright">124.90</span></div>
+            <div id="peCloseWrapper" class="pe-bright">C <span id="peClose">96.10</span></div>
+            <div><span id="peLowWrapper" class="pe-bright">L</span> <span id="peLow" class="pe-bright">67.30</span></div>
           </div>
         </div>
         <div class="card-footer">
-          <div><span style="color:var(--green);">H-C</span> <span id="peHCVal" style="color:var(--green)">28.80</span></div>
-          <div><span style="color:var(--red);">C-L</span> <span id="peCLVal" style="color:var(--red)">28.80</span></div>
+          <div><span class="ce-bright">H-C</span> <span id="peHCVal" class="ce-bright">28.80</span></div>
+          <div><span class="pe-bright">C-L</span> <span id="peCLVal" class="pe-bright">28.80</span></div>
         </div>
       </div>
     </div>
@@ -205,12 +211,12 @@
         <div class="sniper-left-col">
           <div class="sniper-atm-row">
             <span id="s1Strike">24250.00</span>
-            <span class="atm-ce-pe">CE <span id="s1Ce" style="color:var(--green)">79.10</span> - PE <span id="s1Pe" style="color:var(--red)">96.10</span></span>
+            <span class="atm-ce-pe"><span class="ce-bright">CE</span> <span id="s1Ce" class="ce-bright">79.10</span> - <span class="pe-bright">PE</span> <span id="s1Pe" class="pe-bright">96.10</span></span>
           </div>
           <div class="sniper-otm-block">
             <div class="sniper-otm-label">OTM</div>
             <div class="sniper-otm-line">
-              <span class="strike-num" id="s1OtmCeStrike">24350.00</span> CE <span id="s1OtmCe" style="color:var(--green)">40.95</span> | <span class="strike-num" id="s1OtmPeStrike">24150.00</span> PE <span id="s1OtmPe" style="color:var(--red)">53.95</span>
+              <span class="strike-num" id="s1OtmCeStrike">24350.00</span> <span class="ce-bright">CE</span> <span id="s1OtmCe" class="ce-bright">40.95</span> | <span class="strike-num" id="s1OtmPeStrike">24150.00</span> <span class="pe-bright">PE</span> <span id="s1OtmPe" class="pe-bright">53.95</span>
             </div>
           </div>
         </div>
@@ -229,12 +235,12 @@
         <div class="sniper-left-col">
           <div class="sniper-atm-row">
             <span id="s2Strike">24150.00</span>
-            <span class="atm-ce-pe">CE <span id="s2Ce" style="color:var(--green)">94.92</span> - PE <span id="s2Pe" style="color:var(--red)">76.88</span></span>
+            <span class="atm-ce-pe"><span class="ce-bright">CE</span> <span id="s2Ce" class="ce-bright">94.92</span> - <span class="pe-bright">PE</span> <span id="s2Pe" class="pe-bright">76.88</span></span>
           </div>
           <div class="sniper-otm-block">
             <div class="sniper-otm-label">OTM</div>
             <div class="sniper-otm-line">
-              <span class="strike-num" id="s2OtmCeStrike">24050.00</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span class="strike-num" id="s2OtmPeStrike">23900.00</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span>
+              <span class="strike-num" id="s2OtmCeStrike">24050.00</span> <span class="ce-bright">CE</span> <span id="s2OtmCe" class="ce-bright">55.37</span> | <span class="strike-num" id="s2OtmPeStrike">23900.00</span> <span class="pe-bright">PE</span> <span id="s2OtmPe" class="pe-bright">38.44</span>
             </div>
           </div>
         </div>
@@ -269,11 +275,11 @@
       let textVal = 'NEUTRAL';
 
       if (status === 'buyer') {
-        color = 'var(--green)';
+        color = 'var(--green-bright)';
         className = 'buyer';
         textVal = 'BUYER';
       } else if (status === 'seller') {
-        color = 'var(--red)';
+        color = 'var(--red-bright)';
         className = 'seller';
         textVal = 'SELLER';
       }
@@ -363,7 +369,7 @@
           setTxt('s1Val', data.sniper1.val, '47.45');
         }
 
-        // Sniper 2 (Absolute strike prices using base ATM minus 50, 150, 300)
+        // Sniper 2
         document.getElementById('s2Strike').innerText = (baseAtm - 50).toFixed(2);
         document.getElementById('s2OtmCeStrike').innerText = (baseAtm - 150).toFixed(2);
         document.getElementById('s2OtmPeStrike').innerText = (baseAtm - 300).toFixed(2);
