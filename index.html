@@ -72,25 +72,27 @@
     .txt-red { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
     .txt-green { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
 
-    /* New Modern Sniper Layout Styles Matching Screenshot */
+    /* Sniper Layout Styles */
     .sniper-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; }
     .sniper-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .sniper-badge { border: 1px solid #1a365d; color: #38bdf8; background-color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 9px; letter-spacing: 0.5px; font-weight: 600; }
+    .sniper-badge { border: 1px solid #1a365d; color: #38bdf8; background-color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 11px; letter-spacing: 0.5px; font-weight: 600; }
     .sniper-badge.best { border-color: #065f46; color: var(--green); background-color: #022c22; }
-    .badge-sub { color: var(--green); font-size: 9px; font-weight: 600; text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
+    .badge-sub { color: var(--green); font-size: 11px; font-weight: 600; text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
 
     .sniper-main-layout { display: flex; justify-content: space-between; align-items: center; }
-    .sniper-left-col { display: flex; flex-direction: column; gap: 4px; }
+    .sniper-left-col { display: flex; flex-direction: column; gap: 4px; width: calc(100% - 80px); }
     
     .sniper-atm-row { display: flex; align-items: baseline; gap: 10px; font-size: 18px; font-weight: 600; color: #ffffff; }
     .sniper-atm-row span { font-weight: 600; }
     .atm-ce-pe { font-size: 12px; color: var(--text-muted); font-weight: 400; }
 
     .sniper-otm-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; margin-top: 2px; }
-    .sniper-otm-row { display: flex; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 600; color: #ffffff; }
-    .otm-sep { color: var(--text-muted); font-weight: 400; }
+    
+    /* OTM single line formatting with bold strike values */
+    .sniper-otm-line { font-size: 12px; color: var(--text-main); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sniper-otm-line span { font-weight: 600; }
 
-    .sniper-right-col { display: flex; flex-direction: column; align-items: flex-end; border-left: 1px dashed var(--border-color); padding-left: 14px; }
+    .sniper-right-col { display: flex; flex-direction: column; align-items: flex-end; border-left: 1px dashed var(--border-color); padding-left: 14px; min-width: 80px; }
     .sniper-val { color: var(--cyan); font-size: 22px; text-shadow: 0 0 8px rgba(0, 240, 255, 0.5); font-weight: 600; line-height: 1.1; }
     .sniper-subtext { font-size: 9px; color: var(--cyan); letter-spacing: 0.5px; margin-top: 2px; font-weight: 500; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
 
@@ -211,10 +213,8 @@
           </div>
           <div>
             <div class="sniper-otm-label">OTM</div>
-            <div class="sniper-otm-row">
-              <span><span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" style="color:var(--green)">39.55</span></span>
-              <span class="otm-sep">|</span>
-              <span><span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></span>
+            <div class="sniper-otm-line">
+              <span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" style="color:var(--green)">39.55</span> | <span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span>
             </div>
           </div>
         </div>
@@ -238,10 +238,8 @@
           </div>
           <div>
             <div class="sniper-otm-label">OTM</div>
-            <div class="sniper-otm-row">
-              <span><span id="s2OtmCeStrike">24100</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span></span>
-              <span class="otm-sep">|</span>
-              <span><span id="s2OtmPeStrike">23950</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></span>
+            <div class="sniper-otm-line">
+              <span id="s2OtmCeStrike">24100</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span id="s2OtmPeStrike">23950</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span>
             </div>
           </div>
         </div>
@@ -338,7 +336,7 @@
         setTxt('peCLVal', data.pe ? (peClose - data.pe.low) : null, '28.80');
 
         updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHighWrapper', 'ceHigh', 'ceCloseWrapper', 'ceLowWrapper', 'ceLow', data.ceStatus || 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', data.peStatus || 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', 'neutral');
 
         setTxt('minSupply', data.minSupply, '24153.90');
         setTxt('minDemand', data.minDemand, '24127.60');
