@@ -26,9 +26,8 @@
 
     .header-bar { display: flex; justify-content: space-between; align-items: center; }
     .title-group { display: flex; align-items: baseline; gap: 10px; }
-    /* Updated title color to match spot-price cyan */
     .title { font-size: 26px; color: var(--cyan); text-shadow: 0 0 10px rgba(0, 240, 255, 0.4); font-weight: 600; }
-    .spot-price { font-size: 20px; color: var(--cyan); text-shadow: 0 0 8px rgba(0, 240, 255, 0.5); font-weight: 600; }
+    .spot-price { font-size: 26px; color: var(--cyan); text-shadow: 0 0 10px rgba(0, 240, 255, 0.4); font-weight: 600; }
     .exp-badge { border: 1px solid var(--cyan); color: var(--cyan); padding: 3px 8px; border-radius: 6px; font-size: 11px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
 
     .banner-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
@@ -73,24 +72,23 @@
     .txt-red { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
     .txt-green { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
 
-    /* Sniper Layout Styles */
+    /* Sniper Layout Styles matching target design */
     .sniper-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; }
-    .sniper-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .sniper-badge { border: 1px solid #1a365d; color: #38bdf8; background-color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 11px; letter-spacing: 0.5px; font-weight: 600; }
+    .sniper-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .sniper-badge { border: 1px solid #1a365d; color: #38bdf8; background-color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 10px; letter-spacing: 0.5px; font-weight: 600; }
     .sniper-badge.best { border-color: #065f46; color: var(--green); background-color: #022c22; }
-    .badge-sub { color: var(--green); font-size: 11px; font-weight: 600; text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
+    .badge-sub { color: var(--green); font-size: 10px; font-weight: 600; text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
 
     .sniper-main-layout { display: flex; justify-content: space-between; align-items: center; }
-    .sniper-left-col { display: flex; flex-direction: column; gap: 4px; width: calc(100% - 80px); }
+    .sniper-left-col { display: flex; flex-direction: column; gap: 6px; width: calc(100% - 80px); }
     
-    .sniper-atm-row { display: flex; align-items: baseline; gap: 10px; font-size: 18px; font-weight: 600; color: #ffffff; }
-    .sniper-atm-row span { font-weight: 600; }
+    .sniper-atm-row { display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 600; color: #ffffff; }
     .atm-ce-pe { font-size: 12px; color: var(--text-muted); font-weight: 400; }
 
-    .sniper-otm-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; margin-top: 2px; }
-    
-    .sniper-otm-line { font-size: 12px; color: var(--text-main); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sniper-otm-line span { font-weight: 600; }
+    .sniper-otm-block { display: flex; flex-direction: column; gap: 2px; }
+    .sniper-otm-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; }
+    .sniper-otm-line { font-size: 12px; color: var(--text-muted); font-weight: 400; display: flex; align-items: center; gap: 6px; }
+    .sniper-otm-line .strike-num { color: var(--text-main); font-weight: 600; }
 
     .sniper-right-col { display: flex; flex-direction: column; align-items: flex-end; border-left: 1px dashed var(--border-color); padding-left: 14px; min-width: 80px; }
     .sniper-val { color: var(--cyan); font-size: 22px; text-shadow: 0 0 8px rgba(0, 240, 255, 0.5); font-weight: 600; line-height: 1.1; }
@@ -208,18 +206,18 @@
       <div class="sniper-main-layout">
         <div class="sniper-left-col">
           <div class="sniper-atm-row">
-            <span id="s1Strike">24200</span>
+            <span id="s1Strike">24250</span>
             <span class="atm-ce-pe">CE <span id="s1Ce" style="color:var(--green)">79.10</span> - PE <span id="s1Pe" style="color:var(--red)">96.10</span></span>
           </div>
-          <div>
+          <div class="sniper-otm-block">
             <div class="sniper-otm-label">OTM</div>
             <div class="sniper-otm-line">
-              <span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" style="color:var(--green)">39.55</span> | <span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span>
+              <span class="strike-num" id="s1OtmCeStrike">24350</span> CE <span id="s1OtmCe" style="color:var(--green)">40.95</span> | <span class="strike-num" id="s1OtmPeStrike">24150</span> PE <span id="s1OtmPe" style="color:var(--red)">53.95</span>
             </div>
           </div>
         </div>
         <div class="sniper-right-col">
-          <div class="sniper-val" id="s1Val">25.50</div>
+          <div class="sniper-val" id="s1Val">47.45</div>
           <div class="sniper-subtext">SNIPER</div>
         </div>
       </div>
@@ -233,18 +231,18 @@
       <div class="sniper-main-layout">
         <div class="sniper-left-col">
           <div class="sniper-atm-row">
-            <span id="s2Strike">24150</span>
-            <span class="atm-ce-pe">CE <span id="s2Ce" style="color:var(--green)">94.92</span> - PE <span id="s2Pe" style="color:var(--red)">76.88</span></span>
+            <span id="s2Strike">24200</span>
+            <span class="atm-ce-pe">CE <span id="s2Ce" style="color:var(--green)">104.75</span> - PE <span id="s2Pe" style="color:var(--red)">72.10</span></span>
           </div>
-          <div>
+          <div class="sniper-otm-block">
             <div class="sniper-otm-label">OTM</div>
             <div class="sniper-otm-line">
-              <span id="s2OtmCeStrike">24100</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span id="s2OtmPeStrike">23950</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span>
+              <span class="strike-num" id="s2OtmCeStrike">24300</span> CE <span id="s2OtmCe" style="color:var(--green)">57.65</span> | <span class="strike-num" id="s2OtmPeStrike">24100</span> PE <span id="s2OtmPe" style="color:var(--red)">39.85</span>
             </div>
           </div>
         </div>
         <div class="sniper-right-col">
-          <div class="sniper-val" id="s2Val">20.40</div>
+          <div class="sniper-val" id="s2Val">48.75</div>
           <div class="sniper-subtext">SNIPER</div>
         </div>
       </div>
@@ -355,28 +353,28 @@
 
         // Sniper 1
         if (data.sniper1) {
-          const s1Atm = data.sniper1.strike || 24200;
-          setTxt('s1Strike', s1Atm, '24200');
+          const s1Atm = data.sniper1.strike || 24250;
+          setTxt('s1Strike', s1Atm, '24250');
           setTxt('s1Ce', data.sniper1.ce, '79.10');
           setTxt('s1Pe', data.sniper1.pe, '96.10');
-          setTxt('s1OtmCeStrike', s1Atm + 100, '24300');
-          setTxt('s1OtmCe', data.sniper1.otmCe, '39.55');
-          setTxt('s1OtmPeStrike', s1Atm - 100, '24100');
-          setTxt('s1OtmPe', data.sniper1.otmPe, '48.05');
-          setTxt('s1Val', data.sniper1.val, '25.50');
+          setTxt('s1OtmCeStrike', s1Atm + 100, '24350');
+          setTxt('s1OtmCe', data.sniper1.otmCe, '40.95');
+          setTxt('s1OtmPeStrike', s1Atm - 100, '24150');
+          setTxt('s1OtmPe', data.sniper1.otmPe, '53.95');
+          setTxt('s1Val', data.sniper1.val, '47.45');
         }
 
         // Sniper 2
         if (data.sniper2) {
-          const s2Atm = data.sniper2.strike || 24150;
-          setTxt('s2Strike', s2Atm, '24150');
-          setTxt('s2Ce', data.sniper2.ce, '94.92');
-          setTxt('s2Pe', data.sniper2.pe, '76.88');
-          setTxt('s2OtmCeStrike', s2Atm - 50, '24100');
-          setTxt('s2OtmCe', data.sniper2.otmCe, '55.37');
-          setTxt('s2OtmPeStrike', s2Atm - 200, '23950');
-          setTxt('s2OtmPe', data.sniper2.otmPe, '38.44');
-          setTxt('s2Val', data.sniper2.val, '20.40');
+          const s2Atm = data.sniper2.strike || 24200;
+          setTxt('s2Strike', s2Atm, '24200');
+          setTxt('s2Ce', data.sniper2.ce, '104.75');
+          setTxt('s2Pe', data.sniper2.pe, '72.10');
+          setTxt('s2OtmCeStrike', s2Atm + 100, '24300');
+          setTxt('s2OtmCe', data.sniper2.otmCe, '57.65');
+          setTxt('s2OtmPeStrike', s2Atm - 100, '24100');
+          setTxt('s2OtmPe', data.sniper2.otmPe, '39.85');
+          setTxt('s2Val', data.sniper2.val, '48.75');
         }
 
         setTxt('earthVal', data.earthVal, '148.92');
