@@ -63,7 +63,6 @@ def update_nifty_data():
         print(f"Option chain fetch error: {e}")
 
     diff_val = round(ce_close - pe_close, 2)
-    straddle_val = round(ce_close + pe_close, 2)
 
     min_supply = round(atm_strike + ce_close, 2) if atm_strike else 0.0
     min_demand = round(atm_strike - pe_close, 2) if atm_strike else 0.0
@@ -72,7 +71,6 @@ def update_nifty_data():
 
     sniper_atm_rounded = int(round(atm_strike / 100.0) * 100) if atm_strike else 0
 
-    # Initialize Sniper variables
     s1_strike = sniper_atm_rounded
     s1_ce = ce_close
     s1_pe = pe_close
@@ -91,7 +89,6 @@ def update_nifty_data():
 
     try:
         if calls is not None and puts is not None:
-            # Sniper 1 dynamic chain lookup
             if s1_strike in calls.index:
                 s1_ce = round(float(calls.loc[s1_strike, 'lastPrice']), 2)
             if s1_strike in puts.index:
@@ -101,7 +98,6 @@ def update_nifty_data():
             if otm_pe_s1 in puts.index:
                 otm_pe_val_s1 = round(float(puts.loc[otm_pe_s1, 'lastPrice']), 2)
 
-            # Sniper 2 dynamic chain lookup
             if s2_strike in calls.index:
                 s2_ce = round(float(calls.loc[s2_strike, 'lastPrice']), 2)
             if s2_strike in puts.index:
@@ -112,6 +108,8 @@ def update_nifty_data():
                 otm_pe_val_s2 = round(float(puts.loc[otm_pe_s2, 'lastPrice']), 2)
     except Exception as ex:
         print(f"Sniper chain lookup error: {ex}")
+
+    earth_val = round((spot_high - spot_low) * 0.2611, 2) if spot_high and spot_low else 0.0
 
     payload = {
         "spotPrice": float(spot_close),
@@ -163,13 +161,13 @@ def update_nifty_data():
             "otmPe": float(otm_pe_val_s2),
             "val": round(abs(s2_ce - s2_pe) * 1.2, 2)
         },
-        "earthVal": round(straddle_val * 1.5, 2)
+        "earthVal": float(earth_val)
     }
 
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Successfully processed option chain. ATM: {atm_strike}, Sniper Rounded ATM: {sniper_atm_rounded}")
+    print(f"Successfully processed option chain. ATM: {atm_strike}, Sniper Rounded ATM: {sniper_atm_rounded}, Earth: {earth_val}")
 
 if __name__ == "__main__":
     update_nifty_data()
