@@ -42,31 +42,26 @@
     .option-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
     .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     
-    /* Dynamic tag styles */
+    /* Dynamic status tag styles */
     .status-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; }
     .status-tag.neutral { border: 1px solid var(--orange); color: var(--orange); text-shadow: 0 0 6px rgba(255, 165, 0, 0.4); }
     .status-tag.buyer { border: 1px solid var(--green); color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
     .status-tag.seller { border: 1px solid var(--red); color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
 
     .strike-header { font-size: 20px; color: #ffffff; font-weight: 600; }
-    .type-label { color: var(--cyan); font-size: 13px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); font-weight: 600; }
+    .type-label { font-size: 13px; font-weight: 600; }
+    
     .card-body { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
     .candle-container { width: 12px; height: 70px; position: relative; display: flex; justify-content: center; align-items: center; }
     
-    /* Dynamic Candle element colors based on status */
+    /* Candle element styling */
     .wick { position: absolute; width: 2px; height: 100%; }
     .node { position: absolute; width: 10px; height: 4px; top: 40%; }
     .body-box { position: absolute; width: 10px; top: 25%; height: 50%; }
 
     .price-details { text-align: right; font-size: 13px; line-height: 1.5; color: var(--text-main); }
     
-    .ce-color { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
-    .pe-color { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
     .card-footer { border-top: 1px dashed var(--border-color); padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
-    
-    .foot-val-green { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
-    .foot-val-cyan { color: var(--cyan); text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
-    .foot-val-red { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
 
     .metric-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
     .metric-title { color: var(--cyan); font-size: 11px; margin-bottom: 8px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); font-weight: 500; }
@@ -112,7 +107,7 @@
       </div>
       <div>
         <div class="diff-value" id="bannerTotal">17.00</div>
-        <div class="ce-pe-line">CE <span id="bannerCe" class="ce-color">79.10</span> • PE <span id="bannerPe" style="color:var(--red)">96.10</span></div>
+        <div class="ce-pe-line">CE <span id="bannerCe" style="color:var(--green)">79.10</span> • PE <span id="bannerPe" style="color:var(--red)">96.10</span></div>
       </div>
     </div>
 
@@ -120,7 +115,7 @@
       <div class="option-card" id="ceCard">
         <div class="card-top">
           <span class="status-tag neutral" id="ceStatusTag">NEUTRAL</span>
-          <span class="type-label">CE</span>
+          <span class="type-label" id="ceTypeLabel" style="color:var(--green);">CE</span>
         </div>
         <div class="strike-header" id="ceStrike">24200</div>
         <div class="card-body">
@@ -130,20 +125,20 @@
           </div>
           <div class="price-details">
             <div>H <span id="ceHigh" style="color:#ffffff">102.80</span></div>
-            <div class="ce-color">C <span id="ceClose">79.10</span></div>
+            <div id="ceCloseWrapper" style="color:var(--green)">C <span id="ceClose">79.10</span></div>
             <div>L <span id="ceLow" style="color:#ffffff">55.40</span></div>
           </div>
         </div>
         <div class="card-footer">
-          <div>H-C <span class="foot-val-green" id="ceHC">23.70</span></div>
-          <div>C-L <span class="foot-val-red" id="ceCL">23.70</span></div>
+          <div>H-C <span id="ceHCVal" style="color:var(--green)">23.70</span></div>
+          <div>C-L <span id="ceCLVal" style="color:var(--green)">23.70</span></div>
         </div>
       </div>
 
       <div class="option-card" id="peCard">
         <div class="card-top">
           <span class="status-tag neutral" id="peStatusTag">NEUTRAL</span>
-          <span class="type-label" style="color: var(--red);">PE</span>
+          <span class="type-label" id="peTypeLabel" style="color:var(--red);">PE</span>
         </div>
         <div class="strike-header" id="peStrike">24200</div>
         <div class="card-body">
@@ -153,13 +148,13 @@
           </div>
           <div class="price-details">
             <div>H <span id="peHigh" style="color:#ffffff">124.90</span></div>
-            <div class="pe-color">C <span id="peClose">96.10</span></div>
+            <div id="peCloseWrapper" style="color:var(--red)">C <span id="peClose">96.10</span></div>
             <div>L <span id="peLow" style="color:#ffffff">67.30</span></div>
           </div>
         </div>
         <div class="card-footer">
-          <div>H-C <span class="foot-val-cyan" id="peHC">28.80</span></div>
-          <div>C-L <span class="foot-val-red" id="peCL">28.80</span></div>
+          <div>H-C <span id="peHCVal" style="color:var(--red)">28.80</span></div>
+          <div>C-L <span id="peCLVal" style="color:var(--red)">28.80</span></div>
         </div>
       </div>
     </div>
@@ -196,8 +191,8 @@
       <div class="sniper-badge-wrap"><span class="sniper-badge best">SNIPER ATM</span><span class="badge-sub">best</span></div>
       <div class="sniper-content">
         <div class="sniper-details">
-          <div><span id="s1Strike">24200</span> CE <span id="s1Ce" class="ce-color">79.10</span> • PE <span id="s1Pe" style="color:var(--red)">96.10</span></div>
-          <div>OTM <span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" class="ce-color">39.55</span> | <span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></div>
+          <div><span id="s1Strike">24200</span> CE <span id="s1Ce" style="color:var(--green)">79.10</span> • PE <span id="s1Pe" style="color:var(--red)">96.10</span></div>
+          <div>OTM <span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" style="color:var(--green)">39.55</span> | <span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s1Val">25.50</div>
@@ -210,8 +205,8 @@
       <div class="sniper-badge-wrap"><span class="sniper-badge">SNIPER ATM</span></div>
       <div class="sniper-content">
         <div class="sniper-details">
-          <div><span id="s2Strike">24150</span> CE <span id="s2Ce" class="ce-color">94.92</span> • PE <span id="s2Pe" style="color:var(--red)">76.88</span></div>
-          <div>OTM <span id="s2OtmCeStrike">24250</span> CE <span id="s2OtmCe" class="ce-color">55.37</span> | <span id="s2OtmPeStrike">24050</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
+          <div><span id="s2Strike">24150</span> CE <span id="s2Ce" style="color:var(--green)">94.92</span> • PE <span id="s2Pe" style="color:var(--red)">76.88</span></div>
+          <div>OTM <span id="s2OtmCeStrike">24250</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span id="s2OtmPeStrike">24050</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s2Val">20.40</div>
@@ -227,12 +222,16 @@
   </div>
 
   <script>
-    // Helper function to update card theme based on state ('neutral' | 'buyer' | 'seller')
-    function updateCardTheme(cardId, tagId, wickId, element2Id, status) {
+    // Configures card styling, border color, label text, and candle properties based on state ('neutral' | 'buyer' | 'seller')
+    function updateCardTheme(cardId, tagId, labelId, wickId, nodeBodyId, hcValId, clValId, closeWrapperId, status) {
       const card = document.getElementById(cardId);
       const tag = document.getElementById(tagId);
+      const label = document.getElementById(labelId);
       const wick = document.getElementById(wickId);
-      const elem2 = document.getElementById(element2Id);
+      const nodeBody = document.getElementById(nodeBodyId);
+      const hcVal = document.getElementById(hcValId);
+      const clVal = document.getElementById(clValId);
+      const closeWrapper = document.getElementById(closeWrapperId);
 
       let color = 'var(--orange)';
       let className = 'neutral';
@@ -248,9 +247,13 @@
         textVal = 'SELLER';
       }
 
-      // Update card border color
+      // Update card border & label colors
       if (card) card.style.borderColor = color;
-      
+      if (label) label.style.color = color;
+      if (closeWrapper) closeWrapper.style.color = color;
+      if (hcVal) hcVal.style.color = color;
+      if (clVal) clVal.style.color = color;
+
       // Update badge styling & text
       if (tag) {
         tag.className = `status-tag ${className}`;
@@ -259,7 +262,7 @@
 
       // Update candle components colors
       if (wick) wick.style.backgroundColor = color;
-      if (elem2) elem2.style.backgroundColor = color;
+      if (nodeBody) nodeBody.style.backgroundColor = color;
     }
 
     async function loadData() {
@@ -287,19 +290,19 @@
         setTxt('ceHigh', data.ce ? data.ce.high : null, '102.80');
         setTxt('ceClose', ceClose, '79.10');
         setTxt('ceLow', data.ce ? data.ce.low : null, '55.40');
-        setTxt('ceHC', data.ce ? (data.ce.high - ceClose) : null, '23.70');
-        setTxt('ceCL', data.ce ? (ceClose - data.ce.low) : null, '23.70');
+        setTxt('ceHCVal', data.ce ? (data.ce.high - ceClose) : null, '23.70');
+        setTxt('ceCLVal', data.ce ? (ceClose - data.ce.low) : null, '23.70');
 
         setTxt('peStrike', data.atmStrike, '24200');
         setTxt('peHigh', data.pe ? data.pe.high : null, '124.90');
         setTxt('peClose', peClose, '96.10');
         setTxt('peLow', data.pe ? data.pe.low : null, '67.30');
-        setTxt('peHC', data.pe ? (data.pe.high - peClose) : null, '28.80');
-        setTxt('peCL', data.pe ? (peClose - data.pe.low) : null, '28.80');
+        setTxt('peHCVal', data.pe ? (data.pe.high - peClose) : null, '28.80');
+        setTxt('peCLVal', data.pe ? (peClose - data.pe.low) : null, '28.80');
 
-        // Apply dynamic statuses if provided in data (e.g. data.ceStatus = 'buyer', 'seller', or 'neutral')
-        updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', data.ceStatus || 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', data.peStatus || 'neutral');
+        // Apply dynamic statuses (data.ceStatus and data.peStatus can be 'neutral', 'buyer', or 'seller')
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHCVal', 'ceCLVal', 'ceCloseWrapper', data.ceStatus || 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHCVal', 'peCLVal', 'peCloseWrapper', data.peStatus || 'neutral');
 
         setTxt('minSupply', data.minSupply, '24153.90');
         setTxt('minDemand', data.minDemand, '24127.60');
@@ -340,10 +343,9 @@
 
         setTxt('earthVal', data.earthVal, '148.92');
       } catch (err) {
-        console.warn("Using default non-zero baseline parameters.");
-        // Defaults initialization
-        updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', 'neutral');
+        console.warn("Using default baseline parameters.");
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHCVal', 'ceCLVal', 'ceCloseWrapper', 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHCVal', 'peCLVal', 'peCloseWrapper', 'neutral');
       }
     }
 
