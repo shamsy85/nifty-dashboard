@@ -99,7 +99,6 @@
     .earth-title { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #ffffff; font-weight: 500; }
     .earth-val { color: var(--green-bright); font-size: 20px; text-shadow: 0 0 8px rgba(51, 255, 153, 0.6); font-weight: 600; }
 
-    /* Bright Helper Classes */
     .ce-bright { color: var(--green-bright) !important; text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
     .pe-bright { color: var(--red-bright) !important; text-shadow: 0 0 6px rgba(255, 92, 119, 0.6); }
   </style>
@@ -117,7 +116,7 @@
 
     <div class="banner-card">
       <div>
-        <span class="sub-badge">30-08-2026</span>
+        <span class="sub-badge" id="currentDate">30-08-2026</span>
         <div class="atm-display"><span class="atm-label">ATM</span><span id="atmStrike">24200</span></div>
       </div>
       <div>
@@ -127,10 +126,10 @@
     </div>
 
     <div class="grid-2">
-      <div class="option-card" id="ceCard" style="border-color: var(--orange);">
+      <div class="option-card" id="ceCard">
         <div class="card-top">
           <span class="status-tag neutral" id="ceStatusTag">NEUTRAL</span>
-          <span class="type-label ce-bright" id="ceTypeLabel">CE</span>
+          <span class="type-label ce-bright">CE</span>
         </div>
         <div class="strike-header" id="ceStrike">24200.00</div>
         <div class="card-body">
@@ -139,9 +138,9 @@
             <div class="node" id="ceNode"></div>
           </div>
           <div class="price-details">
-            <div><span id="ceHighWrapper" class="ce-bright">H</span> <span id="ceHigh" class="ce-bright">102.80</span></div>
-            <div id="ceCloseWrapper" class="ce-bright">C <span id="ceClose">79.10</span></div>
-            <div><span id="ceLowWrapper" class="ce-bright">L</span> <span id="ceLow" class="ce-bright">55.40</span></div>
+            <div><span class="ce-bright">H</span> <span id="ceHigh" class="ce-bright">102.80</span></div>
+            <div class="ce-bright">C <span id="ceClose">79.10</span></div>
+            <div><span class="ce-bright">L</span> <span id="ceLow" class="ce-bright">55.40</span></div>
           </div>
         </div>
         <div class="card-footer">
@@ -150,10 +149,10 @@
         </div>
       </div>
 
-      <div class="option-card" id="peCard" style="border-color: var(--orange);">
+      <div class="option-card" id="peCard">
         <div class="card-top">
           <span class="status-tag neutral" id="peStatusTag">NEUTRAL</span>
-          <span class="type-label pe-bright" id="peTypeLabel">PE</span>
+          <span class="type-label pe-bright">PE</span>
         </div>
         <div class="strike-header" id="peStrike">24200.00</div>
         <div class="card-body">
@@ -162,9 +161,9 @@
             <div class="body-box" id="peBody"></div>
           </div>
           <div class="price-details">
-            <div><span id="peHighWrapper" class="pe-bright">H</span> <span id="peHigh" class="pe-bright">124.90</span></div>
-            <div id="peCloseWrapper" class="pe-bright">C <span id="peClose">96.10</span></div>
-            <div><span id="peLowWrapper" class="pe-bright">L</span> <span id="peLow" class="pe-bright">67.30</span></div>
+            <div><span class="pe-bright">H</span> <span id="peHigh" class="pe-bright">124.90</span></div>
+            <div class="pe-bright">C <span id="peClose">96.10</span></div>
+            <div><span class="pe-bright">L</span> <span id="peLow" class="pe-bright">67.30</span></div>
           </div>
         </div>
         <div class="card-footer">
@@ -189,7 +188,7 @@
         <div class="zone-title">WEEKLY ZONE</div>
         <div class="zone-rows">
           <div><div class="txt-red" id="wzSupply1">24296.15</div><div class="txt-red" id="wzSupply2">24425.65</div></div>
-          <div><span class="txt-green" id="wzDemand1">24065.45</span><div class="txt-green" id="wzDemand2">23945.65</div></div>
+          <div><div class="txt-green" id="wzDemand1">24065.45</div><div class="txt-green" id="wzDemand2">23945.65</div></div>
         </div>
       </div>
 
@@ -240,7 +239,7 @@
           <div class="sniper-otm-block">
             <div class="sniper-otm-label">OTM</div>
             <div class="sniper-otm-line">
-              <span class="strike-num" id="s2OtmCeStrike">24050.00</span> <span class="ce-bright">CE</span> <span id="s2OtmCe" class="ce-bright">55.37</span> | <span class="strike-num" id="s2OtmPeStrike">23900.00</span> <span class="pe-bright">PE</span> <span id="s2OtmPe" class="pe-bright">38.44</span>
+              <span class="strike-num" id="s2OtmCeStrike">24250.00</span> <span class="ce-bright">CE</span> <span id="s2OtmCe" class="ce-bright">55.37</span> | <span class="strike-num" id="s2OtmPeStrike">24050.00</span> <span class="pe-bright">PE</span> <span id="s2OtmPe" class="pe-bright">38.44</span>
             </div>
           </div>
         </div>
@@ -279,12 +278,10 @@
       }
 
       if (card) card.style.borderColor = color;
-
       if (tag) {
         tag.className = `status-tag ${className}`;
         tag.innerText = textVal;
       }
-
       if (wick) wick.style.backgroundColor = color;
       if (nodeBody) nodeBody.style.backgroundColor = color;
     }
@@ -296,19 +293,20 @@
 
         const setTxt = (id, val, fallback) => {
           const el = document.getElementById(id);
-          if (el) el.innerText = (val !== undefined && val !== null && val !== 0) ? (typeof val === 'number' ? val.toFixed(2) : val) : fallback;
+          if (el) el.innerText = (val !== undefined && val !== null) ? (typeof val === 'number' ? val.toFixed(2) : val) : fallback;
         };
 
         if (data.spotPrice) setTxt('spotPrice', data.spotPrice, '24175.65');
         if (data.expiryDate) document.getElementById('expiryDate').innerText = 'EXP ' + data.expiryDate;
-        
+        if (data.currentDate) document.getElementById('currentDate').innerText = data.currentDate;
+
         const baseAtm = data.atmStrike || 24200;
         if (data.atmStrike) setTxt('atmStrike', data.atmStrike, '24200');
 
         const ceClose = (data.ce && data.ce.close) ? data.ce.close : 79.10;
         const peClose = (data.pe && data.pe.close) ? data.pe.close : 96.10;
         
-        setTxt('bannerTotal', Math.abs(peClose - ceClose), '17.00');
+        setTxt('bannerTotal', Math.abs(ceClose - peClose), '17.00');
         setTxt('bannerCe', ceClose, '79.10');
         setTxt('bannerPe', peClose, '96.10');
 
@@ -326,7 +324,6 @@
         setTxt('peHCVal', data.pe ? (data.pe.high - peClose) : null, '28.80');
         setTxt('peCLVal', data.pe ? (peClose - data.pe.low) : null, '28.80');
 
-        // Pass status dynamically ('neutral', 'buyer', or 'seller')
         updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', data.ceStatus || 'neutral');
         updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', data.peStatus || 'neutral');
 
@@ -345,29 +342,29 @@
         setTxt('mzDemand1', data.mzDemand1, '23795.65');
         setTxt('mzDemand2', data.mzDemand2, '23575.65');
 
-        // Sniper 1
         if (data.sniper1) {
-          const s1Atm = data.sniper1.strike || 24250;
+          const s1Atm = data.sniper1.strike || 24200;
           document.getElementById('s1Strike').innerText = s1Atm.toFixed(2);
           setTxt('s1Ce', data.sniper1.ce, '79.10');
           setTxt('s1Pe', data.sniper1.pe, '96.10');
-          document.getElementById('s1OtmCeStrike').innerText = (s1Atm + 100).toFixed(2);
+          document.getElementById('s1OtmCeStrike').innerText = data.sniper1.otmCeStrike ? data.sniper1.otmCeStrike.toFixed(2) : (s1Atm + 100).toFixed(2);
           setTxt('s1OtmCe', data.sniper1.otmCe, '40.95');
-          document.getElementById('s1OtmPeStrike').innerText = (s1Atm - 100).toFixed(2);
+          document.getElementById('s1OtmPeStrike').innerText = data.sniper1.otmPeStrike ? data.sniper1.otmPeStrike.toFixed(2) : (s1Atm - 100).toFixed(2);
           setTxt('s1OtmPe', data.sniper1.otmPe, '53.95');
           setTxt('s1Val', data.sniper1.val, '47.45');
         }
 
-        // Sniper 2
-        document.getElementById('s2Strike').innerText = (baseAtm - 50).toFixed(2);
-        document.getElementById('s2OtmCeStrike').innerText = (baseAtm - 150).toFixed(2);
-        document.getElementById('s2OtmPeStrike').innerText = (baseAtm - 300).toFixed(2);
-        
-        setTxt('s2Ce', 94.92, '94.92');
-        setTxt('s2Pe', 76.88, '76.88');
-        setTxt('s2OtmCe', 55.37, '55.37');
-        setTxt('s2OtmPe', 38.44, '38.44');
-        setTxt('s2Val', 20.40, '20.40');
+        if (data.sniper2) {
+          const s2Atm = data.sniper2.strike || 24150;
+          document.getElementById('s2Strike').innerText = s2Atm.toFixed(2);
+          setTxt('s2Ce', data.sniper2.ce, '94.92');
+          setTxt('s2Pe', data.sniper2.pe, '76.88');
+          document.getElementById('s2OtmCeStrike').innerText = data.sniper2.otmCeStrike ? data.sniper2.otmCeStrike.toFixed(2) : (s2Atm + 100).toFixed(2);
+          setTxt('s2OtmCe', data.sniper2.otmCe, '55.37');
+          document.getElementById('s2OtmPeStrike').innerText = data.sniper2.otmPeStrike ? data.sniper2.otmPeStrike.toFixed(2) : (s2Atm - 100).toFixed(2);
+          setTxt('s2OtmPe', data.sniper2.otmPe, '38.44');
+          setTxt('s2Val', data.sniper2.val, '20.40');
+        }
 
         setTxt('earthVal', data.earthVal, '148.92');
       } catch (err) {
