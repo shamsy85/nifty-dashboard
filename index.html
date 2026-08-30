@@ -26,7 +26,8 @@
 
     .header-bar { display: flex; justify-content: space-between; align-items: center; }
     .title-group { display: flex; align-items: baseline; gap: 10px; }
-    .title { font-size: 26px; color: #ffffff; text-shadow: 0 0 10px rgba(255, 255, 255, 0.4); font-weight: 600; }
+    /* Updated title color to match spot-price cyan */
+    .title { font-size: 26px; color: var(--cyan); text-shadow: 0 0 10px rgba(0, 240, 255, 0.4); font-weight: 600; }
     .spot-price { font-size: 20px; color: var(--cyan); text-shadow: 0 0 8px rgba(0, 240, 255, 0.5); font-weight: 600; }
     .exp-badge { border: 1px solid var(--cyan); color: var(--cyan); padding: 3px 8px; border-radius: 6px; font-size: 11px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
 
@@ -88,7 +89,6 @@
 
     .sniper-otm-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; margin-top: 2px; }
     
-    /* OTM single line formatting with bold strike values */
     .sniper-otm-line { font-size: 12px; color: var(--text-main); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sniper-otm-line span { font-weight: 600; }
 
