@@ -17,7 +17,7 @@
       --cyan: #00f0ff;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; font-weight: normal; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Bookman Old Style", "Bookman", Georgia, serif; font-weight: normal; }
     body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; display: flex; justify-content: center; }
     .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
 
@@ -48,7 +48,6 @@
     .node { position: absolute; width: 10px; height: 4px; background-color: var(--yellow); top: 40%; }
     .body-box { position: absolute; width: 10px; background-color: var(--red); top: 25%; height: 50%; }
     .price-details { text-align: right; font-size: 13px; line-height: 1.5; color: var(--text-main); }
-    .val-close { }
     .ce-color { color: var(--yellow); text-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
     .pe-color { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
     .card-footer { border-top: 1px dashed var(--border-color); padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
@@ -94,7 +93,7 @@
 
     <div class="banner-card">
       <div>
-        <span class="sub-badge" id="currentDate">30-08-2026</span>
+        <span class="sub-badge">30-08-2026</span>
         <div class="atm-display"><span class="atm-label">ATM</span><span id="atmStrike">24200</span></div>
       </div>
       <div>
@@ -111,7 +110,7 @@
           <div class="candle-container"><div class="wick"></div><div class="node"></div></div>
           <div class="price-details">
             <div>H <span id="ceHigh" style="color:#ffffff">102.80</span></div>
-            <div class="val-close ce-color">C <span id="ceClose">79.10</span></div>
+            <div class="ce-color">C <span id="ceClose">79.10</span></div>
             <div>L <span id="ceLow" style="color:#ffffff">55.40</span></div>
           </div>
         </div>
@@ -128,7 +127,7 @@
           <div class="candle-container"><div class="wick pe-wick"></div><div class="body-box"></div></div>
           <div class="price-details">
             <div>H <span id="peHigh" style="color:#ffffff">124.90</span></div>
-            <div class="val-close pe-color">C <span id="peClose">96.10</span></div>
+            <div class="pe-color">C <span id="peClose">96.10</span></div>
             <div>L <span id="peLow" style="color:#ffffff">67.30</span></div>
           </div>
         </div>
@@ -140,7 +139,7 @@
     </div>
 
     <div class="grid-2">
-      <div class="metric-card"><div class="metric-title">MINIMUM SUPPLY</div><div class="metric-val txt-red" id="minSupply">24215.20</div></div>
+      <div class="metric-card"><div class="metric-title">MINIMUM SUPPLY</div><div class="metric-val txt-red" id="minSupply">24153.90</div></div>
       <div class="metric-card"><div class="metric-title">MINIMUM DEMAND</div><div class="metric-val txt-green" id="minDemand">24127.60</div></div>
     </div>
 
@@ -214,7 +213,6 @@
 
         if (data.spotPrice) setTxt('spotPrice', data.spotPrice, '24175.65');
         if (data.expiryDate) document.getElementById('expiryDate').innerText = 'EXP ' + data.expiryDate;
-        if (data.currentDate) setTxt('currentDate', data.currentDate, '30-08-2026');
         if (data.atmStrike) setTxt('atmStrike', data.atmStrike, '24200');
 
         const ceClose = (data.ce && data.ce.close) ? data.ce.close : 79.10;
@@ -238,7 +236,7 @@
         setTxt('peHC', data.pe ? (data.pe.high - peClose) : null, '28.80');
         setTxt('peCL', data.pe ? (peClose - data.pe.low) : null, '28.80');
 
-        setTxt('minSupply', data.minSupply, '24215.20');
+        setTxt('minSupply', data.minSupply, '24153.90');
         setTxt('minDemand', data.minDemand, '24127.60');
         setTxt('maxSupply', data.maxSupply, '24350.85');
         setTxt('maxDemand', data.maxDemand, '24000.45');
