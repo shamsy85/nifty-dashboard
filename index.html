@@ -72,7 +72,6 @@
     .txt-red { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
     .txt-green { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
 
-    /* Sniper Layout Styles */
     .sniper-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; }
     .sniper-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
     .sniper-badge { border: 1px solid #1a365d; color: #38bdf8; background-color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 10px; letter-spacing: 0.5px; font-weight: 600; }
@@ -184,7 +183,7 @@
         <div class="zone-title">WEEKLY ZONE</div>
         <div class="zone-rows">
           <div><div class="txt-red" id="wzSupply1">24296.15</div><div class="txt-red" id="wzSupply2">24425.65</div></div>
-          <div><div class="txt-green" id="wzDemand1">24065.45</div><div class="txt-green" id="wzDemand2">23945.65</div></div>
+          <div><span class="txt-green" id="wzDemand1">24065.45</span><div class="txt-green" id="wzDemand2">23945.65</div></div>
         </div>
       </div>
 
@@ -205,13 +204,13 @@
       <div class="sniper-main-layout">
         <div class="sniper-left-col">
           <div class="sniper-atm-row">
-            <span id="s1Strike">24250</span>
+            <span id="s1Strike">24250.00</span>
             <span class="atm-ce-pe">CE <span id="s1Ce" style="color:var(--green)">79.10</span> - PE <span id="s1Pe" style="color:var(--red)">96.10</span></span>
           </div>
           <div class="sniper-otm-block">
             <div class="sniper-otm-label">OTM</div>
             <div class="sniper-otm-line">
-              <span class="strike-num" id="s1OtmCeStrike">24350</span> CE <span id="s1OtmCe" style="color:var(--green)">40.95</span> | <span class="strike-num" id="s1OtmPeStrike">24150</span> PE <span id="s1OtmPe" style="color:var(--red)">53.95</span>
+              <span class="strike-num" id="s1OtmCeStrike">24350.00</span> CE <span id="s1OtmCe" style="color:var(--green)">40.95</span> | <span class="strike-num" id="s1OtmPeStrike">24150.00</span> PE <span id="s1OtmPe" style="color:var(--red)">53.95</span>
             </div>
           </div>
         </div>
@@ -229,13 +228,13 @@
       <div class="sniper-main-layout">
         <div class="sniper-left-col">
           <div class="sniper-atm-row">
-            <span id="s2Strike">24150</span>
+            <span id="s2Strike">24150.00</span>
             <span class="atm-ce-pe">CE <span id="s2Ce" style="color:var(--green)">94.92</span> - PE <span id="s2Pe" style="color:var(--red)">76.88</span></span>
           </div>
           <div class="sniper-otm-block">
             <div class="sniper-otm-label">OTM</div>
             <div class="sniper-otm-line">
-              <span class="strike-num" id="s2OtmCeStrike">24050</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span class="strike-num" id="s2OtmPeStrike">23900</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span>
+              <span class="strike-num" id="s2OtmCeStrike">24050.00</span> CE <span id="s2OtmCe" style="color:var(--green)">55.37</span> | <span class="strike-num" id="s2OtmPeStrike">23900.00</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span>
             </div>
           </div>
         </div>
@@ -308,6 +307,8 @@
 
         if (data.spotPrice) setTxt('spotPrice', data.spotPrice, '24175.65');
         if (data.expiryDate) document.getElementById('expiryDate').innerText = 'EXP ' + data.expiryDate;
+        
+        const baseAtm = data.atmStrike || 24200;
         if (data.atmStrike) setTxt('atmStrike', data.atmStrike, '24200');
 
         const ceClose = (data.ce && data.ce.close) ? data.ce.close : 79.10;
@@ -317,14 +318,14 @@
         setTxt('bannerCe', ceClose, '79.10');
         setTxt('bannerPe', peClose, '96.10');
 
-        setTxt('ceStrike', data.atmStrike, '24200');
+        setTxt('ceStrike', baseAtm, '24200');
         setTxt('ceHigh', data.ce ? data.ce.high : null, '102.80');
         setTxt('ceClose', ceClose, '79.10');
         setTxt('ceLow', data.ce ? data.ce.low : null, '55.40');
         setTxt('ceHCVal', data.ce ? (data.ce.high - ceClose) : null, '23.70');
         setTxt('ceCLVal', data.ce ? (ceClose - data.ce.low) : null, '23.70');
 
-        setTxt('peStrike', data.atmStrike, '24200');
+        setTxt('peStrike', baseAtm, '24200');
         setTxt('peHigh', data.pe ? data.pe.high : null, '124.90');
         setTxt('peClose', peClose, '96.10');
         setTxt('peLow', data.pe ? data.pe.low : null, '67.30');
@@ -352,28 +353,26 @@
         // Sniper 1
         if (data.sniper1) {
           const s1Atm = data.sniper1.strike || 24250;
-          setTxt('s1Strike', s1Atm, '24250');
+          document.getElementById('s1Strike').innerText = s1Atm.toFixed(2);
           setTxt('s1Ce', data.sniper1.ce, '79.10');
           setTxt('s1Pe', data.sniper1.pe, '96.10');
-          setTxt('s1OtmCeStrike', s1Atm + 100, '24350');
+          document.getElementById('s1OtmCeStrike').innerText = (s1Atm + 100).toFixed(2);
           setTxt('s1OtmCe', data.sniper1.otmCe, '40.95');
-          setTxt('s1OtmPeStrike', s1Atm - 100, '24150');
+          document.getElementById('s1OtmPeStrike').innerText = (s1Atm - 100).toFixed(2);
           setTxt('s1OtmPe', data.sniper1.otmPe, '53.95');
           setTxt('s1Val', data.sniper1.val, '47.45');
         }
 
-        // Sniper 2 (With -50 ATM, -100 OTM CE, -250 OTM PE logic applied)
-        if (data.sniper2) {
-          const s2Atm = data.sniper2.strike || 24150;
-          setTxt('s2Strike', s2Atm, '24150');
-          setTxt('s2Ce', data.sniper2.ce, '94.92');
-          setTxt('s2Pe', data.sniper2.pe, '76.88');
-          setTxt('s2OtmCeStrike', s2Atm - 100, '24050');
-          setTxt('s2OtmCe', data.sniper2.otmCe, '55.37');
-          setTxt('s2OtmPeStrike', s2Atm - 250, '23900');
-          setTxt('s2OtmPe', data.sniper2.otmPe, '38.44');
-          setTxt('s2Val', data.sniper2.val, '20.40');
-        }
+        // Sniper 2 (Absolute strike prices using base ATM minus 50, 150, 300)
+        document.getElementById('s2Strike').innerText = (baseAtm - 50).toFixed(2);
+        document.getElementById('s2OtmCeStrike').innerText = (baseAtm - 150).toFixed(2);
+        document.getElementById('s2OtmPeStrike').innerText = (baseAtm - 300).toFixed(2);
+        
+        setTxt('s2Ce', 94.92, '94.92');
+        setTxt('s2Pe', 76.88, '76.88');
+        setTxt('s2OtmCe', 55.37, '55.37');
+        setTxt('s2OtmPe', 38.44, '38.44');
+        setTxt('s2Val', 20.40, '20.40');
 
         setTxt('earthVal', data.earthVal, '148.92');
       } catch (err) {
