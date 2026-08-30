@@ -16,6 +16,7 @@
       --text-muted: #9ca3af;
       --green: #00ff7f;
       --red: #ff3355;
+      --orange: #ffa500;
       --cyan: #00f0ff;
     }
 
@@ -40,15 +41,23 @@
 
     .option-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
     .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .status-tag { border: 1px solid var(--green); color: var(--green); padding: 1px 6px; border-radius: 4px; font-size: 10px; text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
+    
+    /* Dynamic tag styles */
+    .status-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; }
+    .status-tag.neutral { border: 1px solid var(--orange); color: var(--orange); text-shadow: 0 0 6px rgba(255, 165, 0, 0.4); }
+    .status-tag.buyer { border: 1px solid var(--green); color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
+    .status-tag.seller { border: 1px solid var(--red); color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
+
     .strike-header { font-size: 20px; color: #ffffff; font-weight: 600; }
     .type-label { color: var(--cyan); font-size: 13px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); font-weight: 600; }
     .card-body { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
     .candle-container { width: 12px; height: 70px; position: relative; display: flex; justify-content: center; align-items: center; }
-    .wick { position: absolute; width: 2px; height: 100%; background-color: var(--green); }
-    .wick.pe-wick { background-color: var(--red); }
-    .node { position: absolute; width: 10px; height: 4px; background-color: var(--green); top: 40%; }
-    .body-box { position: absolute; width: 10px; background-color: var(--red); top: 25%; height: 50%; }
+    
+    /* Dynamic Candle element colors based on status */
+    .wick { position: absolute; width: 2px; height: 100%; }
+    .node { position: absolute; width: 10px; height: 4px; top: 40%; }
+    .body-box { position: absolute; width: 10px; top: 25%; height: 50%; }
+
     .price-details { text-align: right; font-size: 13px; line-height: 1.5; color: var(--text-main); }
     
     .ce-color { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
@@ -108,11 +117,17 @@
     </div>
 
     <div class="grid-2">
-      <div class="option-card">
-        <div class="card-top"><span class="status-tag">NEUTRAL</span><span class="type-label">CE</span></div>
+      <div class="option-card" id="ceCard">
+        <div class="card-top">
+          <span class="status-tag neutral" id="ceStatusTag">NEUTRAL</span>
+          <span class="type-label">CE</span>
+        </div>
         <div class="strike-header" id="ceStrike">24200</div>
         <div class="card-body">
-          <div class="candle-container"><div class="wick"></div><div class="node"></div></div>
+          <div class="candle-container" id="ceCandleContainer">
+            <div class="wick" id="ceWick" style="background-color: var(--orange);"></div>
+            <div class="node" id="ceNode" style="background-color: var(--orange);"></div>
+          </div>
           <div class="price-details">
             <div>H <span id="ceHigh" style="color:#ffffff">102.80</span></div>
             <div class="ce-color">C <span id="ceClose">79.10</span></div>
@@ -125,11 +140,17 @@
         </div>
       </div>
 
-      <div class="option-card">
-        <div class="card-top"><span class="status-tag" style="border-color:var(--red); color:var(--red);">NEUTRAL</span><span class="type-label" style="color: var(--red);">PE</span></div>
+      <div class="option-card" id="peCard">
+        <div class="card-top">
+          <span class="status-tag neutral" id="peStatusTag">NEUTRAL</span>
+          <span class="type-label" style="color: var(--red);">PE</span>
+        </div>
         <div class="strike-header" id="peStrike">24200</div>
         <div class="card-body">
-          <div class="candle-container"><div class="wick pe-wick"></div><div class="body-box"></div></div>
+          <div class="candle-container" id="peCandleContainer">
+            <div class="wick" id="peWick" style="background-color: var(--orange);"></div>
+            <div class="body-box" id="peBody" style="background-color: var(--orange);"></div>
+          </div>
           <div class="price-details">
             <div>H <span id="peHigh" style="color:#ffffff">124.90</span></div>
             <div class="pe-color">C <span id="peClose">96.10</span></div>
@@ -206,6 +227,41 @@
   </div>
 
   <script>
+    // Helper function to update card theme based on state ('neutral' | 'buyer' | 'seller')
+    function updateCardTheme(cardId, tagId, wickId, element2Id, status) {
+      const card = document.getElementById(cardId);
+      const tag = document.getElementById(tagId);
+      const wick = document.getElementById(wickId);
+      const elem2 = document.getElementById(element2Id);
+
+      let color = 'var(--orange)';
+      let className = 'neutral';
+      let textVal = 'NEUTRAL';
+
+      if (status === 'buyer') {
+        color = 'var(--green)';
+        className = 'buyer';
+        textVal = 'BUYER';
+      } else if (status === 'seller') {
+        color = 'var(--red)';
+        className = 'seller';
+        textVal = 'SELLER';
+      }
+
+      // Update card border color
+      if (card) card.style.borderColor = color;
+      
+      // Update badge styling & text
+      if (tag) {
+        tag.className = `status-tag ${className}`;
+        tag.innerText = textVal;
+      }
+
+      // Update candle components colors
+      if (wick) wick.style.backgroundColor = color;
+      if (elem2) elem2.style.backgroundColor = color;
+    }
+
     async function loadData() {
       try {
         const res = await fetch('data.json?cache_bust=' + Date.now());
@@ -240,6 +296,10 @@
         setTxt('peLow', data.pe ? data.pe.low : null, '67.30');
         setTxt('peHC', data.pe ? (data.pe.high - peClose) : null, '28.80');
         setTxt('peCL', data.pe ? (peClose - data.pe.low) : null, '28.80');
+
+        // Apply dynamic statuses if provided in data (e.g. data.ceStatus = 'buyer', 'seller', or 'neutral')
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', data.ceStatus || 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', data.peStatus || 'neutral');
 
         setTxt('minSupply', data.minSupply, '24153.90');
         setTxt('minDemand', data.minDemand, '24127.60');
@@ -281,6 +341,9 @@
         setTxt('earthVal', data.earthVal, '148.92');
       } catch (err) {
         console.warn("Using default non-zero baseline parameters.");
+        // Defaults initialization
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', 'neutral');
       }
     }
 
