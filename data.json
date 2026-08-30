@@ -39,12 +39,12 @@
     "val": 0.0
   },
   "sniper2": {
-    "strike": -50,
+    "strike": 0,
     "ce": 0.0,
     "pe": 0.0,
-    "otmCeStrike": 0,
+    "otmCeStrike": 100,
     "otmCe": 0.0,
-    "otmPeStrike": -200,
+    "otmPeStrike": -100,
     "otmPe": 0.0,
     "val": 0.0
   },
