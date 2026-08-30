@@ -115,7 +115,7 @@
           <span class="status-tag neutral" id="ceStatusTag">NEUTRAL</span>
           <span class="type-label" id="ceTypeLabel" style="color:var(--green);">CE</span>
         </div>
-        <div class="strike-header" id="ceStrike">24200</div>
+        <div class="strike-header"><span id="ceStrikeOffset" style="font-size:14px; margin-right:4px; opacity:0.8;">+100</span><span id="ceStrike">24300</span></div>
         <div class="card-body">
           <div class="candle-container" id="ceCandleContainer">
             <div class="wick" id="ceWick" style="background-color: var(--orange);"></div>
@@ -138,7 +138,7 @@
           <span class="status-tag neutral" id="peStatusTag">NEUTRAL</span>
           <span class="type-label" id="peTypeLabel" style="color:var(--red);">PE</span>
         </div>
-        <div class="strike-header" id="peStrike">24200</div>
+        <div class="strike-header"><span id="peStrikeOffset" style="font-size:14px; margin-right:4px; opacity:0.8;">-100</span><span id="peStrike">24100</span></div>
         <div class="card-body">
           <div class="candle-container" id="peCandleContainer">
             <div class="wick" id="peWick" style="background-color: var(--orange);"></div>
@@ -220,7 +220,6 @@
   </div>
 
   <script>
-    // Configures card styling, border color, labels, and price elements based on state ('neutral' | 'buyer' | 'seller')
     function updateCardTheme(cardId, tagId, labelId, wickId, nodeBodyId, highWrapperId, highValId, closeWrapperId, lowWrapperId, lowValId, status) {
       const card = document.getElementById(cardId);
       const tag = document.getElementById(tagId);
@@ -247,7 +246,6 @@
         textVal = 'SELLER';
       }
 
-      // Apply dynamic colors to card, status tag, labels, and price fields (H, C, L)
       if (card) card.style.borderColor = color;
       if (label) label.style.color = color;
       if (highWrapper) highWrapper.style.color = color;
@@ -277,7 +275,22 @@
 
         if (data.spotPrice) setTxt('spotPrice', data.spotPrice, '24175.65');
         if (data.expiryDate) document.getElementById('expiryDate').innerText = 'EXP ' + data.expiryDate;
-        if (data.atmStrike) setTxt('atmStrike', data.atmStrike, '24200');
+        
+        const atm = data.atmStrike || 24200;
+        setTxt('atmStrike', atm, '24200');
+
+        // Parse custom offsets if provided (defaulting to +100 for CE and -100 for PE based on prompt cues)
+        const ceOffset = (data.ceOffset !== undefined) ? data.ceOffset : 100;
+        const peOffset = (data.peOffset !== undefined) ? data.peOffset : -100;
+
+        const ceStrikeVal = atm + ceOffset;
+        const peStrikeVal = atm + peOffset;
+
+        setTxt('ceStrike', ceStrikeVal, '24300');
+        document.getElementById('ceStrikeOffset').innerText = (ceOffset > 0 ? '+' : '') + ceOffset;
+
+        setTxt('peStrike', peStrikeVal, '24100');
+        document.getElementById('peStrikeOffset').innerText = (peOffset > 0 ? '+' : '') + peOffset;
 
         const ceClose = (data.ce && data.ce.close) ? data.ce.close : 79.10;
         const peClose = (data.pe && data.pe.close) ? data.pe.close : 96.10;
@@ -286,21 +299,18 @@
         setTxt('bannerCe', ceClose, '79.10');
         setTxt('bannerPe', peClose, '96.10');
 
-        setTxt('ceStrike', data.atmStrike, '24200');
         setTxt('ceHigh', data.ce ? data.ce.high : null, '102.80');
         setTxt('ceClose', ceClose, '79.10');
         setTxt('ceLow', data.ce ? data.ce.low : null, '55.40');
         setTxt('ceHCVal', data.ce ? (data.ce.high - ceClose) : null, '23.70');
         setTxt('ceCLVal', data.ce ? (ceClose - data.ce.low) : null, '23.70');
 
-        setTxt('peStrike', data.atmStrike, '24200');
         setTxt('peHigh', data.pe ? data.pe.high : null, '124.90');
         setTxt('peClose', peClose, '96.10');
         setTxt('peLow', data.pe ? data.pe.low : null, '67.30');
         setTxt('peHCVal', data.pe ? (data.pe.high - peClose) : null, '28.80');
         setTxt('peCLVal', data.pe ? (peClose - data.pe.low) : null, '28.80');
 
-        // Apply dynamic statuses (data.ceStatus and data.peStatus can be 'neutral', 'buyer', or 'seller')
         updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHighWrapper', 'ceHigh', 'ceCloseWrapper', 'ceLowWrapper', 'ceLow', data.ceStatus || 'neutral');
         updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', data.peStatus || 'neutral');
 
