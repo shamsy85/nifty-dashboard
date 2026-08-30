@@ -16,7 +16,6 @@
       --text-muted: #9ca3af;
       --green: #00ff7f;
       --red: #ff3355;
-      --yellow: #ffd700;
       --cyan: #00f0ff;
     }
 
@@ -41,19 +40,22 @@
 
     .option-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
     .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .status-tag { border: 1px solid var(--yellow); color: var(--yellow); padding: 1px 6px; border-radius: 4px; font-size: 10px; text-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
+    .status-tag { border: 1px solid var(--green); color: var(--green); padding: 1px 6px; border-radius: 4px; font-size: 10px; text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
     .strike-header { font-size: 20px; color: #ffffff; font-weight: 600; }
     .type-label { color: var(--cyan); font-size: 13px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); font-weight: 600; }
     .card-body { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
     .candle-container { width: 12px; height: 70px; position: relative; display: flex; justify-content: center; align-items: center; }
-    .wick { position: absolute; width: 2px; height: 100%; background-color: var(--yellow); }
+    .wick { position: absolute; width: 2px; height: 100%; background-color: var(--green); }
     .wick.pe-wick { background-color: var(--red); }
-    .node { position: absolute; width: 10px; height: 4px; background-color: var(--yellow); top: 40%; }
+    .node { position: absolute; width: 10px; height: 4px; background-color: var(--green); top: 40%; }
     .body-box { position: absolute; width: 10px; background-color: var(--red); top: 25%; height: 50%; }
     .price-details { text-align: right; font-size: 13px; line-height: 1.5; color: var(--text-main); }
-    .ce-color { color: var(--yellow); text-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
+    
+    .ce-color { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
     .pe-color { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
     .card-footer { border-top: 1px dashed var(--border-color); padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+    
+    .foot-val-green { color: var(--green); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
     .foot-val-cyan { color: var(--cyan); text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
     .foot-val-red { color: var(--red); text-shadow: 0 0 6px rgba(255, 51, 85, 0.4); }
 
@@ -101,7 +103,7 @@
       </div>
       <div>
         <div class="diff-value" id="bannerTotal">17.00</div>
-        <div class="ce-pe-line">CE <span id="bannerCe" style="color:var(--yellow)">79.10</span> • PE <span id="bannerPe" style="color:var(--red)">96.10</span></div>
+        <div class="ce-pe-line">CE <span id="bannerCe" class="ce-color">79.10</span> • PE <span id="bannerPe" style="color:var(--red)">96.10</span></div>
       </div>
     </div>
 
@@ -118,13 +120,13 @@
           </div>
         </div>
         <div class="card-footer">
-          <div>H-C <span class="foot-val-cyan" id="ceHC">23.70</span></div>
+          <div>H-C <span class="foot-val-green" id="ceHC">23.70</span></div>
           <div>C-L <span class="foot-val-red" id="ceCL">23.70</span></div>
         </div>
       </div>
 
       <div class="option-card">
-        <div class="card-top"><span class="status-tag">NEUTRAL</span><span class="type-label" style="color: var(--red);">PE</span></div>
+        <div class="card-top"><span class="status-tag" style="border-color:var(--red); color:var(--red);">NEUTRAL</span><span class="type-label" style="color: var(--red);">PE</span></div>
         <div class="strike-header" id="peStrike">24200</div>
         <div class="card-body">
           <div class="candle-container"><div class="wick pe-wick"></div><div class="body-box"></div></div>
@@ -173,8 +175,8 @@
       <div class="sniper-badge-wrap"><span class="sniper-badge best">SNIPER ATM</span><span class="badge-sub">best</span></div>
       <div class="sniper-content">
         <div class="sniper-details">
-          <div><span id="s1Strike">24200</span> CE <span id="s1Ce" style="color:var(--yellow)">79.10</span> • PE <span id="s1Pe" style="color:var(--red)">96.10</span></div>
-          <div>OTM <span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" style="color:var(--yellow)">39.55</span> | <span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></div>
+          <div><span id="s1Strike">24200</span> CE <span id="s1Ce" class="ce-color">79.10</span> • PE <span id="s1Pe" style="color:var(--red)">96.10</span></div>
+          <div>OTM <span id="s1OtmCeStrike">24300</span> CE <span id="s1OtmCe" class="ce-color">39.55</span> | <span id="s1OtmPeStrike">24100</span> PE <span id="s1OtmPe" style="color:var(--red)">48.05</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s1Val">25.50</div>
@@ -187,8 +189,8 @@
       <div class="sniper-badge-wrap"><span class="sniper-badge">SNIPER ATM</span></div>
       <div class="sniper-content">
         <div class="sniper-details">
-          <div><span id="s2Strike">24150</span> CE <span id="s2Ce" style="color:var(--yellow)">94.92</span> • PE <span id="s2Pe" style="color:var(--red)">76.88</span></div>
-          <div>OTM <span id="s2OtmCeStrike">24250</span> CE <span id="s2OtmCe" style="color:var(--yellow)">55.37</span> | <span id="s2OtmPeStrike">24050</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
+          <div><span id="s2Strike">24150</span> CE <span id="s2Ce" class="ce-color">94.92</span> • PE <span id="s2Pe" style="color:var(--red)">76.88</span></div>
+          <div>OTM <span id="s2OtmCeStrike">24250</span> CE <span id="s2OtmCe" class="ce-color">55.37</span> | <span id="s2OtmPeStrike">24050</span> PE <span id="s2OtmPe" style="color:var(--red)">38.44</span></div>
         </div>
         <div>
           <div class="sniper-val" id="s2Val">20.40</div>
