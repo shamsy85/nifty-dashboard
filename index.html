@@ -301,7 +301,10 @@
         if (data.currentDate) document.getElementById('currentDate').innerText = data.currentDate;
 
         const baseAtm = data.atmStrike || 0;
-        if (data.atmStrike !== undefined) setTxt('atmStrike', data.atmStrike, '--');
+        if (data.atmStrike !== undefined) {
+          const atmEl = document.getElementById('atmStrike');
+          if (atmEl) atmEl.innerText = data.atmStrike;
+        }
 
         const ceClose = (data.ce && data.ce.close !== undefined) ? data.ce.close : 0;
         const peClose = (data.pe && data.pe.close !== undefined) ? data.pe.close : 0;
@@ -310,14 +313,16 @@
         setTxt('bannerCe', ceClose, '--');
         setTxt('bannerPe', peClose, '--');
 
-        setTxt('ceStrike', baseAtm, '--');
+        const ceStrikeEl = document.getElementById('ceStrike');
+        if (ceStrikeEl) ceStrikeEl.innerText = baseAtm;
         setTxt('ceHigh', data.ce ? data.ce.high : null, '--');
         setTxt('ceClose', ceClose, '--');
         setTxt('ceLow', data.ce ? data.ce.low : null, '--');
         setTxt('ceHCVal', (data.ce && data.ce.high !== undefined && data.ce.close !== undefined) ? (data.ce.high - ceClose) : null, '--');
         setTxt('ceCLVal', (data.ce && data.ce.close !== undefined && data.ce.low !== undefined) ? (ceClose - data.ce.low) : null, '--');
 
-        setTxt('peStrike', baseAtm, '--');
+        const peStrikeEl = document.getElementById('peStrike');
+        if (peStrikeEl) peStrikeEl.innerText = baseAtm;
         setTxt('peHigh', data.pe ? data.pe.high : null, '--');
         setTxt('peClose', peClose, '--');
         setTxt('peLow', data.pe ? data.pe.low : null, '--');
@@ -344,24 +349,24 @@
 
         if (data.sniper1) {
           const s1Atm = data.sniper1.strike || 0;
-          document.getElementById('s1Strike').innerText = s1Atm ? s1Atm.toFixed(2) : '--';
+          document.getElementById('s1Strike').innerText = s1Atm ? s1Atm : '--';
           setTxt('s1Ce', data.sniper1.ce, '--');
           setTxt('s1Pe', data.sniper1.pe, '--');
-          document.getElementById('s1OtmCeStrike').innerText = data.sniper1.otmCeStrike ? data.sniper1.otmCeStrike.toFixed(2) : '--';
+          document.getElementById('s1OtmCeStrike').innerText = data.sniper1.otmCeStrike ? data.sniper1.otmCeStrike : '--';
           setTxt('s1OtmCe', data.sniper1.otmCe, '--');
-          document.getElementById('s1OtmPeStrike').innerText = data.sniper1.otmPeStrike ? data.sniper1.otmPeStrike.toFixed(2) : '--';
+          document.getElementById('s1OtmPeStrike').innerText = data.sniper1.otmPeStrike ? data.sniper1.otmPeStrike : '--';
           setTxt('s1OtmPe', data.sniper1.otmPe, '--');
           setTxt('s1Val', data.sniper1.val, '--');
         }
 
         if (data.sniper2) {
           const s2Atm = data.sniper2.strike || 0;
-          document.getElementById('s2Strike').innerText = s2Atm ? s2Atm.toFixed(2) : '--';
+          document.getElementById('s2Strike').innerText = s2Atm ? s2Atm : '--';
           setTxt('s2Ce', data.sniper2.ce, '--');
           setTxt('s2Pe', data.sniper2.pe, '--');
-          document.getElementById('s2OtmCeStrike').innerText = data.sniper2.otmCeStrike ? data.sniper2.otmCeStrike.toFixed(2) : '--';
+          document.getElementById('s2OtmCeStrike').innerText = data.sniper2.otmCeStrike ? data.sniper2.otmCeStrike : '--';
           setTxt('s2OtmCe', data.sniper2.otmCe, '--');
-          document.getElementById('s2OtmPeStrike').innerText = data.sniper2.otmPeStrike ? data.sniper2.otmPeStrike.toFixed(2) : '--';
+          document.getElementById('s2OtmPeStrike').innerText = data.sniper2.otmPeStrike ? data.sniper2.otmPeStrike : '--';
           setTxt('s2OtmPe', data.sniper2.otmPe, '--');
           setTxt('s2Val', data.sniper2.val, '--');
         }
@@ -375,6 +380,7 @@
     }
 
     loadData();
+    setInterval(loadData, 60000); // Auto-poll data every minute
   </script>
 </body>
 </html>
