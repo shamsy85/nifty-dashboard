@@ -41,10 +41,10 @@
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    .option-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
+    .option-card { background-color: var(--card-bg); border: 1px solid var(--orange); border-radius: 10px; padding: 12px; }
     .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     
-    .status-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; }
+    .status-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
     .status-tag.neutral { border: 1px solid var(--orange); color: var(--orange); text-shadow: 0 0 6px rgba(255, 165, 0, 0.4); }
     .status-tag.buyer { border: 1px solid var(--green-bright); color: var(--green-bright); text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
     .status-tag.seller { border: 1px solid var(--red-bright); color: var(--red-bright); text-shadow: 0 0 6px rgba(255, 92, 119, 0.6); }
@@ -55,9 +55,9 @@
     .card-body { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
     .candle-container { width: 12px; height: 70px; position: relative; display: flex; justify-content: center; align-items: center; }
     
-    .wick { position: absolute; width: 2px; height: 100%; }
-    .node { position: absolute; width: 10px; height: 4px; top: 40%; }
-    .body-box { position: absolute; width: 10px; top: 25%; height: 50%; }
+    .wick { position: absolute; width: 2px; height: 100%; background-color: var(--orange); }
+    .node { position: absolute; width: 10px; height: 4px; top: 40%; background-color: var(--orange); }
+    .body-box { position: absolute; width: 10px; top: 25%; height: 50%; background-color: var(--orange); }
 
     .price-details { text-align: right; font-size: 13px; line-height: 1.5; color: var(--text-main); }
     
@@ -127,16 +127,16 @@
     </div>
 
     <div class="grid-2">
-      <div class="option-card" id="ceCard">
+      <div class="option-card" id="ceCard" style="border-color: var(--orange);">
         <div class="card-top">
           <span class="status-tag neutral" id="ceStatusTag">NEUTRAL</span>
           <span class="type-label ce-bright" id="ceTypeLabel">CE</span>
         </div>
-        <div class="strike-header" id="ceStrike">24200</div>
+        <div class="strike-header" id="ceStrike">24200.00</div>
         <div class="card-body">
           <div class="candle-container" id="ceCandleContainer">
-            <div class="wick" id="ceWick" style="background-color: var(--orange);"></div>
-            <div class="node" id="ceNode" style="background-color: var(--orange);"></div>
+            <div class="wick" id="ceWick"></div>
+            <div class="node" id="ceNode"></div>
           </div>
           <div class="price-details">
             <div><span id="ceHighWrapper" class="ce-bright">H</span> <span id="ceHigh" class="ce-bright">102.80</span></div>
@@ -150,16 +150,16 @@
         </div>
       </div>
 
-      <div class="option-card" id="peCard">
+      <div class="option-card" id="peCard" style="border-color: var(--orange);">
         <div class="card-top">
           <span class="status-tag neutral" id="peStatusTag">NEUTRAL</span>
           <span class="type-label pe-bright" id="peTypeLabel">PE</span>
         </div>
-        <div class="strike-header" id="peStrike">24200</div>
+        <div class="strike-header" id="peStrike">24200.00</div>
         <div class="card-body">
           <div class="candle-container" id="peCandleContainer">
-            <div class="wick" id="peWick" style="background-color: var(--orange);"></div>
-            <div class="body-box" id="peBody" style="background-color: var(--orange);"></div>
+            <div class="wick" id="peWick"></div>
+            <div class="body-box" id="peBody"></div>
           </div>
           <div class="price-details">
             <div><span id="peHighWrapper" class="pe-bright">H</span> <span id="peHigh" class="pe-bright">124.90</span></div>
@@ -258,17 +258,11 @@
   </div>
 
   <script>
-    function updateCardTheme(cardId, tagId, labelId, wickId, nodeBodyId, highWrapperId, highValId, closeWrapperId, lowWrapperId, lowValId, status) {
+    function updateCardTheme(cardId, tagId, wickId, nodeBodyId, status) {
       const card = document.getElementById(cardId);
       const tag = document.getElementById(tagId);
-      const label = document.getElementById(labelId);
       const wick = document.getElementById(wickId);
       const nodeBody = document.getElementById(nodeBodyId);
-      const highWrapper = document.getElementById(highWrapperId);
-      const highVal = document.getElementById(highValId);
-      const closeWrapper = document.getElementById(closeWrapperId);
-      const lowWrapper = document.getElementById(lowWrapperId);
-      const lowVal = document.getElementById(lowValId);
 
       let color = 'var(--orange)';
       let className = 'neutral';
@@ -285,12 +279,6 @@
       }
 
       if (card) card.style.borderColor = color;
-      if (label) label.style.color = color;
-      if (highWrapper) highWrapper.style.color = color;
-      if (highVal) highVal.style.color = color;
-      if (closeWrapper) closeWrapper.style.color = color;
-      if (lowWrapper) lowWrapper.style.color = color;
-      if (lowVal) lowVal.style.color = color;
 
       if (tag) {
         tag.className = `status-tag ${className}`;
@@ -338,8 +326,9 @@
         setTxt('peHCVal', data.pe ? (data.pe.high - peClose) : null, '28.80');
         setTxt('peCLVal', data.pe ? (peClose - data.pe.low) : null, '28.80');
 
-        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHighWrapper', 'ceHigh', 'ceCloseWrapper', 'ceLowWrapper', 'ceLow', data.ceStatus || 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', 'neutral');
+        // Pass status dynamically ('neutral', 'buyer', or 'seller')
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', data.ceStatus || 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', data.peStatus || 'neutral');
 
         setTxt('minSupply', data.minSupply, '24153.90');
         setTxt('minDemand', data.minDemand, '24127.60');
@@ -383,8 +372,8 @@
         setTxt('earthVal', data.earthVal, '148.92');
       } catch (err) {
         console.warn("Using default baseline parameters.");
-        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHighWrapper', 'ceHigh', 'ceCloseWrapper', 'ceLowWrapper', 'ceLow', 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', 'neutral');
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', 'neutral');
       }
     }
 
