@@ -3,8 +3,6 @@ from datetime import datetime
 import yfinance as yf
 
 def update_nifty_data():
-    today_str = datetime.now().strftime("%d-%m-%Y")
-    
     nifty = yf.Ticker("^NSEI")
     hist = nifty.history(period="1d")
 
@@ -12,8 +10,11 @@ def update_nifty_data():
         spot_close = round(float(hist['Close'].iloc[-1]), 2)
         spot_high = round(float(hist['High'].iloc[-1]), 2)
         spot_low = round(float(hist['Low'].iloc[-1]), 2)
+        # Automatically captures the exact market trading date from the dataframe index
+        today_str = hist.index[-1].strftime("%d-%m-%Y")
     else:
         spot_close, spot_high, spot_low = 0.0, 0.0, 0.0
+        today_str = datetime.now().strftime("%d-%m-%Y")
 
     ce_close, ce_high, ce_low = 0.0, 0.0, 0.0
     pe_close, pe_high, pe_low = 0.0, 0.0, 0.0
@@ -167,7 +168,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Successfully processed option chain. ATM: {atm_strike}, Sniper Rounded ATM: {sniper_atm_rounded}, Earth: {earth_val}")
+    print(f"Successfully processed option chain for {today_str}. ATM: {atm_strike}, Earth: {earth_val}")
 
 if __name__ == "__main__":
     update_nifty_data()
