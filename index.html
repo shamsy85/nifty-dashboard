@@ -33,7 +33,7 @@
                 <span id="currentDate" style="border: 1px solid #00f3ff; padding: 2px 5px; border-radius: 4px; font-size: 10px; color: #00f3ff;">--</span>
                 <span id="topTotal" class="val-green" style="font-size: 16px;">0.00</span>
             </div>
-            <div style="margin-top: 4px; font-size: 12px;">ATM <span id="atmStrike" class="val-green">0</span> <span style="font-size:10px; color:#888;">CE 0.00 • PE 0.00</span></div>
+            <div style="margin-top: 4px; font-size: 12px;">ATM <span id="atmStrike" class="val-green">0</span> <span style="font-size:10px; color:#888;">CE <span id="ceVal">0.00</span> • PE <span id="peVal">0.00</span></span></div>
         </div>
 
         <div class="grid-2">
@@ -74,14 +74,14 @@
 
         <div class="card">
             <div class="row"><span style="color:#00ff66; font-size:11px;">SNIPER ATM <span style="color:#fff;">best</span></span></div>
-            <div class="row" style="font-size:11px; margin: 4px 0;"><span>-- CE 0.00 - PE 0.00</span></div>
-            <div class="row" style="font-size:10px; color:#aaa;"><span>OTM 100 <span class="val-green">CE 0.00</span> | -100 <span class="val-red">PE 0.00</span></span><span class="val-green" style="font-size:15px;" id="sniperVal1">0.00 SNIPER</span></div>
+            <div class="row" style="font-size:11px; margin: 4px 0;"><span>-- CE <span id="sniperAtm1CE">0.00</span> - PE <span id="sniperAtm1PE">0.00</span></span></div>
+            <div class="row" style="font-size:10px; color:#aaa;"><span>OTM 100 <span class="val-green">CE 0.00</span> | -100 <span class="val-red">PE 0.00</span></span><span class="val-green" style="font-size:15px;"><span id="sniperVal1">0.00</span> SNIPER</span></div>
         </div>
 
         <div class="card">
             <div class="row"><span style="color:#00f3ff; font-size:11px;">SNIPER ATM</span></div>
-            <div class="row" style="font-size:11px; margin: 4px 0;"><span>-- CE 0.00 - PE 0.00</span></div>
-            <div class="row" style="font-size:10px; color:#aaa;"><span>OTM 100 <span class="val-green">CE 0.00</span> | -100 <span class="val-red">PE 0.00</span></span><span class="val-green" style="font-size:15px;" id="sniperVal2">0.00 SNIPER</span></div>
+            <div class="row" style="font-size:11px; margin: 4px 0;"><span>-- CE <span id="sniperAtm2CE">0.00</span> - PE <span id="sniperAtm2PE">0.00</span></span></div>
+            <div class="row" style="font-size:10px; color:#aaa;"><span>OTM 100 <span class="val-green">CE 0.00</span> | -100 <span class="val-red">PE 0.00</span></span><span class="val-green" style="font-size:15px;"><span id="sniperVal2">0.00</span> SNIPER</span></div>
         </div>
 
         <div class="card row">
@@ -94,10 +94,10 @@
         fetch('data.json')
             .then(res => res.json())
             .then(data => {
-                document.getElementById('spotPrice').innerText = data.spotPrice;
-                document.getElementById('currentDate').innerText = data.currentDate;
-                document.getElementById('atmStrike').innerText = data.atmStrike;
-                document.getElementById('earthVal').innerText = data.earthVal;
+                for (const key in data) {
+                    const el = document.getElementById(key);
+                    if (el) el.innerText = data[key];
+                }
             })
             .catch(err => console.error("Error loading JSON:", err));
     </script>
