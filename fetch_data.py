@@ -1,6 +1,16 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import yfinance as yf
+
+def get_next_trading_day():
+    # Get tomorrow's date
+    next_day = datetime.now() + timedelta(days=1)
+    # If tomorrow is Saturday (5) or Sunday (6), shift to Monday
+    if next_day.weekday() == 5:
+        next_day += timedelta(days=2)
+    elif next_day.weekday() == 6:
+        next_day += timedelta(days=1)
+    return next_day.strftime("%d-%m-%Y")
 
 def update_nifty_data():
     nifty = yf.Ticker("^NSEI")
@@ -10,10 +20,11 @@ def update_nifty_data():
         spot_close = round(float(hist['Close'].iloc[-1]), 2)
         spot_high = round(float(hist['High'].iloc[-1]), 2)
         spot_low = round(float(hist['Low'].iloc[-1]), 2)
-        today_str = hist.index[-1].strftime("%d-%m-%Y")
     else:
         spot_close, spot_high, spot_low = 0.0, 0.0, 0.0
-        today_str = datetime.now().strftime("%d-%m-%Y")
+
+    # Use next trading day rule instead of today's static date
+    today_str = get_next_trading_day()
 
     ce_close, ce_high, ce_low = 0.0, 0.0, 0.0
     pe_close, pe_high, pe_low = 0.0, 0.0, 0.0
@@ -32,7 +43,7 @@ def update_nifty_data():
             puts = opt_chain.puts.set_index('strike')
 
             common_strikes = sorted(list(set(calls.index).intersection(set(puts.index))))
-
+            
             if common_strikes:
                 min_diff = float('inf')
                 best_atm = common_strikes[0]
@@ -75,14 +86,14 @@ def update_nifty_data():
     s1_strike = sniper_atm_100
     otm_ce_s1 = s1_strike + 100
     otm_pe_s1 = s1_strike - 100
-
+    
     otm_ce_val_s1 = round(ce_close * 0.5, 2)
     otm_pe_val_s1 = round(pe_close * 0.5, 2)
 
     s2_strike = sniper_atm_50
     otm_ce_s2 = s2_strike + 100
     otm_pe_s2 = s2_strike - 100
-
+    
     otm_ce_val_s2 = round(ce_close * 0.7, 2)
     otm_pe_val_s2 = round(pe_close * 0.4, 2)
 
@@ -161,7 +172,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Successfully processed option chain for {today_str}. ATM: {atm_strike}, Earth: {earth_val}")
+    print(f"Successfully processed option chain for next trading day: {today_str}. ATM: {atm_strike}")
 
 if __name__ == "__main__":
     update_nifty_data()
