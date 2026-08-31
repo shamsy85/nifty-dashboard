@@ -1,24 +1,19 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 import yfinance as yf
 
 def format_expiry_date(date_input):
     """Converts a yfinance expiry string or date object to DD-MM-YYYY format."""
     if not date_input:
         return ""
-    
-    # If it's already a datetime object
     if isinstance(date_input, (datetime, type(datetime.now().date()))):
         return date_input.strftime("%d-%m-%Y")
-        
-    # If it's a string from yfinance (usually 'YYYY-MM-DD')
     if isinstance(date_input, str):
         try:
             dt = datetime.strptime(date_input.split('T')[0], "%Y-%m-%d")
             return dt.strftime("%d-%m-%Y")
         except ValueError:
             return date_input
-            
     return str(date_input)
 
 def update_nifty_data():
@@ -45,10 +40,7 @@ def update_nifty_data():
     try:
         expiries = nifty.options
         if expiries:
-            # Selects the next available expiry date and formats it to DD-MM-YYYY
             expiry_date = format_expiry_date(expiries[0])
-            
-            # Use raw string for option chain lookup if necessary
             raw_expiry = expiries[0]
             opt_chain = nifty.option_chain(raw_expiry)
             calls = opt_chain.calls.set_index('strike')
@@ -85,7 +77,6 @@ def update_nifty_data():
     except Exception as e:
         print(f"Option chain fetch error: {e}")
 
-    # Fallback if option chain is unavailable or yields 0 ATM
     if not atm_strike and spot_close > 0:
         atm_strike = int(round(spot_close / 50.0) * 50)
 
