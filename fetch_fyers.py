@@ -24,12 +24,12 @@ def get_fyers_data():
                 "topTotal": 0.00,
                 "ceVal": 0.00,
                 "peVal": 0.00,
-                "ceHigh": 0.00,
-                "ceClose": 0.00,
-                "ceLow": 0.00,
-                "peHigh": 0.00,
-                "peClose": 0.00,
-                "peLow": 0.00,
+                "ceHigh": 125.50,    # Replace with real CE High from API/Calculation
+                "ceClose": 110.20,   # Replace with real CE Close from API/Calculation
+                "ceLow": 95.10,      # Replace with real CE Low from API/Calculation
+                "peHigh": 140.30,    # Replace with real PE High from API/Calculation
+                "peClose": 122.50,   # Replace with real PE Close from API/Calculation
+                "peLow": 105.00,     # Replace with real PE Low from API/Calculation
                 "minSupply": 24225.5,
                 "minDemand": 23984.8,
                 "maxSupply": 24340.7,
@@ -45,7 +45,7 @@ def get_fyers_data():
             
             with open("data.json", "w") as f:
                 json.dump(payload, f, indent=2)
-            print("Successfully updated full data payload.")
+            print("Successfully updated H, C, L data payload.")
     except Exception as e:
         print(f"Error: {e}")
 
