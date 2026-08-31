@@ -1,6 +1,25 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import yfinance as yf
+
+def format_expiry_date(date_input):
+    """Converts a yfinance expiry string or date object to DD-MM-YYYY format."""
+    if not date_input:
+        return ""
+    
+    # If it's already a datetime object
+    if isinstance(date_input, (datetime, type(datetime.now().date()))):
+        return date_input.strftime("%d-%m-%Y")
+        
+    # If it's a string from yfinance (usually 'YYYY-MM-DD')
+    if isinstance(date_input, str):
+        try:
+            dt = datetime.strptime(date_input.split('T')[0], "%Y-%m-%d")
+            return dt.strftime("%d-%m-%Y")
+        except ValueError:
+            return date_input
+            
+    return str(date_input)
 
 def update_nifty_data():
     nifty = yf.Ticker("^NSEI")
@@ -26,8 +45,12 @@ def update_nifty_data():
     try:
         expiries = nifty.options
         if expiries:
-            expiry_date = expiries[0]
-            opt_chain = nifty.option_chain(expiry_date)
+            # Selects the next available expiry date and formats it to DD-MM-YYYY
+            expiry_date = format_expiry_date(expiries[0])
+            
+            # Use raw string for option chain lookup if necessary
+            raw_expiry = expiries[0]
+            opt_chain = nifty.option_chain(raw_expiry)
             calls = opt_chain.calls.set_index('strike')
             puts = opt_chain.puts.set_index('strike')
 
@@ -163,7 +186,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Successfully processed option chain for {today_str}. ATM: {atm_strike}, Earth: {earth_val}")
+    print(f"Successfully processed option chain for {today_str}. Expiry: {expiry_date}, ATM: {atm_strike}, Earth: {earth_val}")
 
 if __name__ == "__main__":
     update_nifty_data()
