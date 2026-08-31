@@ -32,7 +32,7 @@ def update_nifty_data():
             puts = opt_chain.puts.set_index('strike')
 
             common_strikes = sorted(list(set(calls.index).intersection(set(puts.index))))
-            
+
             if common_strikes:
                 min_diff = float('inf')
                 best_atm = common_strikes[0]
@@ -69,21 +69,20 @@ def update_nifty_data():
     max_supply = round(atm_strike + (ce_close + pe_close), 2) if atm_strike else 0.0
     max_demand = round(atm_strike - (pe_close + ce_close), 2) if atm_strike else 0.0
 
-    # Nearest round 100 and nearest round 50 logic for sniper setup
     sniper_atm_100 = int(round(atm_strike / 100.0) * 100) if atm_strike else 0
     sniper_atm_50 = int(round(atm_strike / 50.0) * 50) if atm_strike else 0
 
     s1_strike = sniper_atm_100
     otm_ce_s1 = s1_strike + 100
     otm_pe_s1 = s1_strike - 100
-    
+
     otm_ce_val_s1 = round(ce_close * 0.5, 2)
     otm_pe_val_s1 = round(pe_close * 0.5, 2)
 
     s2_strike = sniper_atm_50
     otm_ce_s2 = s2_strike + 100
     otm_pe_s2 = s2_strike - 100
-    
+
     otm_ce_val_s2 = round(ce_close * 0.7, 2)
     otm_pe_val_s2 = round(pe_close * 0.4, 2)
 
