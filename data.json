@@ -1,9 +1,9 @@
 {
-  "spotPrice": 24175.65,
-  "spotHigh": 24188.3,
-  "spotLow": 24076.85,
+  "spotPrice": 24080.4,
+  "spotHigh": 24128.7,
+  "spotLow": 23993.6,
   "expiryDate": "",
-  "currentDate": "28-08-2026",
+  "currentDate": "31-08-2026",
   "atmStrike": 0,
   "bannerTotal": 0.0,
   "ce": {
@@ -20,14 +20,14 @@
   "minDemand": 0.0,
   "maxSupply": 0.0,
   "maxDemand": 0.0,
-  "wzSupply1": 24296.15,
-  "wzSupply2": 24425.65,
-  "wzDemand1": 24065.45,
-  "wzDemand2": 23945.65,
-  "mzSupply1": 24575.65,
-  "mzSupply2": 24825.65,
-  "mzDemand1": 23795.65,
-  "mzDemand2": 23575.65,
+  "wzSupply1": 24200.9,
+  "wzSupply2": 24330.4,
+  "wzDemand1": 23970.2,
+  "wzDemand2": 23850.4,
+  "mzSupply1": 24480.4,
+  "mzSupply2": 24730.4,
+  "mzDemand1": 23700.4,
+  "mzDemand2": 23480.4,
   "sniper1": {
     "strike": 0,
     "ce": 0.0,
@@ -48,5 +48,5 @@
     "otmPe": 0.0,
     "val": 0.0
   },
-  "earthVal": 29.1
+  "earthVal": 35.27
 }
