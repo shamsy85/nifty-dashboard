@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime
 from fyers_apiv3 import fyersModel
 
 client_id = os.environ.get("FYERS_CLIENT_ID")
@@ -17,14 +18,14 @@ def get_fyers_data():
 
             payload = {
                 "spotPrice": float(spot_price),
-                "currentDate": "31-08-2026",
+                "currentDate": datetime.now().strftime("%d-%m-%Y"),
                 "atmStrike": int(round(spot_price / 100.0) * 100),
                 "earthVal": 35.27
             }
 
             with open("data.json", "w") as f:
                 json.dump(payload, f, indent=2)
-            print("Successfully updated data from FYERS API.")
+            print("Successfully updated dashboard data from FYERS API.")
     except Exception as e:
         print(f"Error connecting to FYERS: {e}")
 
