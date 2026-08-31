@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NIFTY Analytics Dashboard</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: #0b0f19;
@@ -36,210 +34,36 @@
             border: 1px solid #1f2937;
             margin-bottom: 12px;
         }
-        .header-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #00ffcc;
-            letter-spacing: 0.5px;
-        }
-        .exp-badge {
-            font-size: 11px;
-            background: transparent;
-            border: 1px solid #00ffcc;
-            color: #00ffcc;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-        .sub-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding: 0 4px;
-        }
-        .date-badge {
-            font-size: 11px;
-            background: transparent;
-            border: 1px solid #00ffcc;
-            color: #00ffcc;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        .atm-text {
-            font-size: 13px;
-            font-weight: bold;
-            color: #ffffff;
-        }
-        .atm-text span {
-            color: #00ffcc;
-        }
-        .ce-pe-wrapper {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .card-box {
-            flex: 1;
-            background: #111827;
-            border: 1px solid #f59e0b;
-            border-radius: 8px;
-            padding: 10px;
-            position: relative;
-        }
-        .card-box.pe-card {
-            border-color: #f59e0b;
-        }
-        .status-badge {
-            font-size: 9px;
-            font-weight: bold;
-            background: #f59e0b;
-            color: #000;
-            padding: 2px 6px;
-            border-radius: 3px;
-            display: inline-block;
-            margin-bottom: 6px;
-        }
-        .card-val {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffffff;
-            margin-bottom: 8px;
-        }
-        .metric-row {
-            font-size: 11px;
-            color: #9ca3af;
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            line-height: 1.4;
-        }
-        .metric-row span {
-            color: #00ffcc;
-            font-weight: 600;
-        }
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .metric-card {
-            background: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 8px;
-            padding: 10px;
-        }
-        .metric-label {
-            font-size: 10px;
-            font-weight: bold;
-            color: #00ffcc;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-        .metric-number {
-            font-size: 16px;
-            font-weight: bold;
-            color: #ff3366;
-        }
-        .metric-number.demand {
-            color: #00ffcc;
-        }
-        .zone-card {
-            background: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 12px;
-        }
-        .zone-title {
-            font-size: 10px;
-            font-weight: bold;
-            color: #00ffcc;
-            text-align: center;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-        .zone-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #ff3366;
-        }
-        .zone-grid.monthly {
-            color: #ff3366;
-        }
-        .zone-col-right {
-            text-align: right;
-            color: #00ffcc;
-        }
-        .sniper-card {
-            background: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 12px;
-        }
-        .sniper-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-        .sniper-badge {
-            font-size: 9px;
-            background: #065f46;
-            color: #34d399;
-            border: 1px solid #10b981;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .sniper-best {
-            font-size: 10px;
-            color: #34d399;
-        }
-        .sniper-details {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-bottom: 6px;
-        }
-        .sniper-details span {
-            color: #00ffcc;
-        }
-        .sniper-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px dashed #374151;
-            padding-top: 6px;
-            font-size: 11px;
-        }
-        .earth-card {
-            background: #111827;
-            border: 1px solid #10b981;
-            border-radius: 8px;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .earth-label {
-            font-size: 12px;
-            font-weight: bold;
-            color: #00ffcc;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .earth-value {
-            font-size: 16px;
-            font-weight: bold;
-            color: #00ffcc;
-        }
+        .header-title { font-size: 18px; font-weight: 700; color: #00ffcc; }
+        .exp-badge { font-size: 11px; border: 1px solid #00ffcc; color: #00ffcc; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+        .sub-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+        .date-badge { font-size: 11px; border: 1px solid #00ffcc; color: #00ffcc; padding: 2px 6px; border-radius: 4px; }
+        .atm-text { font-size: 13px; font-weight: bold; color: #ffffff; }
+        .atm-text span { color: #00ffcc; }
+        .ce-pe-wrapper { display: flex; gap: 10px; margin-bottom: 12px; }
+        .card-box { flex: 1; background: #111827; border: 1px solid #f59e0b; border-radius: 8px; padding: 10px; }
+        .status-badge { font-size: 9px; font-weight: bold; background: #f59e0b; color: #000; padding: 2px 6px; border-radius: 3px; display: inline-block; margin-bottom: 6px; }
+        .card-val { font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 8px; }
+        .metric-row { font-size: 11px; color: #9ca3af; display: flex; justify-content: flex-end; gap: 8px; line-height: 1.4; }
+        .metric-row span { color: #00ffcc; font-weight: 600; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .metric-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 10px; }
+        .metric-label { font-size: 10px; font-weight: bold; color: #00ffcc; margin-bottom: 6px; text-transform: uppercase; }
+        .metric-number { font-size: 16px; font-weight: bold; color: #ff3366; }
+        .metric-number.demand { color: #00ffcc; }
+        .zone-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+        .zone-title { font-size: 10px; font-weight: bold; color: #00ffcc; text-align: center; margin-bottom: 8px; }
+        .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px; font-weight: 600; color: #ff3366; }
+        .zone-col-right { text-align: right; color: #00ffcc; }
+        .sniper-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+        .sniper-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .sniper-badge { font-size: 9px; background: #065f46; color: #34d399; border: 1px solid #10b981; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .sniper-details { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
+        .sniper-details span { color: #00ffcc; }
+        .sniper-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #374151; padding-top: 6px; font-size: 11px; }
+        .earth-card { background: #111827; border: 1px solid #10b981; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .earth-label { font-size: 12px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 6px; }
+        .earth-value { font-size: 16px; font-weight: bold; color: #00ffcc; }
     </style>
 </head>
 <body>
@@ -251,26 +75,20 @@
         </div>
 
         <div class="sub-header">
-            <div class="date-badge" id="currentDate">31-08-2026</div>
+            <div class="date-badge" id="currentDate">--</div>
             <div class="atm-text">ATM <span id="atmStrike">0</span></div>
         </div>
 
         <div class="ce-pe-wrapper">
             <div class="card-box">
-                <div style="display:flex; justify-content:space-between;">
-                    <span class="status-badge">NEUTRAL</span>
-                    <span style="font-size:10px; font-weight:bold; color:#00ffcc;">CE</span>
-                </div>
+                <div style="display:flex; justify-content:space-between;"><span class="status-badge">NEUTRAL</span><span style="font-size:10px; color:#00ffcc;">CE</span></div>
                 <div class="card-val" id="ceClose">0.00</div>
                 <div class="metric-row">H <span id="ceHigh">0.00</span></div>
                 <div class="metric-row">C <span id="ceCloseSub">0.00</span></div>
                 <div class="metric-row">L <span id="ceLow">0.00</span></div>
             </div>
-            <div class="card-box pe-card">
-                <div style="display:flex; justify-content:space-between;">
-                    <span class="status-badge">NEUTRAL</span>
-                    <span style="font-size:10px; font-weight:bold; color:#f59e0b;">PE</span>
-                </div>
+            <div class="card-box">
+                <div style="display:flex; justify-content:space-between;"><span class="status-badge">NEUTRAL</span><span style="font-size:10px; color:#f59e0b;">PE</span></div>
                 <div class="card-val" id="peClose">0.00</div>
                 <div class="metric-row">H <span id="peHigh">0.00</span></div>
                 <div class="metric-row">C <span id="peCloseSub">0.00</span></div>
@@ -279,92 +97,59 @@
         </div>
 
         <div class="grid-2">
-            <div class="metric-card">
-                <div class="metric-label">Minimum Supply</div>
-                <div class="metric-number" id="minSupply">0.00</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Minimum Demand</div>
-                <div class="metric-number demand" id="minDemand">0.00</div>
-            </div>
+            <div class="metric-card"><div class="metric-label">Minimum Supply</div><div class="metric-number" id="minSupply">0.00</div></div>
+            <div class="metric-card"><div class="metric-label">Minimum Demand</div><div class="metric-number demand" id="minDemand">0.00</div></div>
         </div>
 
         <div class="grid-2">
-            <div class="metric-card">
-                <div class="metric-label">Maximum Supply</div>
-                <div class="metric-number" id="maxSupply">0.00</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Maximum Demand</div>
-                <div class="metric-number demand" id="maxDemand">0.00</div>
-            </div>
+            <div class="metric-card"><div class="metric-label">Maximum Supply</div><div class="metric-number" id="maxSupply">0.00</div></div>
+            <div class="metric-card"><div class="metric-label">Maximum Demand</div><div class="metric-number demand" id="maxDemand">0.00</div></div>
         </div>
 
         <div class="zone-card">
             <div class="zone-title">WEEKLY ZONE</div>
             <div class="zone-grid">
-                <div>
-                    <div id="wzSupply1">24200.90</div>
-                    <div id="wzSupply2" style="margin-top:4px;">24330.40</div>
-                </div>
-                <div class="zone-col-right">
-                    <div id="wzDemand1">23970.20</div>
-                    <div id="wzDemand2" style="margin-top:4px;">23850.40</div>
-                </div>
+                <div><div id="wzSupply1">0.00</div><div id="wzSupply2" style="margin-top:4px;">0.00</div></div>
+                <div class="zone-col-right"><div id="wzDemand1">0.00</div><div id="wzDemand2" style="margin-top:4px;">0.00</div></div>
             </div>
         </div>
 
         <div class="zone-card">
             <div class="zone-title">MONTHLY ZONE</div>
-            <div class="zone-grid monthly">
-                <div>
-                    <div id="mzSupply1">24480.40</div>
-                    <div id="mzSupply2" style="margin-top:4px;">24730.40</div>
-                </div>
-                <div class="zone-col-right" style="color: #00ffcc;">
-                    <div id="mzDemand1">23700.40</div>
-                    <div id="mzDemand2" style="margin-top:4px;">23480.40</div>
-                </div>
+            <div class="zone-grid">
+                <div><div id="mzSupply1">0.00</div><div id="mzSupply2" style="margin-top:4px;">0.00</div></div>
+                <div class="zone-col-right"><div id="mzDemand1">0.00</div><div id="mzDemand2" style="margin-top:4px;">0.00</div></div>
             </div>
         </div>
 
         <div class="sniper-card">
-            <div class="sniper-header">
-                <span class="sniper-badge">SNIPER ATM</span>
-                <span class="sniper-best">best</span>
-            </div>
-            <div class="sniper-details">
-                <span id="s1Strike">--</span> CE <span id="s1Ce">0.00</span> - PE <span id="s1Pe">0.00</span>
-            </div>
+            <div class="sniper-header"><span class="sniper-badge">SNIPER ATM</span><span style="font-size:10px; color:#34d399;">best</span></div>
+            <div class="sniper-details"><span id="s1Strike">--</span> CE <span id="s1Ce">0.00</span> - PE <span id="s1Pe">0.00</span></div>
             <div class="sniper-footer">
-                <div>OTM <span id="s1OtmCeStrike">100</span> CE <span id="s1OtmCe">0.00</span> | -<span id="s1OtmPeStrike">100</span> PE <span id="s1OtmPe">0.00</span></div>
+                <div>OTM CE <span id="s1OtmCe">0.00</span> | PE <span id="s1OtmPe">0.00</span></div>
                 <div style="font-size:15px; font-weight:bold; color:#00ffcc;" id="s1Val">0.00</div>
             </div>
         </div>
 
         <div class="sniper-card">
-            <div class="sniper-header">
-                <span class="sniper-badge">SNIPER ATM</span>
-            </div>
-            <div class="sniper-details">
-                <span id="s2Strike">--</span> CE <span id="s2Ce">0.00</span> - PE <span id="s2Pe">0.00</span>
-            </div>
+            <div class="sniper-header"><span class="sniper-badge">SNIPER ATM</span></div>
+            <div class="sniper-details"><span id="s2Strike">--</span> CE <span id="s2Ce">0.00</span> - PE <span id="s2Pe">0.00</span></div>
             <div class="sniper-footer">
-                <div>OTM <span id="s2OtmCeStrike">100</span> CE <span id="s2OtmCe">0.00</span> | -<span id="s2OtmPeStrike">100</span> PE <span id="s2OtmPe">0.00</span></div>
+                <div>OTM CE <span id="s2OtmCe">0.00</span> | PE <span id="s2OtmPe">0.00</span></div>
                 <div style="font-size:15px; font-weight:bold; color:#00ffcc;" id="s2Val">0.00</div>
             </div>
         </div>
 
         <div class="earth-card">
             <div class="earth-label">🌐 EARTH</div>
-            <div class="earth-value" id="earthVal">35.27</div>
+            <div class="earth-value" id="earthVal">0.00</div>
         </div>
     </div>
 
     <script>
         async function fetchDashboard() {
             try {
-                let res = await fetch('data.json');
+                let res = await fetch('data.json?t=' + new Date().getTime());
                 if (!res.ok) return;
                 let data = await res.json();
 
@@ -417,12 +202,11 @@
                 document.getElementById('earthVal').innerText = data.earthVal || '0.00';
 
             } catch (err) {
-                console.error("Dashboard JSON load error:", err);
+                console.error("Dashboard error:", err);
             }
         }
 
         fetchDashboard();
-        setInterval(fetchDashboard, 30000);
     </script>
 </body>
 </html>
