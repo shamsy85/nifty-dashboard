@@ -2,20 +2,6 @@ import json
 from datetime import datetime
 import yfinance as yf
 
-def format_expiry_date(date_input):
-    """Converts a yfinance expiry string or date object to DD-MM-YYYY format."""
-    if not date_input:
-        return ""
-    if isinstance(date_input, (datetime, type(datetime.now().date()))):
-        return date_input.strftime("%d-%m-%Y")
-    if isinstance(date_input, str):
-        try:
-            dt = datetime.strptime(date_input.split('T')[0], "%Y-%m-%d")
-            return dt.strftime("%d-%m-%Y")
-        except ValueError:
-            return date_input
-    return str(date_input)
-
 def update_nifty_data():
     nifty = yf.Ticker("^NSEI")
     hist = nifty.history(period="1d")
@@ -40,9 +26,8 @@ def update_nifty_data():
     try:
         expiries = nifty.options
         if expiries:
-            expiry_date = format_expiry_date(expiries[0])
-            raw_expiry = expiries[0]
-            opt_chain = nifty.option_chain(raw_expiry)
+            expiry_date = expiries[0]
+            opt_chain = nifty.option_chain(expiry_date)
             calls = opt_chain.calls.set_index('strike')
             puts = opt_chain.puts.set_index('strike')
 
@@ -77,9 +62,6 @@ def update_nifty_data():
     except Exception as e:
         print(f"Option chain fetch error: {e}")
 
-    if not atm_strike and spot_close > 0:
-        atm_strike = int(round(spot_close / 50.0) * 50)
-
     diff_val = round(ce_close - pe_close, 2)
 
     min_supply = round(atm_strike + ce_close, 2) if atm_strike else 0.0
@@ -87,7 +69,10 @@ def update_nifty_data():
     max_supply = round(atm_strike + (ce_close + pe_close), 2) if atm_strike else 0.0
     max_demand = round(atm_strike - (pe_close + ce_close), 2) if atm_strike else 0.0
 
+    # Nearest round 100 and nearest round 50 logic for sniper setup
     sniper_atm_100 = int(round(atm_strike / 100.0) * 100) if atm_strike else 0
+    sniper_atm_50 = int(round(atm_strike / 50.0) * 50) if atm_strike else 0
+
     s1_strike = sniper_atm_100
     otm_ce_s1 = s1_strike + 100
     otm_pe_s1 = s1_strike - 100
@@ -95,7 +80,7 @@ def update_nifty_data():
     otm_ce_val_s1 = round(ce_close * 0.5, 2)
     otm_pe_val_s1 = round(pe_close * 0.5, 2)
 
-    s2_strike = sniper_atm_100 - 50 if sniper_atm_100 else 0
+    s2_strike = sniper_atm_50
     otm_ce_s2 = s2_strike + 100
     otm_pe_s2 = s2_strike - 100
     
@@ -177,7 +162,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Successfully processed option chain for {today_str}. Expiry: {expiry_date}, ATM: {atm_strike}, Earth: {earth_val}")
+    print(f"Successfully processed option chain for {today_str}. ATM: {atm_strike}, Earth: {earth_val}")
 
 if __name__ == "__main__":
     update_nifty_data()
