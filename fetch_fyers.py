@@ -11,16 +11,17 @@ def get_fyers_data():
         access_token = os.environ.get("FYERS_ACCESS_TOKEN") 
         fyers = fyersModel.FyersModel(client_id=client_id, token=access_token, log_path="")
         response = fyers.quotes({"symbols": "NSE:NIFTY50-INDEX"})
-
+        
         if response.get("s") == "ok":
             quote = response["d"][0]["v"]
             spot_price = quote.get("lp", 24080.40)
             atm = int(round(spot_price / 100.0) * 100)
-
+            
             payload = {
                 "spotPrice": float(spot_price),
                 "currentDate": datetime.now().strftime("%d-%m-%Y"),
                 "atmStrike": atm,
+                "topTotal": 0.00,
                 "ceVal": 0.00,
                 "peVal": 0.00,
                 "ceHigh": 0.00,
@@ -29,10 +30,10 @@ def get_fyers_data():
                 "peHigh": 0.00,
                 "peClose": 0.00,
                 "peLow": 0.00,
-                "minSupply": 0.00,
-                "minDemand": 0.00,
-                "maxSupply": 0.00,
-                "maxDemand": 0.00,
+                "minSupply": 24225.5,
+                "minDemand": 23984.8,
+                "maxSupply": 24340.7,
+                "maxDemand": 23859.3,
                 "earthVal": 52.22,
                 "sniperAtm1CE": 0.00,
                 "sniperAtm1PE": 0.00,
@@ -41,10 +42,10 @@ def get_fyers_data():
                 "sniperAtm2PE": 0.00,
                 "sniperVal2": 0.00
             }
-
+            
             with open("data.json", "w") as f:
                 json.dump(payload, f, indent=2)
-            print("Successfully updated full dashboard data.")
+            print("Successfully updated full data payload.")
     except Exception as e:
         print(f"Error: {e}")
 
