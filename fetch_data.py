@@ -12,12 +12,12 @@ def get_next_trading_day():
 def update_nifty_data():
     today_str = get_next_trading_day()
     
-    # Default fallback base values derived from current Nifty trends
+    # Default fallback base values
     spot_close = 24080.40
     spot_high = 24150.00
     spot_low = 23950.00
     expiry_date = "03-Sep-2026"
-    atm_strike = int(round(spot_close / 100.0) * 100) # Calculates 24100
+    atm_strike = int(round(spot_close / 100.0) * 100)
     
     ce_close, ce_high, ce_low = 125.50, 145.00, 95.00
     pe_close, pe_high, pe_low = 115.20, 135.00, 85.00
@@ -44,7 +44,7 @@ def update_nifty_data():
                     pe_low = float(item['PE'].get('lowPrice', pe_low))
                 break
     except Exception as e:
-        print(f"Using reliable calculated fallback metrics: {e}")
+        print(f"Using fallback metrics: {e}")
 
     diff_val = round(ce_close - pe_close, 2)
     min_supply = round(atm_strike + ce_close, 2)
@@ -95,7 +95,7 @@ def update_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Data successfully compiled for {today_str} with ATM: {atm_strike}")
+    print(f"Data compiled for {today_str}.")
 
 if __name__ == "__main__":
     update_nifty_data()
