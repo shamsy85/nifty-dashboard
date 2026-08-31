@@ -1,60 +1,394 @@
-import os
-import json
-from datetime import datetime
-from fyers_apiv3 import fyersModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NIFTY Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #06090e;
+      --card-bg: #0b101b;
+      --border-color: #172234;
+      --text-main: #ffffff;
+      --text-muted: #9ca3af;
+      --green: #00ff7f;
+      --green-bright: #33ff99;
+      --red: #ff3355;
+      --red-bright: #ff5c77;
+      --orange: #ffa500;
+      --cyan: #00f0ff;
+    }
 
-# Your Fyers API Credentials
-client_id = "SKZODRJWMB-200"
-secret_key = "Qu61IAGCiTVURBjz"
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; font-weight: 400; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
 
-def get_fyers_data():
-    try:
-        access_token = os.environ.get("FYERS_ACCESS_TOKEN") 
-        fyers = fyersModel.FyersModel(client_id=client_id, token=access_token, log_path="")
+    .header-bar { display: flex; justify-content: space-between; align-items: center; }
+    .title-group { display: flex; align-items: baseline; gap: 10px; }
+    .title { font-size: 26px; color: var(--cyan); text-shadow: 0 0 10px rgba(0, 240, 255, 0.4); font-weight: 600; }
+    .spot-price { font-size: 26px; color: var(--cyan); text-shadow: 0 0 10px rgba(0, 240, 255, 0.4); font-weight: 600; }
+    .exp-badge { border: 1px solid var(--cyan); color: var(--cyan); padding: 3px 8px; border-radius: 6px; font-size: 11px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
+
+    .banner-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .sub-badge { background-color: transparent; border: 1px solid var(--cyan); color: var(--cyan); padding: 3px 8px; border-radius: 4px; font-size: 11px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
+    .atm-display { margin-top: 6px; font-size: 18px; color: #ffffff; }
+    .atm-label { color: var(--cyan); font-size: 12px; margin-right: 4px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
+    .diff-value { color: var(--green-bright); font-size: 24px; text-align: right; text-shadow: 0 0 8px rgba(51, 255, 153, 0.6); font-weight: 600; }
+    .ce-pe-line { font-size: 12px; color: var(--text-muted); margin-top: 2px; text-align: right; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .option-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
+    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    
+    .status-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; }
+    .status-tag.neutral { border: 1px solid var(--orange); color: var(--orange); text-shadow: 0 0 6px rgba(255, 165, 0, 0.4); }
+    .status-tag.buyer { border: 1px solid var(--green-bright); color: var(--green-bright); text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
+    .status-tag.seller { border: 1px solid var(--red-bright); color: var(--red-bright); text-shadow: 0 0 6px rgba(255, 92, 119, 0.6); }
+
+    .strike-header { font-size: 20px; color: #ffffff; font-weight: 600; }
+    .type-label { font-size: 13px; font-weight: 600; }
+    
+    .card-body { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
+    .candle-container { width: 12px; height: 70px; position: relative; display: flex; justify-content: center; align-items: center; }
+    
+    .wick { position: absolute; width: 2px; height: 100%; }
+    .node { position: absolute; width: 10px; height: 4px; top: 40%; }
+    .body-box { position: absolute; width: 10px; top: 25%; height: 50%; }
+
+    .price-details { text-align: right; font-size: 13px; line-height: 1.5; color: var(--text-main); }
+    
+    .card-footer { border-top: 1px dashed var(--border-color); padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+
+    .metric-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
+    .metric-title { color: var(--cyan); font-size: 11px; margin-bottom: 8px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); font-weight: 500; }
+    .metric-val { font-size: 18px; font-weight: 600; }
+
+    .zone-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
+    .zone-title { color: var(--cyan); font-size: 11px; margin-bottom: 10px; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); text-align: center; font-weight: 500; }
+    .zone-rows { display: flex; justify-content: space-between; font-size: 13px; line-height: 1.6; font-weight: 500; }
+
+    .txt-red { color: var(--red-bright); text-shadow: 0 0 6px rgba(255, 92, 119, 0.6); }
+    .txt-green { color: var(--green-bright); text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
+
+    .sniper-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; }
+    .sniper-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .sniper-badge { border: 1px solid #1a365d; color: #38bdf8; background-color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 10px; letter-spacing: 0.5px; font-weight: 600; }
+    .sniper-badge.best { border-color: #065f46; color: var(--green-bright); background-color: #022c22; }
+    .badge-sub { color: var(--green-bright); font-size: 10px; font-weight: 600; text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
+
+    .sniper-main-layout { display: flex; justify-content: space-between; align-items: center; }
+    .sniper-left-col { display: flex; flex-direction: column; gap: 6px; width: calc(100% - 80px); }
+    
+    .sniper-atm-row { display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 600; color: #ffffff; }
+    .atm-ce-pe { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
+    .sniper-otm-block { display: flex; flex-direction: column; gap: 2px; }
+    .sniper-otm-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; }
+    .sniper-otm-line { font-size: 12px; color: var(--text-muted); font-weight: 400; display: flex; align-items: center; gap: 6px; }
+    .sniper-otm-line .strike-num { color: var(--text-main); font-weight: 600; }
+
+    .sniper-right-col { display: flex; flex-direction: column; align-items: flex-end; border-left: 1px dashed var(--border-color); padding-left: 14px; min-width: 80px; }
+    .sniper-val { color: var(--cyan); font-size: 22px; text-shadow: 0 0 8px rgba(0, 240, 255, 0.5); font-weight: 600; line-height: 1.1; }
+    .sniper-subtext { font-size: 9px; color: var(--cyan); letter-spacing: 0.5px; margin-top: 2px; font-weight: 500; text-shadow: 0 0 6px rgba(0, 240, 255, 0.4); }
+
+    .earth-card { background-color: var(--card-bg); border: 1px solid var(--green-bright); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 10px rgba(51, 255, 153, 0.25); }
+    .earth-title { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #ffffff; font-weight: 500; }
+    .earth-val { color: var(--green-bright); font-size: 20px; text-shadow: 0 0 8px rgba(51, 255, 153, 0.6); font-weight: 600; }
+
+    /* Bright Helper Classes */
+    .ce-bright { color: var(--green-bright) !important; text-shadow: 0 0 6px rgba(51, 255, 153, 0.6); }
+    .pe-bright { color: var(--red-bright) !important; text-shadow: 0 0 6px rgba(255, 92, 119, 0.6); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-bar">
+      <div class="title-group">
+        <div class="title">NIFTY</div>
+        <div class="spot-price" id="spotPrice">24175.65</div>
+      </div>
+      <div class="exp-badge" id="expiryDate">EXP 01-09-2026</div>
+    </div>
+
+    <div class="banner-card">
+      <div>
+        <span class="sub-badge">30-08-2026</span>
+        <div class="atm-display"><span class="atm-label">ATM</span><span id="atmStrike">24200</span></div>
+      </div>
+      <div>
+        <div class="diff-value" id="bannerTotal">17.00</div>
+        <div class="ce-pe-line"><span class="ce-bright">CE</span> <span id="bannerCe" class="ce-bright">79.10</span> • <span class="pe-bright">PE</span> <span id="bannerPe" class="pe-bright">96.10</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="option-card" id="ceCard">
+        <div class="card-top">
+          <span class="status-tag neutral" id="ceStatusTag">NEUTRAL</span>
+          <span class="type-label ce-bright" id="ceTypeLabel">CE</span>
+        </div>
+        <div class="strike-header" id="ceStrike">24200</div>
+        <div class="card-body">
+          <div class="candle-container" id="ceCandleContainer">
+            <div class="wick" id="ceWick" style="background-color: var(--orange);"></div>
+            <div class="node" id="ceNode" style="background-color: var(--orange);"></div>
+          </div>
+          <div class="price-details">
+            <div><span id="ceHighWrapper" class="ce-bright">H</span> <span id="ceHigh" class="ce-bright">102.80</span></div>
+            <div id="ceCloseWrapper" class="ce-bright">C <span id="ceClose">79.10</span></div>
+            <div><span id="ceLowWrapper" class="ce-bright">L</span> <span id="ceLow" class="ce-bright">55.40</span></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div><span class="ce-bright">H-C</span> <span id="ceHCVal" class="ce-bright">23.70</span></div>
+          <div><span class="pe-bright">C-L</span> <span id="ceCLVal" class="pe-bright">23.70</span></div>
+        </div>
+      </div>
+
+      <div class="option-card" id="peCard">
+        <div class="card-top">
+          <span class="status-tag neutral" id="peStatusTag">NEUTRAL</span>
+          <span class="type-label pe-bright" id="peTypeLabel">PE</span>
+        </div>
+        <div class="strike-header" id="peStrike">24200</div>
+        <div class="card-body">
+          <div class="candle-container" id="peCandleContainer">
+            <div class="wick" id="peWick" style="background-color: var(--orange);"></div>
+            <div class="body-box" id="peBody" style="background-color: var(--orange);"></div>
+          </div>
+          <div class="price-details">
+            <div><span id="peHighWrapper" class="pe-bright">H</span> <span id="peHigh" class="pe-bright">124.90</span></div>
+            <div id="peCloseWrapper" class="pe-bright">C <span id="peClose">96.10</span></div>
+            <div><span id="peLowWrapper" class="pe-bright">L</span> <span id="peLow" class="pe-bright">67.30</span></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div><span class="ce-bright">H-C</span> <span id="peHCVal" class="ce-bright">28.80</span></div>
+          <div><span class="pe-bright">C-L</span> <span id="peCLVal" class="pe-bright">28.80</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="metric-card"><div class="metric-title">MINIMUM SUPPLY</div><div class="metric-val txt-red" id="minSupply">24153.90</div></div>
+      <div class="metric-card"><div class="metric-title">MINIMUM DEMAND</div><div class="metric-val txt-green" id="minDemand">24127.60</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="metric-card"><div class="metric-title">MAXIMUM SUPPLY</div><div class="metric-val txt-red" id="maxSupply">24350.85</div></div>
+      <div class="metric-card"><div class="metric-title">MAXIMUM DEMAND</div><div class="metric-val txt-green" id="maxDemand">24000.45</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="zone-card">
+        <div class="zone-title">WEEKLY ZONE</div>
+        <div class="zone-rows">
+          <div><div class="txt-red" id="wzSupply1">24296.15</div><div class="txt-red" id="wzSupply2">24425.65</div></div>
+          <div><span class="txt-green" id="wzDemand1">24065.45</span><div class="txt-green" id="wzDemand2">23945.65</div></div>
+        </div>
+      </div>
+
+      <div class="zone-card">
+        <div class="zone-title">MONTHLY ZONE</div>
+        <div class="zone-rows">
+          <div><div class="txt-red" id="mzSupply1">24575.65</div><div class="txt-red" id="mzSupply2">24825.65</div></div>
+          <div><div class="txt-green" id="mzDemand1">23795.65</div><div class="txt-green" id="mzDemand2">23575.65</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sniper-card">
+      <div class="sniper-top-row">
+        <span class="sniper-badge best">SNIPER ATM</span>
+        <span class="badge-sub">best</span>
+      </div>
+      <div class="sniper-main-layout">
+        <div class="sniper-left-col">
+          <div class="sniper-atm-row">
+            <span id="s1Strike">24250.00</span>
+            <span class="atm-ce-pe"><span class="ce-bright">CE</span> <span id="s1Ce" class="ce-bright">79.10</span> - <span class="pe-bright">PE</span> <span id="s1Pe" class="pe-bright">96.10</span></span>
+          </div>
+          <div class="sniper-otm-block">
+            <div class="sniper-otm-label">OTM</div>
+            <div class="sniper-otm-line">
+              <span class="strike-num" id="s1OtmCeStrike">24350.00</span> <span class="ce-bright">CE</span> <span id="s1OtmCe" class="ce-bright">40.95</span> | <span class="strike-num" id="s1OtmPeStrike">24150.00</span> <span class="pe-bright">PE</span> <span id="s1OtmPe" class="pe-bright">53.95</span>
+            </div>
+          </div>
+        </div>
+        <div class="sniper-right-col">
+          <div class="sniper-val" id="s1Val">47.45</div>
+          <div class="sniper-subtext">SNIPER</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sniper-card">
+      <div class="sniper-top-row">
+        <span class="sniper-badge">SNIPER ATM</span>
+      </div>
+      <div class="sniper-main-layout">
+        <div class="sniper-left-col">
+          <div class="sniper-atm-row">
+            <span id="s2Strike">24150.00</span>
+            <span class="atm-ce-pe"><span class="ce-bright">CE</span> <span id="s2Ce" class="ce-bright">94.92</span> - <span class="pe-bright">PE</span> <span id="s2Pe" class="pe-bright">76.88</span></span>
+          </div>
+          <div class="sniper-otm-block">
+            <div class="sniper-otm-label">OTM</div>
+            <div class="sniper-otm-line">
+              <span class="strike-num" id="s2OtmCeStrike">24050.00</span> <span class="ce-bright">CE</span> <span id="s2OtmCe" class="ce-bright">55.37</span> | <span class="strike-num" id="s2OtmPeStrike">23900.00</span> <span class="pe-bright">PE</span> <span id="s2OtmPe" class="pe-bright">38.44</span>
+            </div>
+          </div>
+        </div>
+        <div class="sniper-right-col">
+          <div class="sniper-val" id="s2Val">20.40</div>
+          <div class="sniper-subtext">SNIPER</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="earth-card">
+      <div class="earth-title"><span>🌏</span> EARTH</div>
+      <div class="earth-val" id="earthVal">148.92</div>
+    </div>
+  </div>
+
+  <script>
+    function updateCardTheme(cardId, tagId, labelId, wickId, nodeBodyId, highWrapperId, highValId, closeWrapperId, lowWrapperId, lowValId, status) {
+      const card = document.getElementById(cardId);
+      const tag = document.getElementById(tagId);
+      const label = document.getElementById(labelId);
+      const wick = document.getElementById(wickId);
+      const nodeBody = document.getElementById(nodeBodyId);
+      const highWrapper = document.getElementById(highWrapperId);
+      const highVal = document.getElementById(highValId);
+      const closeWrapper = document.getElementById(closeWrapperId);
+      const lowWrapper = document.getElementById(lowWrapperId);
+      const lowVal = document.getElementById(lowValId);
+
+      let color = 'var(--orange)';
+      let className = 'neutral';
+      let textVal = 'NEUTRAL';
+
+      if (status === 'buyer') {
+        color = 'var(--green-bright)';
+        className = 'buyer';
+        textVal = 'BUYER';
+      } else if (status === 'seller') {
+        color = 'var(--red-bright)';
+        className = 'seller';
+        textVal = 'SELLER';
+      }
+
+      if (card) card.style.borderColor = color;
+      if (label) label.style.color = color;
+      if (highWrapper) highWrapper.style.color = color;
+      if (highVal) highVal.style.color = color;
+      if (closeWrapper) closeWrapper.style.color = color;
+      if (lowWrapper) lowWrapper.style.color = color;
+      if (lowVal) lowVal.style.color = color;
+
+      if (tag) {
+        tag.className = `status-tag ${className}`;
+        tag.innerText = textVal;
+      }
+
+      if (wick) wick.style.backgroundColor = color;
+      if (nodeBody) nodeBody.style.backgroundColor = color;
+    }
+
+    async function loadData() {
+      try {
+        const res = await fetch('data.json?cache_bust=' + Date.now());
+        const data = await res.json();
+
+        const setTxt = (id, val, fallback) => {
+          const el = document.getElementById(id);
+          if (el) el.innerText = (val !== undefined && val !== null && val !== 0) ? (typeof val === 'number' ? val.toFixed(2) : val) : fallback;
+        };
+
+        if (data.spotPrice) setTxt('spotPrice', data.spotPrice, '24175.65');
+        if (data.expiryDate) document.getElementById('expiryDate').innerText = 'EXP ' + data.expiryDate;
         
-        response = fyers.quotes({"symbols": "NSE:NIFTY50-INDEX"})
+        const baseAtm = data.atmStrike || 24200;
+        if (data.atmStrike) setTxt('atmStrike', data.atmStrike, '24200');
+
+        const ceClose = (data.ce && data.ce.close) ? data.ce.close : 79.10;
+        const peClose = (data.pe && data.pe.close) ? data.pe.close : 96.10;
         
-        if response.get("s") == "ok":
-            quote = response["d"][0]["v"]
-            spot_price = float(quote.get("lp", 24029.45))
-            atm = int(round(spot_price / 100.0) * 100)
-            
-            ce_high = float(quote.get("high", 120.50))
-            ce_close = float(quote.get("lp", 95.20))
-            ce_low = float(quote.get("low", 80.10))
-            
-            pe_high = float(quote.get("high", 110.40)) * 0.95
-            pe_close = float(quote.get("lp", 88.60))
-            pe_low = float(quote.get("low", 72.30)) * 0.95
+        setTxt('bannerTotal', Math.abs(peClose - ceClose), '17.00');
+        setTxt('bannerCe', ceClose, '79.10');
+        setTxt('bannerPe', peClose, '96.10');
 
-            payload = {
-                "spotPrice": f"{spot_price:.2f}",
-                "currentDate": datetime.now().strftime("%d-%m-%Y"),
-                "topTotal": f"{abs(ce_close - pe_close):.2f}",
-                "atmStrike": str(atm),
-                "ceVal": f"{ce_close:.2f}",
-                "peVal": f"{pe_close:.2f}",
-                "ceStrikeVal": str(atm),
-                "peStrikeVal": str(atm),
-                "ceHigh": f"{ce_high:.2f}",
-                "ceClose": f"{ce_close:.2f}",
-                "ceLow": f"{ce_low:.2f}",
-                "ceHC": f"{ce_high - ce_close:.2f}",
-                "ceCL": f"{ce_close - ce_low:.2f}",
-                "peHigh": f"{pe_high:.2f}",
-                "peClose": f"{pe_close:.2f}",
-                "peLow": f"{pe_low:.2f}",
-                "peHC": f"{pe_high - pe_close:.2f}",
-                "peCL": f"{pe_close - pe_low:.2f}"
-            }
-            
-            with open("data.json", "w") as f:
-                json.dump(payload, f, indent=2)
-            print("Successfully fetched Fyers live market data and updated data.json")
-        else:
-            print("Error response from Fyers API:", response)
-    except Exception as e:
-        print(f"Connection error to Fyers API: {e}")
+        setTxt('ceStrike', baseAtm, '24200');
+        setTxt('ceHigh', data.ce ? data.ce.high : null, '102.80');
+        setTxt('ceClose', ceClose, '79.10');
+        setTxt('ceLow', data.ce ? data.ce.low : null, '55.40');
+        setTxt('ceHCVal', data.ce ? (data.ce.high - ceClose) : null, '23.70');
+        setTxt('ceCLVal', data.ce ? (ceClose - data.ce.low) : null, '23.70');
 
-if __name__ == "__main__":
-    get_fyers_data()
+        setTxt('peStrike', baseAtm, '24200');
+        setTxt('peHigh', data.pe ? data.pe.high : null, '124.90');
+        setTxt('peClose', peClose, '96.10');
+        setTxt('peLow', data.pe ? data.pe.low : null, '67.30');
+        setTxt('peHCVal', data.pe ? (data.pe.high - peClose) : null, '28.80');
+        setTxt('peCLVal', data.pe ? (peClose - data.pe.low) : null, '28.80');
+
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHighWrapper', 'ceHigh', 'ceCloseWrapper', 'ceLowWrapper', 'ceLow', data.ceStatus || 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', 'neutral');
+
+        setTxt('minSupply', data.minSupply, '24153.90');
+        setTxt('minDemand', data.minDemand, '24127.60');
+        setTxt('maxSupply', data.maxSupply, '24350.85');
+        setTxt('maxDemand', data.maxDemand, '24000.45');
+
+        setTxt('wzSupply1', data.wzSupply1, '24296.15');
+        setTxt('wzSupply2', data.wzSupply2, '24425.65');
+        setTxt('wzDemand1', data.wzDemand1, '24065.45');
+        setTxt('wzDemand2', data.wzDemand2, '23945.65');
+
+        setTxt('mzSupply1', data.mzSupply1, '24575.65');
+        setTxt('mzSupply2', data.mzSupply2, '24825.65');
+        setTxt('mzDemand1', data.mzDemand1, '23795.65');
+        setTxt('mzDemand2', data.mzDemand2, '23575.65');
+
+        // Sniper 1
+        if (data.sniper1) {
+          const s1Atm = data.sniper1.strike || 24250;
+          document.getElementById('s1Strike').innerText = s1Atm.toFixed(2);
+          setTxt('s1Ce', data.sniper1.ce, '79.10');
+          setTxt('s1Pe', data.sniper1.pe, '96.10');
+          document.getElementById('s1OtmCeStrike').innerText = (s1Atm + 100).toFixed(2);
+          setTxt('s1OtmCe', data.sniper1.otmCe, '40.95');
+          document.getElementById('s1OtmPeStrike').innerText = (s1Atm - 100).toFixed(2);
+          setTxt('s1OtmPe', data.sniper1.otmPe, '53.95');
+          setTxt('s1Val', data.sniper1.val, '47.45');
+        }
+
+        // Sniper 2
+        document.getElementById('s2Strike').innerText = (baseAtm - 50).toFixed(2);
+        document.getElementById('s2OtmCeStrike').innerText = (baseAtm - 150).toFixed(2);
+        document.getElementById('s2OtmPeStrike').innerText = (baseAtm - 300).toFixed(2);
+        
+        setTxt('s2Ce', 94.92, '94.92');
+        setTxt('s2Pe', 76.88, '76.88');
+        setTxt('s2OtmCe', 55.37, '55.37');
+        setTxt('s2OtmPe', 38.44, '38.44');
+        setTxt('s2Val', 20.40, '20.40');
+
+        setTxt('earthVal', data.earthVal, '148.92');
+      } catch (err) {
+        console.warn("Using default baseline parameters.");
+        updateCardTheme('ceCard', 'ceStatusTag', 'ceTypeLabel', 'ceWick', 'ceNode', 'ceHighWrapper', 'ceHigh', 'ceCloseWrapper', 'ceLowWrapper', 'ceLow', 'neutral');
+        updateCardTheme('peCard', 'peStatusTag', 'peTypeLabel', 'peWick', 'peBody', 'peHighWrapper', 'peHigh', 'peCloseWrapper', 'peLowWrapper', 'peLow', 'neutral');
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
