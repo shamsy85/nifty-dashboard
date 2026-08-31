@@ -1,33 +1,244 @@
-<script>
-    function updateCardTheme(cardId, tagId, wickId, nodeBodyId, status) {
-      const card = document.getElementById(cardId);
-      const tag = document.getElementById(tagId);
-      const wick = document.getElementById(wickId);
-      const nodeBody = document.getElementById(nodeBodyId);
-
-      let color = 'var(--orange)';
-      let className = 'neutral';
-      let textVal = 'NEUTRAL';
-
-      if (status === 'buyer') {
-        color = 'var(--green-bright)';
-        className = 'buyer';
-        textVal = 'BUYER';
-      } else if (status === 'seller') {
-        color = 'var(--red-bright)';
-        className = 'seller';
-        textVal = 'SELLER';
-      }
-
-      if (card) card.style.borderColor = color;
-      if (tag) {
-        tag.className = `status-tag ${className}`;
-        tag.innerText = textVal;
-      }
-      if (wick) wick.style.backgroundColor = color;
-      if (nodeBody) nodeBody.style.backgroundColor = color;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nifty Dashboard</title>
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: #111827;
+      --border-color: #1f2937;
+      --green-bright: #00ff66;
+      --red-bright: #ff3333;
+      --orange: #ffaa00;
+      --cyan: #00ffff;
     }
 
+    body {
+      background-color: var(--bg-dark);
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .title {
+      font-size: 22px;
+      color: var(--cyan);
+      font-weight: bold;
+    }
+
+    .badge-exp {
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      background: transparent;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .flex-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .date-box {
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .text-green { color: var(--green-bright); }
+    .text-red { color: var(--red-bright); }
+    .text-orange { color: var(--orange); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .sub-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--orange);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .value-lg {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .zones-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .zone-box {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .zone-title {
+      font-size: 10px;
+      color: var(--cyan);
+      text-align: center;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .zone-values {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+    <div class="header-row">
+      <div class="title">NIFTY <span id="spotPrice">--</span></div>
+      <div id="expiryDate" class="badge-exp">EXP --</div>
+    </div>
+
+    <div class="card">
+      <div class="flex-row">
+        <div id="currentDate" class="date-box">--</div>
+        <div>
+          <span class="text-green" id="bannerTotal" style="font-size: 18px; font-weight: bold;">0.00</span>
+        </div>
+      </div>
+      <div style="font-size: 12px; margin-top: 5px;">
+        ATM <span id="atmStrike" style="font-weight: bold;">0</span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="sub-card" id="ceCard">
+        <div class="flex-row">
+          <span class="label text-orange" id="ceStatusTag">NEUTRAL</span>
+          <span class="label text-orange">CE</span>
+        </div>
+        <div class="value-lg" id="ceClose">0.00</div>
+        <div style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">
+          <div>H <span id="ceHigh">0.00</span></div>
+          <div>C <span id="ceCloseSub">0.00</span></div>
+          <div>L <span id="ceLow">0.00</span></div>
+        </div>
+      </div>
+
+      <div class="sub-card" id="peCard" style="border-color: var(--orange);">
+        <div class="flex-row">
+          <span class="label text-orange" id="peStatusTag">NEUTRAL</span>
+          <span class="label text-orange">PE</span>
+        </div>
+        <div class="value-lg" id="peClose">0.00</div>
+        <div style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">
+          <div>H <span id="peHigh">0.00</span></div>
+          <div>C <span id="peCloseSub">0.00</span></div>
+          <div>L <span id="peLow">0.00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="label" style="color: var(--cyan);">MINIMUM SUPPLY</div>
+        <div class="value-lg text-red" id="minSupply">0.00</div>
+      </div>
+      <div class="card">
+        <div class="label" style="color: var(--cyan);">MINIMUM DEMAND</div>
+        <div class="value-lg text-green" id="minDemand">0.00</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="label" style="color: var(--cyan);">MAXIMUM SUPPLY</div>
+        <div class="value-lg text-red" id="maxSupply">0.00</div>
+      </div>
+      <div class="card">
+        <div class="label" style="color: var(--cyan);">MAXIMUM DEMAND</div>
+        <div class="value-lg text-green" id="maxDemand">0.00</div>
+      </div>
+    </div>
+
+    <div class="zones-grid">
+      <div class="zone-box">
+        <div class="zone-title">WEEKLY ZONE</div>
+        <div class="zone-values">
+          <div>
+            <div class="text-red" id="wzSupply1">0.00</div>
+            <div class="text-red" id="wzSupply2" style="margin-top: 4px;">0.00</div>
+          </div>
+          <div>
+            <div class="text-green" id="wzDemand1" style="text-align: right;">0.00</div>
+            <div class="text-green" id="wzDemand2" style="text-align: right; margin-top: 4px;">0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zone-box">
+        <div class="zone-title">MONTHLY ZONE</div>
+        <div class="zone-values">
+          <div>
+            <div class="text-red" id="mzSupply1">0.00</div>
+            <div class="text-red" id="mzSupply2" style="margin-top: 4px;">0.00</div>
+          </div>
+          <div>
+            <div class="text-green" id="mzDemand1" style="text-align: right;">0.00</div>
+            <div class="text-green" id="mzDemand2" style="text-align: right; margin-top: 4px;">0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card flex-row" style="border-color: var(--green-bright);">
+      <div style="font-size: 13px; font-weight: bold; color: var(--cyan);">🌍 EARTH</div>
+      <div class="text-green" style="font-size: 20px; font-weight: bold;" id="earthVal">0.00</div>
+    </div>
+  </div>
+
+  <script>
     async function loadData() {
       try {
         const res = await fetch('data.json?cache_bust=' + Date.now());
@@ -40,45 +251,29 @@
 
         if (data.spotPrice !== undefined) setTxt('spotPrice', data.spotPrice, '--');
         
-        // Fix: Properly update the expiry date badge from JSON payload
+        // Dynamically insert expiry date from JSON
         if (data.expiryDate) {
           const expEl = document.getElementById('expiryDate');
           if (expEl) expEl.innerText = 'EXP ' + data.expiryDate;
         }
 
         if (data.currentDate) document.getElementById('currentDate').innerText = data.currentDate;
-
-        const baseAtm = data.atmStrike || 0;
-        if (data.atmStrike !== undefined) {
-          const atmEl = document.getElementById('atmStrike');
-          if (atmEl) atmEl.innerText = data.atmStrike;
-        }
+        if (data.atmStrike !== undefined) document.getElementById('atmStrike').innerText = data.atmStrike;
 
         const ceClose = (data.ce && data.ce.close !== undefined) ? data.ce.close : 0;
         const peClose = (data.pe && data.pe.close !== undefined) ? data.pe.close : 0;
         
         setTxt('bannerTotal', Math.abs(ceClose - peClose), '--');
-        setTxt('bannerCe', ceClose, '--');
-        setTxt('bannerPe', peClose, '--');
 
-        const ceStrikeEl = document.getElementById('ceStrike');
-        if (ceStrikeEl) ceStrikeEl.innerText = baseAtm;
         setTxt('ceHigh', data.ce ? data.ce.high : null, '--');
         setTxt('ceClose', ceClose, '--');
+        setTxt('ceCloseSub', ceClose, '--');
         setTxt('ceLow', data.ce ? data.ce.low : null, '--');
-        setTxt('ceHCVal', (data.ce && data.ce.high !== undefined && data.ce.close !== undefined) ? (data.ce.high - ceClose) : null, '--');
-        setTxt('ceCLVal', (data.ce && data.ce.close !== undefined && data.ce.low !== undefined) ? (ceClose - data.ce.low) : null, '--');
 
-        const peStrikeEl = document.getElementById('peStrike');
-        if (peStrikeEl) peStrikeEl.innerText = baseAtm;
         setTxt('peHigh', data.pe ? data.pe.high : null, '--');
         setTxt('peClose', peClose, '--');
+        setTxt('peCloseSub', peClose, '--');
         setTxt('peLow', data.pe ? data.pe.low : null, '--');
-        setTxt('peHCVal', (data.pe && data.pe.high !== undefined && data.pe.close !== undefined) ? (data.pe.high - peClose) : null, '--');
-        setTxt('peCLVal', (data.pe && data.pe.close !== undefined && data.pe.low !== undefined) ? (peClose - data.pe.low) : null, '--');
-
-        updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', data.ceStatus || 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', data.peStatus || 'neutral');
 
         setTxt('minSupply', data.minSupply, '--');
         setTxt('minDemand', data.minDemand, '--');
@@ -95,38 +290,15 @@
         setTxt('mzDemand1', data.mzDemand1, '--');
         setTxt('mzDemand2', data.mzDemand2, '--');
 
-        if (data.sniper1) {
-          const s1Atm = data.sniper1.strike || 0;
-          document.getElementById('s1Strike').innerText = s1Atm ? s1Atm : '--';
-          setTxt('s1Ce', data.sniper1.ce, '--');
-          setTxt('s1Pe', data.sniper1.pe, '--');
-          document.getElementById('s1OtmCeStrike').innerText = data.sniper1.otmCeStrike ? data.sniper1.otmCeStrike : '--';
-          setTxt('s1OtmCe', data.sniper1.otmCe, '--');
-          document.getElementById('s1OtmPeStrike').innerText = data.sniper1.otmPeStrike ? data.sniper1.otmPeStrike : '--';
-          setTxt('s1OtmPe', data.sniper1.otmPe, '--');
-          setTxt('s1Val', data.sniper1.val, '--');
-        }
-
-        if (data.sniper2) {
-          const s2Atm = data.sniper2.strike || 0;
-          document.getElementById('s2Strike').innerText = s2Atm ? s2Atm : '--';
-          setTxt('s2Ce', data.sniper2.ce, '--');
-          setTxt('s2Pe', data.sniper2.pe, '--');
-          document.getElementById('s2OtmCeStrike').innerText = data.sniper2.otmCeStrike ? data.sniper2.otmCeStrike : '--';
-          setTxt('s2OtmCe', data.sniper2.otmCe, '--');
-          document.getElementById('s2OtmPeStrike').innerText = data.sniper2.otmPeStrike ? data.sniper2.otmPeStrike : '--';
-          setTxt('s2OtmPe', data.sniper2.otmPe, '--');
-          setTxt('s2Val', data.sniper2.val, '--');
-        }
-
         setTxt('earthVal', data.earthVal, '--');
+
       } catch (err) {
-        console.warn("Using default baseline parameters.");
-        updateCardTheme('ceCard', 'ceStatusTag', 'ceWick', 'ceNode', 'neutral');
-        updateCardTheme('peCard', 'peStatusTag', 'peWick', 'peBody', 'neutral');
+        console.warn("Could not load data.json payload.", err);
       }
     }
 
     loadData();
-    setInterval(loadData, 60000); // Auto-poll data every minute
+    setInterval(loadData, 60000);
   </script>
+</body>
+</html>
