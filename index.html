@@ -17,7 +17,7 @@
         }
         .dashboard-container {
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             background: #0d1322;
             padding: 14px;
             border-radius: 12px;
@@ -36,31 +36,75 @@
         }
         .header-title { font-size: 18px; font-weight: 700; color: #00ffcc; }
         .exp-badge { font-size: 11px; border: 1px solid #00ffcc; color: #00ffcc; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
-        .sub-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
-        .date-badge { font-size: 11px; border: 1px solid #00ffcc; color: #00ffcc; padding: 2px 6px; border-radius: 4px; }
-        .atm-text { font-size: 13px; font-weight: bold; color: #ffffff; }
-        .atm-text span { color: #00ffcc; }
+        
+        .top-banner-card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .top-banner-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .date-badge { font-size: 11px; border: 1px solid #00ffcc; color: #00ffcc; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+        .atm-label-top { font-size: 12px; font-weight: bold; color: #00ffcc; margin-top: 4px; }
+        .banner-total-val { font-size: 20px; font-weight: bold; color: #00ffcc; text-align: right; }
+        .banner-sub-text { font-size: 11px; color: #9ca3af; text-align: right; margin-top: 2px; }
+        .banner-sub-text span { color: #00ffcc; font-weight: 600; }
+
         .ce-pe-wrapper { display: flex; gap: 10px; margin-bottom: 12px; }
-        .card-box { flex: 1; background: #111827; border: 1px solid #f59e0b; border-radius: 8px; padding: 10px; }
+        .card-box { flex: 1; background: #111827; border: 1px solid #f59e0b; border-radius: 8px; padding: 10px; position: relative; }
         .status-badge { font-size: 9px; font-weight: bold; background: #f59e0b; color: #000; padding: 2px 6px; border-radius: 3px; display: inline-block; margin-bottom: 6px; }
-        .card-val { font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 8px; }
-        .metric-row { font-size: 11px; color: #9ca3af; display: flex; justify-content: flex-end; gap: 8px; line-height: 1.4; }
+        
+        .card-inner-flex { display: flex; align-items: flex-start; justify-content: space-between; }
+        .card-val { font-size: 20px; font-weight: bold; color: #ffffff; margin-bottom: 4px; }
+        
+        /* Vertical Slider Bar Graphic */
+        .slider-bar {
+            width: 4px;
+            height: 45px;
+            background: #374151;
+            border-radius: 2px;
+            position: relative;
+            margin-right: 6px;
+        }
+        .slider-thumb {
+            width: 10px;
+            height: 6px;
+            background: #f59e0b;
+            position: absolute;
+            left: -3px;
+            top: 18px;
+            border-radius: 2px;
+        }
+
+        .metric-row { font-size: 11px; color: #9ca3af; display: flex; justify-content: flex-end; gap: 6px; line-height: 1.3; }
         .metric-row span { color: #00ffcc; font-weight: 600; }
+        .card-footer-metrics { display: flex; justify-content: space-between; border-top: 1px dashed #374151; margin-top: 8px; padding-top: 6px; font-size: 10px; color: #9ca3af; }
+        .card-footer-metrics span { color: #00ffcc; }
+
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         .metric-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 10px; }
         .metric-label { font-size: 10px; font-weight: bold; color: #00ffcc; margin-bottom: 6px; text-transform: uppercase; }
         .metric-number { font-size: 16px; font-weight: bold; color: #ff3366; }
         .metric-number.demand { color: #00ffcc; }
+
         .zone-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
         .zone-title { font-size: 10px; font-weight: bold; color: #00ffcc; text-align: center; margin-bottom: 8px; }
         .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px; font-weight: 600; color: #ff3366; }
         .zone-col-right { text-align: right; color: #00ffcc; }
+
         .sniper-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
         .sniper-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .sniper-badge { font-size: 9px; background: #065f46; color: #34d399; border: 1px solid #10b981; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .sniper-details { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
         .sniper-details span { color: #00ffcc; }
         .sniper-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #374151; padding-top: 6px; font-size: 11px; }
+        .sniper-total { font-size: 16px; font-weight: bold; color: #00ffcc; text-align: right; border-left: 1px dashed #374151; padding-left: 10px; }
+
         .earth-card { background: #111827; border: 1px solid #10b981; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .earth-label { font-size: 12px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 6px; }
         .earth-value { font-size: 16px; font-weight: bold; color: #00ffcc; }
@@ -69,43 +113,84 @@
 <body>
 
     <div class="dashboard-container">
+        <!-- Header -->
         <div class="header-box">
             <div class="header-title">NIFTY <span id="spotPrice">24080.40</span></div>
             <div class="exp-badge" id="expBadge">EXP --</div>
         </div>
 
-        <div class="sub-header">
-            <div class="date-badge" id="currentDate">--</div>
-            <div class="atm-text">ATM <span id="atmStrike">0</span></div>
+        <!-- Top Banner / Date / ATM Block -->
+        <div class="top-banner-card">
+            <div class="top-banner-row">
+                <div>
+                    <div class="date-badge" id="currentDate">--</div>
+                    <div class="atm-label-top">ATM <span id="atmStrike">0</span></div>
+                </div>
+                <div>
+                    <div class="banner-total-val" id="bannerTotal">0.00</div>
+                    <div class="banner-sub-text">CE <span id="bannerCe">0.00</span> • PE <span id="bannerPe">0.00</span></div>
+                </div>
+            </div>
         </div>
 
+        <!-- CE and PE Cards with Sliders -->
         <div class="ce-pe-wrapper">
+            <!-- CE Card -->
             <div class="card-box">
-                <div style="display:flex; justify-content:space-between;"><span class="status-badge">NEUTRAL</span><span style="font-size:10px; color:#00ffcc;">CE</span></div>
-                <div class="card-val" id="ceClose">0.00</div>
-                <div class="metric-row">H <span id="ceHigh">0.00</span></div>
-                <div class="metric-row">C <span id="ceCloseSub">0.00</span></div>
-                <div class="metric-row">L <span id="ceLow">0.00</span></div>
+                <div style="display:flex; justify-content:space-between;"><span class="status-badge">NEUTRAL</span><span style="font-size:10px; font-weight:bold; color:#00ffcc;">CE</span></div>
+                <div class="card-inner-flex">
+                    <div>
+                        <div class="card-val" id="ceClose">0.00</div>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <div class="slider-bar"><div class="slider-thumb"></div></div>
+                        <div>
+                            <div class="metric-row">H <span id="ceHigh">0.00</span></div>
+                            <div class="metric-row">C <span id="ceCloseSub">0.00</span></div>
+                            <div class="metric-row">L <span id="ceLow">0.00</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer-metrics">
+                    <div>H-C <span id="ceHc">0.00</span></div>
+                    <div>C-L <span id="ceCl">0.00</span></div>
+                </div>
             </div>
+
+            <!-- PE Card -->
             <div class="card-box">
-                <div style="display:flex; justify-content:space-between;"><span class="status-badge">NEUTRAL</span><span style="font-size:10px; color:#f59e0b;">PE</span></div>
-                <div class="card-val" id="peClose">0.00</div>
-                <div class="metric-row">H <span id="peHigh">0.00</span></div>
-                <div class="metric-row">C <span id="peCloseSub">0.00</span></div>
-                <div class="metric-row">L <span id="peLow">0.00</span></div>
+                <div style="display:flex; justify-content:space-between;"><span class="status-badge">NEUTRAL</span><span style="font-size:10px; font-weight:bold; color:#f59e0b;">PE</span></div>
+                <div class="card-inner-flex">
+                    <div>
+                        <div class="card-val" id="peClose">0.00</div>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <div class="slider-bar"><div class="slider-thumb"></div></div>
+                        <div>
+                            <div class="metric-row">H <span id="peHigh">0.00</span></div>
+                            <div class="metric-row">C <span id="peCloseSub">0.00</span></div>
+                            <div class="metric-row">L <span id="peLow">0.00</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer-metrics">
+                    <div>H-C <span id="peHc">0.00</span></div>
+                    <div>C-L <span id="peCl">0.00</span></div>
+                </div>
             </div>
         </div>
 
+        <!-- Min/Max Supply & Demand -->
         <div class="grid-2">
             <div class="metric-card"><div class="metric-label">Minimum Supply</div><div class="metric-number" id="minSupply">0.00</div></div>
             <div class="metric-card"><div class="metric-label">Minimum Demand</div><div class="metric-number demand" id="minDemand">0.00</div></div>
         </div>
-
         <div class="grid-2">
             <div class="metric-card"><div class="metric-label">Maximum Supply</div><div class="metric-number" id="maxSupply">0.00</div></div>
             <div class="metric-card"><div class="metric-label">Maximum Demand</div><div class="metric-number demand" id="maxDemand">0.00</div></div>
         </div>
 
+        <!-- Weekly Zone -->
         <div class="zone-card">
             <div class="zone-title">WEEKLY ZONE</div>
             <div class="zone-grid">
@@ -114,32 +199,40 @@
             </div>
         </div>
 
+        <!-- Monthly Zone -->
         <div class="zone-card">
             <div class="zone-title">MONTHLY ZONE</div>
-            <div class="zone-grid">
+            <div class="zone-grid" style="color:#ff3366;">
                 <div><div id="mzSupply1">0.00</div><div id="mzSupply2" style="margin-top:4px;">0.00</div></div>
-                <div class="zone-col-right"><div id="mzDemand1">0.00</div><div id="mzDemand2" style="margin-top:4px;">0.00</div></div>
+                <div class="zone-col-right" style="color:#00ffcc;"><div id="mzDemand1">0.00</div><div id="mzDemand2" style="margin-top:4px;">0.00</div></div>
             </div>
         </div>
 
+        <!-- Sniper 1 -->
         <div class="sniper-card">
             <div class="sniper-header"><span class="sniper-badge">SNIPER ATM</span><span style="font-size:10px; color:#34d399;">best</span></div>
-            <div class="sniper-details"><span id="s1Strike">--</span> CE <span id="s1Ce">0.00</span> - PE <span id="s1Pe">0.00</span></div>
-            <div class="sniper-footer">
-                <div>OTM CE <span id="s1OtmCe">0.00</span> | PE <span id="s1OtmPe">0.00</span></div>
-                <div style="font-size:15px; font-weight:bold; color:#00ffcc;" id="s1Val">0.00</div>
+            <div class="sniper-footer" style="border-top:none; padding-top:0;">
+                <div>
+                    <div class="sniper-details"><span id="s1Strike">--</span> CE <span id="s1Ce">0.00</span> - PE <span id="s1Pe">0.00</span></div>
+                    <div style="font-size:10px; color:#9ca3af;">OTM <span id="s1OtmCeStrike">100</span> CE <span id="s1OtmCe">0.00</span> | -<span id="s1OtmPeStrike">100</span> PE <span id="s1OtmPe">0.00</span></div>
+                </div>
+                <div class="sniper-total"><span id="s1Val">0.00</span><br><span style="font-size:9px; color:#9ca3af; font-weight:normal;">SNIPER</span></div>
             </div>
         </div>
 
+        <!-- Sniper 2 -->
         <div class="sniper-card">
             <div class="sniper-header"><span class="sniper-badge">SNIPER ATM</span></div>
-            <div class="sniper-details"><span id="s2Strike">--</span> CE <span id="s2Ce">0.00</span> - PE <span id="s2Pe">0.00</span></div>
-            <div class="sniper-footer">
-                <div>OTM CE <span id="s2OtmCe">0.00</span> | PE <span id="s2OtmPe">0.00</span></div>
-                <div style="font-size:15px; font-weight:bold; color:#00ffcc;" id="s2Val">0.00</div>
+            <div class="sniper-footer" style="border-top:none; padding-top:0;">
+                <div>
+                    <div class="sniper-details"><span id="s2Strike">--</span> CE <span id="s2Ce">0.00</span> - PE <span id="s2Pe">0.00</span></div>
+                    <div style="font-size:10px; color:#9ca3af;">OTM <span id="s2OtmCeStrike">100</span> CE <span id="s2OtmCe">0.00</span> | -<span id="s2OtmPeStrike">100</span> PE <span id="s2OtmPe">0.00</span></div>
+                </div>
+                <div class="sniper-total"><span id="s2Val">0.00</span><br><span style="font-size:9px; color:#9ca3af; font-weight:normal;">SNIPER</span></div>
             </div>
         </div>
 
+        <!-- Earth Card -->
         <div class="earth-card">
             <div class="earth-label">🌐 EARTH</div>
             <div class="earth-value" id="earthVal">0.00</div>
@@ -157,18 +250,26 @@
                 document.getElementById('expBadge').innerText = data.expiryDate ? `EXP ${data.expiryDate}` : 'EXP --';
                 document.getElementById('currentDate').innerText = data.currentDate || '--';
                 document.getElementById('atmStrike').innerText = data.atmStrike || '0';
+                
+                document.getElementById('bannerTotal').innerText = data.bannerTotal || '0.00';
 
                 if(data.ce) {
                     document.getElementById('ceClose').innerText = data.ce.close || '0.00';
                     document.getElementById('ceCloseSub').innerText = data.ce.close || '0.00';
                     document.getElementById('ceHigh').innerText = data.ce.high || '0.00';
                     document.getElementById('ceLow').innerText = data.ce.low || '0.00';
+                    document.getElementById('bannerCe').innerText = data.ce.close || '0.00';
+                    document.getElementById('ceHc').innerText = (data.ce.high - data.ce.close).toFixed(2);
+                    document.getElementById('ceCl').innerText = (data.ce.close - data.ce.low).toFixed(2);
                 }
                 if(data.pe) {
                     document.getElementById('peClose').innerText = data.pe.close || '0.00';
                     document.getElementById('peCloseSub').innerText = data.pe.close || '0.00';
                     document.getElementById('peHigh').innerText = data.pe.high || '0.00';
                     document.getElementById('peLow').innerText = data.pe.low || '0.00';
+                    document.getElementById('bannerPe').innerText = data.pe.close || '0.00';
+                    document.getElementById('peHc').innerText = (data.pe.high - data.pe.close).toFixed(2);
+                    document.getElementById('peCl').innerText = (data.pe.close - data.pe.low).toFixed(2);
                 }
 
                 document.getElementById('minSupply').innerText = data.minSupply || '0.00';
@@ -191,12 +292,16 @@
                     document.getElementById('s1Ce').innerText = data.sniper1.ce || '0.00';
                     document.getElementById('s1Pe').innerText = data.sniper1.pe || '0.00';
                     document.getElementById('s1Val').innerText = data.sniper1.val || '0.00';
+                    if(data.sniper1.otmCe) document.getElementById('s1OtmCe').innerText = data.sniper1.otmCe;
+                    if(data.sniper1.otmPe) document.getElementById('s1OtmPe').innerText = data.sniper1.otmPe;
                 }
                 if(data.sniper2) {
                     document.getElementById('s2Strike').innerText = data.sniper2.strike || '--';
                     document.getElementById('s2Ce').innerText = data.sniper2.ce || '0.00';
                     document.getElementById('s2Pe').innerText = data.sniper2.pe || '0.00';
                     document.getElementById('s2Val').innerText = data.sniper2.val || '0.00';
+                    if(data.sniper2.otmCe) document.getElementById('s2OtmCe').innerText = data.sniper2.otmCe;
+                    if(data.sniper2.otmPe) document.getElementById('s2OtmPe').innerText = data.sniper2.otmPe;
                 }
 
                 document.getElementById('earthVal').innerText = data.earthVal || '0.00';
