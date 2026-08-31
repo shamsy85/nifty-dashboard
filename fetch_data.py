@@ -62,6 +62,10 @@ def update_nifty_data():
     except Exception as e:
         print(f"Option chain fetch error: {e}")
 
+    # Fallback if option chain is unavailable or yields 0 ATM
+    if not atm_strike and spot_close > 0:
+        atm_strike = int(round(spot_close / 50.0) * 50)
+
     diff_val = round(ce_close - pe_close, 2)
 
     min_supply = round(atm_strike + ce_close, 2) if atm_strike else 0.0
