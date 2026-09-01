@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NIFTY Options Dashboard - Bordered Neon</title>
+<title>NIFTY Options Dashboard</title>
 <style>
   :root {
     --bg-color: #05070a;
@@ -11,7 +11,6 @@
     --card-border: #2a3852;
     --text-primary: #ffffff;
     
-    /* Ultra-Bright Neon Palette */
     --green-bright: #00ff66; 
     --green-glow: rgba(0, 255, 102, 0.5);
     --red-bright: #ff1e56;   
@@ -110,9 +109,7 @@
     text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
   }
 
-  .banner-right {
-    text-align: right;
-  }
+  .banner-right { text-align: right; }
 
   .banner-total {
     font-size: 20px;
@@ -238,19 +235,9 @@
     font-weight: 400;
   }
 
-  .ohlc-close {
-    font-size: 15px;
-    font-weight: 400;
-  }
-
-  .ohlc-close.neutral { 
-    color: var(--neutral-color); 
-    text-shadow: 0 0 6px var(--neutral-glow);
-  }
-  .ohlc-close.red { 
-    color: var(--red-bright); 
-    text-shadow: 0 0 6px var(--red-glow);
-  }
+  .ohlc-close { font-size: 15px; font-weight: 400; }
+  .ohlc-close.neutral { color: var(--neutral-color); text-shadow: 0 0 6px var(--neutral-glow); }
+  .ohlc-close.red { color: var(--red-bright); text-shadow: 0 0 6px var(--red-glow); }
 
   .diff-row {
     display: flex;
@@ -266,16 +253,8 @@
   .diff-val-cyan { color: var(--cyan-accent); font-weight: 400; text-shadow: 0 0 4px var(--cyan-glow); }
   .diff-val-red { color: var(--red-bright); font-weight: 400; text-shadow: 0 0 4px var(--red-glow); }
 
-  .val-supply { 
-    color: var(--red-bright); 
-    font-weight: 400; 
-    text-shadow: 0 0 8px var(--red-glow);
-  }
-  .val-demand { 
-    color: var(--green-bright); 
-    font-weight: 400; 
-    text-shadow: 0 0 8px var(--green-glow);
-  }
+  .val-supply { color: var(--red-bright); font-weight: 400; text-shadow: 0 0 8px var(--red-glow); }
+  .val-demand { color: var(--green-bright); font-weight: 400; text-shadow: 0 0 8px var(--green-glow); }
 
   .sniper-card {
     background-color: var(--card-bg);
@@ -310,15 +289,8 @@
     text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
   }
 
-  .sniper-leg {
-    font-size: 12px;
-    color: var(--cyan-accent);
-  }
-
-  .sniper-leg span {
-    color: #ffffff;
-    font-weight: 400;
-  }
+  .sniper-leg { font-size: 12px; color: var(--cyan-accent); }
+  .sniper-leg span { color: #ffffff; font-weight: 400; }
 
   .sniper-otm {
     font-size: 11px;
@@ -327,9 +299,7 @@
     font-weight: 400;
   }
 
-  .sniper-score {
-    text-align: right;
-  }
+  .sniper-score { text-align: right; }
 
   .sniper-score-val {
     font-size: 22px;
@@ -561,7 +531,8 @@
 
   async function loadData() {
     try {
-      const response = await fetch('data.json');
+      // Append cache buster to prevent browsers from loading stale local JSON
+      const response = await fetch('data.json?t=' + new Date().getTime());
       const data = await response.json();
 
       document.getElementById('spotPriceHeader').textContent = formatNum(data.spotPrice);
