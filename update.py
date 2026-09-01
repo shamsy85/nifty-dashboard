@@ -1,17 +1,39 @@
 
 import requests
 import json
+import time
 from datetime import datetime
 
+HOME = "https://www.nseindia.com/"
+API = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0 Safari/537.36",
+    "Accept": "application/json,text/plain,*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.nseindia.com/option-chain",
+    "Origin": "https://www.nseindia.com",
+    "Connection": "keep-alive",
+}
+
 session = requests.Session()
-headers = {"User-Agent": "Mozilla/5.0"}
+session.headers.update(headers)
 
-# Get NSE cookies
-session.get("https://www.nseindia.com", headers=headers)
+# Get NSE cookies first
+session.get(HOME, timeout=20)
+time.sleep(2)
 
-# Fetch Option Chain
-url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
-data = session.get(url, headers=headers).json()
+r = session.get(API, timeout=20)
+
+# Retry once if NSE blocks the request
+if r.status_code != 200:
+    session.get(HOME, timeout=20)
+    time.sleep(2)
+    r = session.get(API, timeout=20)
+
+r.raise_for_status()
+
+data = r.json()
 
 spot = data["records"]["underlyingValue"]
 expiry = data["records"]["expiryDates"][0]
@@ -72,4 +94,4 @@ output = {
 with open("data.json", "w") as f:
     json.dump(output, f, indent=2)
 
-print("data.json updated")
+print("data.json updated successfully")
