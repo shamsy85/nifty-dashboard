@@ -2,29 +2,530 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nifty Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post-Market Nifty Report</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; padding-top: 50px; }
-        .card { background: #1e1e1e; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background-color: #0b0f17;
+            color: #f3f4f6;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        /* Top Bar */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 2px;
+        }
+        .header-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #38bdf8;
+        }
+        .header-spot {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e5e7eb;
+        }
+        .header-exp {
+            background: #1e293b;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #94a3b8;
+            border: 1px solid #334155;
+        }
+        .header-exp span {
+            color: #f8fafc;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        /* Main Card Container */
+        .card {
+            background: #131b2e;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 14px;
+            position: relative;
+        }
+
+        /* Sub header card */
+        .sub-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .date-badge {
+            background: #1e293b;
+            color: #94a3b8;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #334155;
+        }
+        .atm-display {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .atm-label {
+            font-size: 10px;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .top-right-metric {
+            text-align: right;
+        }
+        .tr-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: #34d399;
+        }
+        .tr-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        /* Grid layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .grid-2-uneven {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 10px;
+        }
+
+        /* CE / PE Split Cards */
+        .split-card {
+            background: #172033;
+            border: 1px solid #223049;
+            border-radius: 10px;
+            padding: 12px;
+            position: relative;
+        }
+        .badge-tag {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+        .badge-neutral { background: #334155; color: #cbd5e1; }
+        .badge-sellers { background: #7f1d1d; color: #fca5a5; }
+
+        .strike-hl-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .strike-main {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .hl-box {
+            font-size: 11px;
+            color: #94a3b8;
+            text-align: right;
+            line-height: 1.4;
+        }
+        .hl-box span { color: #f1f5f9; font-weight: 600; }
+        
+        .hc-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .hc-row span b { color: #38bdf8; }
+
+        /* Metric Box (Supply / Demand) */
+        .metric-box {
+            background: #172033;
+            border: 1px solid #223049;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .metric-title {
+            font-size: 10px;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .metric-val {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .val-red { color: #f87171; }
+        .val-green { color: #34d399; }
+
+        /* Zone Box */
+        .zone-box {
+            background: #172033;
+            border: 1px solid #223049;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .zone-cols {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        .zone-col-left { color: #f87171; }
+        .zone-col-right { color: #34d399; }
+
+        /* Sniper Box */
+        .sniper-container {
+            background: #172033;
+            border: 1px solid #223049;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .sniper-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .sniper-tag {
+            font-size: 9px;
+            font-weight: 700;
+            background: #1e293b;
+            color: #38bdf8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #334155;
+        }
+        .best-tag {
+            background: #064e3b;
+            color: #34d399;
+            border-color: #065f46;
+            margin-left: 6px;
+        }
+        .sniper-main-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .otm-row {
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            gap: 12px;
+            margin-top: 4px;
+        }
+        .otm-row span { color: #e2e8f0; font-weight: 500; }
+        .sniper-right-val {
+            text-align: right;
+        }
+        .s-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .s-label {
+            font-size: 9px;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Earth Box */
+        .earth-box {
+            background: #172033;
+            border: 1px solid #223049;
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .earth-label {
+            font-size: 11px;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .earth-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Nifty 50 Live Tracker</h1>
-        <p><strong>Spot Price:</strong> <span id="spot">Loading...</span></p>
-        <p><strong>ATM Strike:</strong> <span id="strike">Loading...</span></p>
-        <p><strong>Date:</strong> <span id="date">Loading...</span></p>
+
+<div class="container">
+    <!-- Top Bar -->
+    <div class="header-bar">
+        <div>
+            <div class="header-title">NIFTY</div>
+            <div class="header-spot" id="spotPrice">--</div>
+        </div>
+        <div class="header-exp">
+            EXP <span id="expiryDate">--</span>
+        </div>
     </div>
 
-    <script>
-        fetch('data.json')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('spot').innerText = data.spotPrice;
-                document.getElementById('strike').innerText = data.atmStrike;
-                document.getElementById('date').innerText = data.currentDate;
-            })
-            .catch(error => console.error('Error loading JSON data:', error));
-    </script>
+    <!-- Main Card with ATM & CE/PE Splits -->
+    <div class="card">
+        <div class="sub-header-row">
+            <div>
+                <span class="date-badge" id="currentDate">--</span>
+                <div style="margin-top: 6px;">
+                    <div class="atm-label">ATM</div>
+                    <div class="atm-display" id="atmStrike">--</div>
+                </div>
+            </div>
+            <div class="top-right-metric">
+                <div class="tr-val" id="bannerTotal">--</div>
+                <div class="tr-sub">
+                    CE <span id="ceCloseTop">--</span> • PE <span id="peCloseTop">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 12px;">
+            <!-- CE Split Card -->
+            <div class="split-card">
+                <div class="badge-tag badge-neutral">Neutral</div>
+                <div class="strike-hl-row">
+                    <div class="strike-main"><span id="ceStrikeDisplay">--</span> <span style="font-size: 12px; color: #94a3b8;">CE</span></div>
+                    <div class="hl-box">
+                        H <span id="ceHigh">--</span><br>
+                        C <span id="ceClose">--</span><br>
+                        L <span id="ceLow">--</span>
+                    </div>
+                </div>
+                <div class="hc-row">
+                    <div>H-C <b id="ceHC">--</b></div>
+                    <div>C-L <b id="ceCL">--</b></div>
+                </div>
+            </div>
+
+            <!-- PE Split Card -->
+            <div class="split-card">
+                <div class="badge-tag badge-sellers">Sellers</div>
+                <div class="strike-hl-row">
+                    <div class="strike-main"><span id="peStrikeDisplay">--</span> <span style="font-size: 12px; color: #94a3b8;">PE</span></div>
+                    <div class="hl-box" style="color: #f87171;">
+                        H <span id="peHigh" style="color:#f87171;">--</span><br>
+                        C <span id="peClose" style="color:#f87171;">--</span><br>
+                        L <span id="peLow" style="color:#f87171;">--</span>
+                    </div>
+                </div>
+                <div class="hc-row">
+                    <div>H-C <b id="peHC" style="color:#f87171;">--</b></div>
+                    <div>C-L <b id="peCL" style="color:#f87171;">--</b></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supply & Demand Grid -->
+    <div class="grid-2">
+        <div class="metric-box">
+            <div class="metric-title">Minimum Supply</div>
+            <div class="metric-val val-red" id="minSupply">--</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-title">Minimum Demand</div>
+            <div class="metric-val val-green" id="minDemand">--</div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="metric-box">
+            <div class="metric-title">Maximum Supply</div>
+            <div class="metric-val val-red" id="maxSupply">--</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-title">Maximum Demand</div>
+            <div class="metric-val val-green" id="maxDemand">--</div>
+        </div>
+    </div>
+
+    <!-- Zones Grid -->
+    <div class="grid-2">
+        <div class="zone-box">
+            <div class="metric-title">Weekly Zone</div>
+            <div class="zone-cols">
+                <div class="zone-col-left" id="wzSupply">--<br>--</div>
+                <div class="zone-col-right" id="wzDemand">--<br>--</div>
+            </div>
+        </div>
+        <div class="zone-box">
+            <div class="metric-title">Monthly Zone</div>
+            <div class="zone-cols">
+                <div class="zone-col-left" id="mzSupply">--<br>--</div>
+                <div class="zone-col-right" id="mzDemand">--<br>--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sniper ATM 1 -->
+    <div class="sniper-container">
+        <div class="sniper-header">
+            <div>
+                <span class="sniper-tag">Sniper ATM</span>
+                <span class="sniper-tag best-tag">best</span>
+            </div>
+        </div>
+        <div class="sniper-main-row">
+            <div>
+                <div style="font-size: 18px; font-weight: 700;" id="s1Strike">--</div>
+                <div class="otm-row">
+                    <div>OTM <span id="s1OtmCeStrike">--</span> CE <span id="s1OtmCe">--</span></div>
+                    <div>|</div>
+                    <div><span id="s1OtmPeStrike">--</span> PE <span id="s1OtmPe">--</span></div>
+                </div>
+            </div>
+            <div class="sniper-right-val">
+                <div class="s-val" id="s1Val">--</div>
+                <div class="s-label">Sniper</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sniper ATM 2 -->
+    <div class="sniper-container">
+        <div class="sniper-header">
+            <div>
+                <span class="sniper-tag">Sniper ATM</span>
+            </div>
+        </div>
+        <div class="sniper-main-row">
+            <div>
+                <div style="font-size: 18px; font-weight: 700;" id="s2Strike">--</div>
+                <div class="otm-row">
+                    <div>OTM <span id="s2OtmCeStrike">--</span> CE <span id="s2OtmCe">--</span></div>
+                    <div>|</div>
+                    <div><span id="s2OtmPeStrike">--</span> PE <span id="s2OtmPe">--</span></div>
+                </div>
+            </div>
+            <div class="sniper-right-val">
+                <div class="s-val" id="s2Val">--</div>
+                <div class="s-label">Sniper</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Earth Box -->
+    <div class="earth-box">
+        <div class="earth-label">🌐 Earth</div>
+        <div class="earth-val" id="earthVal">--</div>
+    </div>
+</div>
+
+<script>
+    async function loadDashboardData() {
+        try {
+            const response = await fetch('data.json');
+            if (!response.ok) throw new Error('Failed to load data.json');
+            const data = await response.json();
+
+            // Header info
+            document.getElementById('spotPrice').innerText = Number(data.spotPrice).toFixed(2);
+            document.getElementById('expiryDate').innerText = data.expiryDate;
+            document.getElementById('currentDate').innerText = data.currentDate;
+            document.getElementById('atmStrike').innerText = data.atmStrike;
+            document.getElementById('bannerTotal').innerText = Number(data.bannerTotal).toFixed(2);
+
+            // CE & PE Tops & Splits
+            document.getElementById('ceCloseTop').innerText = Number(data.ce.close).toFixed(2);
+            document.getElementById('peCloseTop').innerText = Number(data.pe.close).toFixed(2);
+
+            document.getElementById('ceStrikeDisplay').innerText = data.atmStrike;
+            document.getElementById('peStrikeDisplay').innerText = data.atmStrike;
+
+            document.getElementById('ceHigh').innerText = Number(data.ce.high).toFixed(1);
+            document.getElementById('ceClose').innerText = Number(data.ce.close).toFixed(1);
+            document.getElementById('ceLow').innerText = Number(data.ce.low).toFixed(1);
+
+            document.getElementById('peHigh').innerText = Number(data.pe.high).toFixed(1);
+            document.getElementById('peClose').innerText = Number(data.pe.close).toFixed(1);
+            document.getElementById('peLow').innerText = Number(data.pe.low).toFixed(1);
+
+            // Differences
+            const ceHC = (data.ce.high - data.ce.close).toFixed(1);
+            const ceCL = (data.ce.close - data.ce.low).toFixed(1);
+            const peHC = (data.pe.high - data.pe.close).toFixed(1);
+            const peCL = (data.pe.close - data.pe.low).toFixed(1);
+
+            document.getElementById('ceHC').innerText = ceHC;
+            document.getElementById('ceCL').innerText = ceCL;
+            document.getElementById('peHC').innerText = peHC;
+            document.getElementById('peCL').innerText = peCL;
+
+            // Supply & Demand
+            document.getElementById('minSupply').innerText = Number(data.minSupply).toFixed(2);
+            document.getElementById('minDemand').innerText = Number(data.minDemand).toFixed(2);
+            document.getElementById('maxSupply').innerText = Number(data.maxSupply).toFixed(2);
+            document.getElementById('maxDemand').innerText = Number(data.maxDemand).toFixed(2);
+
+            // Weekly & Monthly Zones
+            document.getElementById('wzSupply').innerHTML = `${Number(data.wzSupply1).toFixed(2)}<br>${Number(data.wzSupply2).toFixed(2)}`;
+            document.getElementById('wzDemand').innerHTML = `${Number(data.wzDemand1).toFixed(2)}<br>${Number(data.wzDemand2).toFixed(2)}`;
+            document.getElementById('mzSupply').innerHTML = `${Number(data.mzSupply1).toFixed(2)}<br>${Number(data.mzSupply2).toFixed(2)}`;
+            document.getElementById('mzDemand').innerHTML = `${Number(data.mzDemand1).toFixed(2)}<br>${Number(data.mzDemand2).toFixed(2)}`;
+
+            // Sniper 1
+            document.getElementById('s1Strike').innerText = data.sniper1.strike;
+            document.getElementById('s1OtmCeStrike').innerText = data.sniper1.otmCeStrike;
+            document.getElementById('s1OtmCe').innerText = Number(data.sniper1.otmCe).toFixed(2);
+            document.getElementById('s1OtmPeStrike').innerText = data.sniper1.otmPeStrike;
+            document.getElementById('s1OtmPe').innerText = Number(data.sniper1.otmPe).toFixed(2);
+            document.getElementById('s1Val').innerText = Number(data.sniper1.val).toFixed(2);
+
+            // Sniper 2
+            document.getElementById('s2Strike').innerText = data.sniper2.strike;
+            document.getElementById('s2OtmCeStrike').innerText = data.sniper2.otmCeStrike;
+            document.getElementById('s2OtmCe').innerText = Number(data.sniper2.otmCe).toFixed(2);
+            document.getElementById('s2OtmPeStrike').innerText = data.sniper2.otmPeStrike;
+            document.getElementById('s2OtmPe').innerText = Number(data.sniper2.otmPe).toFixed(2);
+            document.getElementById('s2Val').innerText = Number(data.sniper2.val).toFixed(2);
+
+            // Earth
+            document.getElementById('earthVal').innerText = Number(data.earthVal).toFixed(2);
+
+        } catch (error) {
+            console.error("Error loading dashboard data:", error);
+        }
+    }
+
+    loadDashboardData();
+</script>
+
 </body>
 </html>
