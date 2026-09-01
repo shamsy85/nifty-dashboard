@@ -35,21 +35,21 @@ def generate_automated_token():
         "Content-Type": "application/json"
     })
 
-    # 2. Send Login OTP
-    r1 = s.post("https://api-t1.fyers.in/vagator/v2/send_login_otp_v2", json={"fy_id": fy_id, "app_id": "2"})
+    # 2. Send Login OTP (Using api-t2 domain)
+    r1 = s.post("https://api-t2.fyers.in/vagator/v2/send_login_otp_v2", json={"fy_id": fy_id, "app_id": "2"})
     if r1.status_code != 200:
         raise Exception(f"Failed to send OTP (Status {r1.status_code}): {r1.text}")
     request_key = r1.json().get("request_key")
 
     # 3. Verify TOTP
     totp_code = pyotp.TOTP(totp_key).now()
-    r2 = s.post("https://api-t1.fyers.in/vagator/v2/verify_otp", json={"request_key": request_key, "otp": totp_code})
+    r2 = s.post("https://api-t2.fyers.in/vagator/v2/verify_otp", json={"request_key": request_key, "otp": totp_code})
     if r2.status_code != 200:
         raise Exception(f"Failed to verify TOTP: {r2.text}")
     request_key_2 = r2.json().get("request_key")
 
     # 4. Verify PIN
-    r3 = s.post("https://api-t1.fyers.in/vagator/v2/verify_pin_v2", json={"request_key": request_key_2, "identity_type": "pin", "identifier": pin})
+    r3 = s.post("https://api-t2.fyers.in/vagator/v2/verify_pin_v2", json={"request_key": request_key_2, "identity_type": "pin", "identifier": pin})
     if r3.status_code != 200:
         raise Exception(f"Failed to verify PIN: {r3.text}")
     access_token_base = r3.json().get("data", {}).get("access_token")
