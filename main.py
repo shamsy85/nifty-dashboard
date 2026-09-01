@@ -8,12 +8,11 @@ from urllib.parse import urlparse, parse_qsl
 from fyers_apiv3 import fyersModel
 
 def generate_automated_token():
-    # Pull credentials from GitHub repository secrets
     client_id = os.environ.get("SKZODRJWMB-200")
     secret_key = os.environ.get("Qu61IAGCiTVURBjz")
     pin = os.environ.get("1997")
     totp_key = os.environ.get("2SGUPUQAPLCQ72R2SD7PV3SOB33ZKUXF")
-    fy_id = "XM25300"  # User ID remains hardcoded or can be a secret
+    fy_id = "XM25300"
 
     if not all([client_id, secret_key, pin, totp_key]):
         raise Exception("One or more Fyers GitHub secrets are missing from the environment variables.")
@@ -85,8 +84,7 @@ def generate_automated_token():
     }
     r4 = s.post("https://api.fyers.in/api/v2/token", json=payload, headers=headers)
     if r4.status_code != 200:
-        # Fallback mechanism if token endpoint blocks automated requests: instruct to use direct access token secret if needed
-        raise Exception(f"Failed to fetch authorization code (Code -96 / Error): {r4.text}. Consider using a pre-generated FYERS_ACCESS_TOKEN secret.")
+        raise Exception(f"Failed to fetch authorization code: {r4.text}")
     
     response_data = r4.json()
     if "Url" not in response_data:
