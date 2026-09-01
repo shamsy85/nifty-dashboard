@@ -8,10 +8,10 @@ from urllib.parse import urlparse, parse_qsl
 from fyers_apiv3 import fyersModel
 
 def generate_automated_token():
-    client_id = os.environ.get("SKZODRJWMB-200")
-    secret_key = os.environ.get("Qu61IAGCiTVURBjz")
-    pin = os.environ.get("1997")
-    totp_key = os.environ.get("2SGUPUQAPLCQ72R2SD7PV3SOB33ZKUXF")
+    client_id = os.environ.get("FYERS_CLIENT_ID")
+    secret_key = os.environ.get("FYERS_SECRET_KEY")
+    pin = os.environ.get("FYERS_PIN")
+    totp_key = os.environ.get("FYERS_TOTP_KEY")
     fy_id = "XM25300"
 
     if not all([client_id, secret_key, pin, totp_key]):
