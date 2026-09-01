@@ -33,10 +33,12 @@ def generate_automated_token():
     s.headers.update({
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Origin": "https://trade.fyers.in",
+        "Referer": "https://trade.fyers.in/"
     })
 
-    # 2. Send Login OTP (fy_id must be Base64 encoded)
+    # 2. Send Login OTP
     encoded_fy_id = base64.b64encode(fy_id.encode()).decode()
     r1 = s.post("https://api-t2.fyers.in/vagator/v2/send_login_otp_v2", json={"fy_id": encoded_fy_id, "app_id": "2"})
     if r1.status_code != 200:
@@ -50,7 +52,7 @@ def generate_automated_token():
         raise Exception(f"Failed to verify TOTP: {r2.text}")
     request_key_2 = r2.json().get("request_key")
 
-    # 4. Verify PIN (pin/identifier must also be Base64 encoded)
+    # 4. Verify PIN
     encoded_pin = base64.b64encode(pin.encode()).decode()
     r3 = s.post("https://api-t2.fyers.in/vagator/v2/verify_pin_v2", json={"request_key": request_key_2, "identity_type": "pin", "identifier": encoded_pin})
     if r3.status_code != 200:
@@ -58,7 +60,13 @@ def generate_automated_token():
     access_token_base = r3.json().get("data", {}).get("access_token")
 
     # 5. Get Auth Code via API token exchange
-    headers = {"authorization": f"Bearer {access_token_base}", "content-type": "application/json"}
+    headers = {
+        "authorization": f"Bearer {access_token_base}", 
+        "content-type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Origin": "https://trade.fyers.in",
+        "Referer": "https://trade.fyers.in/"
+    }
     payload = {
         "fyers_id": fy_id,
         "app_id": app_id_hash,
@@ -68,13 +76,18 @@ def generate_automated_token():
         "state": "None",
         "scope": "",
         "nonce": "",
-        "response_type": "code"
+        "response_type": "code",
+        "create_cookie": True
     }
     r4 = s.post("https://api.fyers.in/api/v2/token", json=payload, headers=headers)
     if r4.status_code != 200:
         raise Exception(f"Failed to fetch authorization code: {r4.text}")
     
-    auth_code = r4.json().get("Url").split("auth_code=")[1].split("&")[0]
+    response_data = r4.json()
+    if "Url" not in response_data:
+        raise Exception(f"Token exchange response missing Url: {response_data}")
+        
+    auth_code = response_data.get("Url").split("auth_code=")[1].split("&")[0]
 
     # 6. Generate Final Access Token
     session.set_token(auth_code)
