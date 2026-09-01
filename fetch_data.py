@@ -4,16 +4,17 @@ import pandas as pd
 import yfinance as yf
 
 
-def get_upcoming_expiry():
-    """Calculates the upcoming Thursday expiry date for NIFTY options."""
+def get_current_expiry():
+    """Calculates the current/upcoming Tuesday expiry date for NIFTY options."""
     today = datetime.now()
-    # Thursday is weekday index 3 (Monday is 0)
-    days_until_thursday = (3 - today.weekday()) % 7
-    # If today is Thursday after market hours, target next week's Thursday
-    if days_until_thursday == 0 and today.hour >= 16:
-        days_until_thursday = 7
+    # Tuesday is weekday index 1 (Monday is 0, Tuesday is 1)
+    days_until_tuesday = (1 - today.weekday()) % 7
 
-    expiry_date = today + timedelta(days=days_until_thursday)
+    # If today is Tuesday after market close (after 4 PM), target next Tuesday's expiry
+    if days_until_tuesday == 0 and today.hour >= 16:
+        days_until_tuesday = 7
+
+    expiry_date = today + timedelta(days=days_until_tuesday)
     return expiry_date.strftime("%d-%b-%Y").upper()
 
 
@@ -32,9 +33,9 @@ def fetch_nifty_data():
     # 2. Dynamic ATM Strike Calculation (Rounded to nearest 50)
     atm_strike = int(round(spot_close / 50.0) * 50)
 
-    # 3. Dynamic Date Formats
+    # 3. Dynamic Date Formats (Tuesday Expiry)
     current_date_str = datetime.now().strftime("%d-%b-%Y").upper()
-    expiry_date_str = get_upcoming_expiry()
+    expiry_date_str = get_current_expiry()
 
     # Note: Replace dummy option price values below with your option API data source
     ce_data = {"high": 145.20, "close": 110.50, "low": 85.00}
