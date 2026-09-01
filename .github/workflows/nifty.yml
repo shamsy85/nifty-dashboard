@@ -1,17 +1,15 @@
-name: Run FYERS Data Fetch
+name: Update Nifty Dashboard Data
 
 on:
   schedule:
-    - cron: '30 11 * * *' # Runs daily at 5:00 PM IST
-    - cron: '30 12 * * *' # Runs daily at 6:00 PM IST
-  workflow_dispatch:
+    - cron: '30 11 * * *'  # Runs daily at 5:00 PM IST (11:30 UTC)
+    - cron: '30 12 * * *'  # Runs daily at 6:00 PM IST (12:30 UTC)
+  workflow_dispatch:        # Allows manual trigger from GitHub UI
 
 jobs:
-  fetch-data:
+  update-data:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-  
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -23,19 +21,21 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install requests fyers-apiv3
+        python -m pip install --upgrade pip
+        pip install requests fyers-apiv3 pyotp
 
-    - name: Run data fetching script
+    - name: Run market data script
       env:
-        FYERS_ACCESS_TOKEN: ${{ secrets.FYERS_ACCESS_TOKEN }}
-        FYERS_CLIENT_ID: ${{ secrets.FYERS_CLIENT_ID }}
+        FYERS_CLIENT_ID: "SKZODRJWMB-200"
+        FYERS_SECRET_KEY: "Qu61IAGCiTVURBjz"
+        FYERS_PIN: "1997"
+        FYERS_TOTP_KEY: "WRUOITZF6ROJOTIQVDQCE3ZLLGIMIRMH"
       run: |
         python main.py
 
-    - name: Commit and push updated data.json
+    - name: Commit and push changes if data.json updated
       run: |
-        git config --global user.name "GitHub Actions Bot"
-        git config --global user.email "actions@github.com"
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add data.json
-        git commit -m "Automated Post-Market Data Update [skip ci]" || echo "No changes to commit"
-        git push
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update Nifty dashboard data [skip ci]" && git push)
