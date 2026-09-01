@@ -25,10 +25,10 @@ jobs:
 
       - name: Run market data script
         env:
-          FYERS_CLIENT_ID: "SKZODRJWMB-200"
-          FYERS_SECRET_KEY: "Qu61IAGCiTVURBjz"
-          FYERS_PIN: "1997"
-          FYERS_TOTP_KEY: "2SGUPUQAPLCQ72R2SD7PV3SOB33ZKUXF"
+          FYERS_CLIENT_ID: SKZODRJWMB-200
+          FYERS_SECRET_KEY: Qu61IAGCiTVURBjz
+          FYERS_PIN: 1997
+          FYERS_TOTP_KEY: 2SGUPUQAPLCQ72R2SD7PV3SOB33ZKUXF
         run: python main.py
 
       - name: Commit and push changes if data.json updated
