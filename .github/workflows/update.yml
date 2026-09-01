@@ -1,4 +1,4 @@
-name: Update NIFTY Dashboard
+name: Update Nifty Dashboard Data
 
 on:
   schedule:
@@ -25,9 +25,10 @@ jobs:
       - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
-          pip install requests pandas
+          pip install -r requirements.txt
 
       - name: Run update script
+        continue-on-error: true
         run: python update.py
 
       - name: Commit and push updated data
