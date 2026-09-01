@@ -13,12 +13,10 @@ def fetch_nse_data():
         "Referer": "https://www.nseindia.com/option-chain",
     }
 
-    # Step 1: Hit main site to obtain valid cookies
     print("Obtaining NSE session cookies...")
     session.get("https://www.nseindia.com", headers=headers, timeout=15)
     time.sleep(2)
 
-    # Step 2: Fetch Option Chain API
     url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
     print("Requesting Option Chain data...")
     res = session.get(url, headers=headers, timeout=15)
@@ -39,20 +37,27 @@ def process_data():
         current_expiry = expiries[0] if expiries else "--"
         atm = int(round(spot / 50.0) * 50)
 
-        print(f"Fetched Spot: {spot} | ATM: {atm} | Expiry: {current_expiry}")
-
         def get_strike_row(strike):
             for item in data_list:
                 if item.get("expiryDate") == current_expiry and item.get("strikePrice") == strike:
                     ce = item.get("CE", {})
                     pe = item.get("PE", {})
+
+                    c_close = float(ce.get("lastPrice", 0))
+                    c_high = float(ce.get("highPrice", 0)) if float(ce.get("highPrice", 0)) > 0 else c_close
+                    c_low = float(ce.get("lowPrice", 0)) if float(ce.get("lowPrice", 0)) > 0 else c_close
+
+                    p_close = float(pe.get("lastPrice", 0))
+                    p_high = float(pe.get("highPrice", 0)) if float(pe.get("highPrice", 0)) > 0 else p_close
+                    p_low = float(pe.get("lowPrice", 0)) if float(pe.get("lowPrice", 0)) > 0 else p_close
+
                     return {
-                        "ce_high": float(ce.get("highPrice", 0)),
-                        "ce_close": float(ce.get("lastPrice", 0)),
-                        "ce_low": float(ce.get("lowPrice", 0)),
-                        "pe_high": float(pe.get("highPrice", 0)),
-                        "pe_close": float(pe.get("lastPrice", 0)),
-                        "pe_low": float(pe.get("lowPrice", 0)),
+                        "ce_high": round(c_high, 2),
+                        "ce_close": round(c_close, 2),
+                        "ce_low": round(c_low, 2),
+                        "pe_high": round(p_high, 2),
+                        "pe_close": round(p_close, 2),
+                        "pe_low": round(p_low, 2),
                     }
             return {"ce_high": 0, "ce_close": 0, "ce_low": 0, "pe_high": 0, "pe_close": 0, "pe_low": 0}
 
@@ -65,7 +70,7 @@ def process_data():
         output = {
             "currentDate": datetime.now().strftime("%d %b %Y").upper(),
             "expiryDate": str(current_expiry).upper(),
-            "spotPrice": spot,
+            "spotPrice": round(spot, 2),
             "atmStrike": atm,
             "ce": {
                 "high": atm_data["ce_high"],
@@ -106,31 +111,8 @@ def process_data():
         print("data.json generated successfully!")
 
     except Exception as e:
-        print(f"Primary fetch failed: {e}. Writing fallback payload...")
-        fallback_spot = 24055.80
-        fallback_atm = 24050
-        output = {
-            "currentDate": datetime.now().strftime("%d %b %Y").upper(),
-            "expiryDate": "ACTIVE",
-            "spotPrice": fallback_spot,
-            "atmStrike": fallback_atm,
-            "ce": {"high": 120.0, "close": 110.0, "low": 90.0},
-            "pe": {"high": 115.0, "close": 105.0, "low": 85.0},
-            "bannerTotal": 215.0,
-            "spotHigh": 24105.80,
-            "spotLow": 24005.80,
-            "sniper1": {
-                "strike": fallback_atm, "ce": 110.0, "pe": 105.0,
-                "otmCeStrike": 24100, "otmPeStrike": 24000, "otmCe": 80.0, "otmPe": 75.0
-            },
-            "sniper2": {
-                "strike": fallback_atm, "ce": 110.0, "pe": 105.0,
-                "otmCeStrike": 24150, "otmPeStrike": 23950, "otmCe": 55.0, "otmPe": 50.0
-            }
-        }
-        with open("data.json", "w") as f:
-            json.dump(output, f, indent=2)
-        print("Fallback data written to data.json successfully.")
+        print(f"Fetch failed: {e}")
+        raise e
 
 if __name__ == "__main__":
     process_data()
