@@ -1,530 +1,648 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post-Market Nifty Report</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-        body {
-            background-color: #0b0f17;
-            color: #f3f4f6;
-            padding: 16px;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 440px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        /* Top Bar */
-        .header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 2px;
-        }
-        .header-title {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            color: #38bdf8;
-        }
-        .header-spot {
-            font-size: 18px;
-            font-weight: 600;
-            color: #e5e7eb;
-        }
-        .header-exp {
-            background: #1e293b;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #94a3b8;
-            border: 1px solid #334155;
-        }
-        .header-exp span {
-            color: #f8fafc;
-            font-weight: 600;
-            margin-left: 4px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIFTY Options Dashboard - Bordered Neon</title>
+<style>
+  :root {
+    --bg-color: #05070a;
+    --card-bg: #0d131f;
+    --card-border: #2a3852;
+    --text-primary: #ffffff;
+    
+    /* Ultra-Bright Neon Palette */
+    --green-bright: #00ff66; 
+    --green-glow: rgba(0, 255, 102, 0.5);
+    --red-bright: #ff1e56;   
+    --red-glow: rgba(255, 30, 86, 0.5);
+    --cyan-accent: #00f0ff;  
+    --cyan-glow: rgba(0, 240, 255, 0.5);
+    --neutral-color: #ffe600; 
+    --neutral-glow: rgba(255, 230, 0, 0.5);
+  }
 
-        /* Main Card Container */
-        .card {
-            background: #131b2e;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            padding: 14px;
-            position: relative;
-        }
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    font-weight: 400;
+  }
 
-        /* Sub header card */
-        .sub-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .date-badge {
-            background: #1e293b;
-            color: #94a3b8;
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            border: 1px solid #334155;
-        }
-        .atm-display {
-            font-size: 22px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-        .atm-label {
-            font-size: 10px;
-            color: #94a3b8;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .top-right-metric {
-            text-align: right;
-        }
-        .tr-val {
-            font-size: 18px;
-            font-weight: 700;
-            color: #34d399;
-        }
-        .tr-sub {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
+  .dashboard {
+    width: 100%;
+    max-width: 480px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
-        /* Grid layouts */
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .grid-2-uneven {
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 10px;
-        }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 4px;
+  }
 
-        /* CE / PE Split Cards */
-        .split-card {
-            background: #172033;
-            border: 1px solid #223049;
-            border-radius: 10px;
-            padding: 12px;
-            position: relative;
-        }
-        .badge-tag {
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            padding: 2px 6px;
-            border-radius: 3px;
-            display: inline-block;
-            margin-bottom: 6px;
-        }
-        .badge-neutral { background: #334155; color: #cbd5e1; }
-        .badge-sellers { background: #7f1d1d; color: #fca5a5; }
+  .header-title {
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  }
 
-        .strike-hl-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-        .strike-main {
-            font-size: 18px;
-            font-weight: 700;
-        }
-        .hl-box {
-            font-size: 11px;
-            color: #94a3b8;
-            text-align: right;
-            line-height: 1.4;
-        }
-        .hl-box span { color: #f1f5f9; font-weight: 600; }
-        
-        .hc-row {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        .hc-row span b { color: #38bdf8; }
+  .header-price {
+    font-size: 17px;
+    color: #ffffff;
+    margin-left: 8px;
+    font-weight: 400;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  }
 
-        /* Metric Box (Supply / Demand) */
-        .metric-box {
-            background: #172033;
-            border: 1px solid #223049;
-            border-radius: 10px;
-            padding: 12px;
-        }
-        .metric-title {
-            font-size: 10px;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-        .metric-val {
-            font-size: 20px;
-            font-weight: 700;
-        }
-        .val-red { color: #f87171; }
-        .val-green { color: #34d399; }
+  .header-expiry {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--cyan-accent);
+    background-color: #091e36;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--cyan-accent);
+    box-shadow: 0 0 8px var(--cyan-glow);
+    text-shadow: 0 0 4px var(--cyan-glow);
+  }
 
-        /* Zone Box */
-        .zone-box {
-            background: #172033;
-            border: 1px solid #223049;
-            border-radius: 10px;
-            padding: 12px;
-        }
-        .zone-cols {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-        }
-        .zone-col-left { color: #f87171; }
-        .zone-col-right { color: #34d399; }
+  .top-banner {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-        /* Sniper Box */
-        .sniper-container {
-            background: #172033;
-            border: 1px solid #223049;
-            border-radius: 10px;
-            padding: 12px;
-        }
-        .sniper-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .sniper-tag {
-            font-size: 9px;
-            font-weight: 700;
-            background: #1e293b;
-            color: #38bdf8;
-            padding: 2px 6px;
-            border-radius: 3px;
-            border: 1px solid #334155;
-        }
-        .best-tag {
-            background: #064e3b;
-            color: #34d399;
-            border-color: #065f46;
-            margin-left: 6px;
-        }
-        .sniper-main-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-        .otm-row {
-            font-size: 12px;
-            color: #94a3b8;
-            display: flex;
-            gap: 12px;
-            margin-top: 4px;
-        }
-        .otm-row span { color: #e2e8f0; font-weight: 500; }
-        .sniper-right-val {
-            text-align: right;
-        }
-        .s-val {
-            font-size: 20px;
-            font-weight: 700;
-            color: #f8fafc;
-        }
-        .s-label {
-            font-size: 9px;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
+  .badge {
+    font-size: 10px;
+    font-weight: 400;
+    background-color: #1e293b;
+    color: #ffffff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 4px;
+    border: 1px solid #475569;
+  }
 
-        /* Earth Box */
-        .earth-box {
-            background: #172033;
-            border: 1px solid #223049;
-            border-radius: 10px;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .earth-label {
-            font-size: 11px;
-            color: #94a3b8;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .earth-val {
-            font-size: 18px;
-            font-weight: 700;
-            color: #f8fafc;
-        }
-    </style>
+  .banner-strike {
+    font-size: 20px;
+    font-weight: 400;
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  }
+
+  .banner-right {
+    text-align: right;
+  }
+
+  .banner-total {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--green-bright);
+    text-shadow: 0 0 8px var(--green-glow);
+  }
+
+  .banner-sub {
+    font-size: 12px;
+    color: #ffffff;
+    font-weight: 400;
+  }
+
+  .banner-sub span {
+    color: var(--cyan-accent);
+    text-shadow: 0 0 4px var(--cyan-glow);
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 12px;
+    position: relative;
+  }
+
+  .card-tag {
+    position: absolute;
+    top: -9px;
+    left: 10px;
+    font-size: 10px;
+    font-weight: 400;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .tag-neutral {
+    background-color: #332f00;
+    color: var(--neutral-color);
+    border: 1px solid var(--neutral-color);
+    box-shadow: 0 0 6px var(--neutral-glow);
+  }
+
+  .tag-sellers {
+    background-color: #4a0011;
+    color: var(--red-bright);
+    border: 1px solid var(--red-bright);
+    box-shadow: 0 0 6px var(--red-glow);
+  }
+
+  .card-title {
+    font-size: 11px;
+    color: var(--cyan-accent);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    text-shadow: 0 0 4px var(--cyan-glow);
+  }
+
+  .card-value {
+    font-size: 17px;
+    font-weight: 400;
+  }
+
+  .option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 4px;
+    margin-bottom: 10px;
+  }
+
+  .option-strike {
+    font-size: 20px;
+    font-weight: 400;
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  }
+
+  .option-type {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--cyan-accent);
+    text-shadow: 0 0 4px var(--cyan-glow);
+  }
+
+  .ohlc-layout {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+  }
+
+  .candle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 24px;
+    height: 60px;
+  }
+
+  .candle-svg {
+    width: 20px;
+    height: 60px;
+  }
+
+  .ohlc-data {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: #ffffff;
+    font-weight: 400;
+  }
+
+  .ohlc-close {
+    font-size: 15px;
+    font-weight: 400;
+  }
+
+  .ohlc-close.neutral { 
+    color: var(--neutral-color); 
+    text-shadow: 0 0 6px var(--neutral-glow);
+  }
+  .ohlc-close.red { 
+    color: var(--red-bright); 
+    text-shadow: 0 0 6px var(--red-glow);
+  }
+
+  .diff-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--card-border);
+    font-size: 11px;
+    font-weight: 400;
+  }
+
+  .diff-label { color: #ffffff; }
+  .diff-val-cyan { color: var(--cyan-accent); font-weight: 400; text-shadow: 0 0 4px var(--cyan-glow); }
+  .diff-val-red { color: var(--red-bright); font-weight: 400; text-shadow: 0 0 4px var(--red-glow); }
+
+  .val-supply { 
+    color: var(--red-bright); 
+    font-weight: 400; 
+    text-shadow: 0 0 8px var(--red-glow);
+  }
+  .val-demand { 
+    color: var(--green-bright); 
+    font-weight: 400; 
+    text-shadow: 0 0 8px var(--green-glow);
+  }
+
+  .sniper-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+  }
+
+  .sniper-badge {
+    position: absolute;
+    top: -9px;
+    left: 10px;
+    font-size: 10px;
+    font-weight: 400;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: #023819;
+    color: var(--green-bright);
+    border: 1px solid var(--green-bright);
+    box-shadow: 0 0 6px var(--green-glow);
+  }
+
+  .sniper-main-strike {
+    font-size: 17px;
+    font-weight: 400;
+    margin-top: 4px;
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  }
+
+  .sniper-leg {
+    font-size: 12px;
+    color: var(--cyan-accent);
+  }
+
+  .sniper-leg span {
+    color: #ffffff;
+    font-weight: 400;
+  }
+
+  .sniper-otm {
+    font-size: 11px;
+    color: #ffffff;
+    margin-top: 6px;
+    font-weight: 400;
+  }
+
+  .sniper-score {
+    text-align: right;
+  }
+
+  .sniper-score-val {
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--cyan-accent);
+    text-shadow: 0 0 8px var(--cyan-glow);
+  }
+
+  .sniper-score-label {
+    font-size: 10px;
+    color: var(--cyan-accent);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 4px var(--cyan-glow);
+  }
+
+  .footer-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--green-bright);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 400;
+    color: #ffffff;
+    box-shadow: 0 0 8px var(--green-glow);
+  }
+
+  .footer-val {
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--green-bright);
+    text-shadow: 0 0 8px var(--green-glow);
+  }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <!-- Top Bar -->
-    <div class="header-bar">
-        <div>
-            <div class="header-title">NIFTY</div>
-            <div class="header-spot" id="spotPrice">--</div>
+<div class="dashboard">
+
+  <div class="header">
+    <div>
+      <span class="header-title">NIFTY</span>
+      <span class="header-price" id="spotPriceHeader">--</span>
+    </div>
+    <div class="header-expiry" id="expiryHeader">EXP --</div>
+  </div>
+
+  <div class="top-banner">
+    <div>
+      <div class="badge" id="dateBadge">--</div>
+      <div><span class="badge" style="background:none; border:none; padding:0; color: var(--cyan-accent); text-shadow: 0 0 4px var(--cyan-glow);">ATM</span> <span class="banner-strike" id="bannerAtm">--</span></div>
+    </div>
+    <div class="banner-right">
+      <div class="banner-total" id="bannerTotal">--</div>
+      <div class="banner-sub">CE <span id="bannerCe">--</span> &bull; PE <span id="bannerPe">--</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card" style="margin-top: 6px;">
+      <div class="card-tag" id="ceTag">--</div>
+      <div class="option-header">
+        <span class="option-strike" id="ceStrike">--</span>
+        <span class="option-type">CE</span>
+      </div>
+      <div class="ohlc-layout">
+        <div class="candle-container">
+          <svg class="candle-svg" viewBox="0 0 20 60">
+            <line x1="10" y1="5" x2="10" y2="55" stroke="var(--neutral-color)" stroke-width="2.5"/>
+            <rect x="5" y="28" width="10" height="4" fill="var(--neutral-color)" rx="1"/>
+          </svg>
         </div>
-        <div class="header-exp">
-            EXP <span id="expiryDate">--</span>
+        <div class="ohlc-data">
+          <div>H <span id="ceHigh">--</span></div>
+          <div class="ohlc-close neutral">C <span id="ceClose">--</span></div>
+          <div>L <span id="ceLow">--</span></div>
         </div>
+      </div>
+      <div class="diff-row">
+        <span class="diff-label">H-C <span class="diff-val-cyan" id="ceHc">--</span></span>
+        <span class="diff-label">C-L <span class="diff-val-red" id="ceCl">--</span></span>
+      </div>
     </div>
 
-    <!-- Main Card with ATM & CE/PE Splits -->
+    <div class="card" style="margin-top: 6px;">
+      <div class="card-tag" id="peTag">--</div>
+      <div class="option-header">
+        <span class="option-strike" id="peStrike">--</span>
+        <span class="option-type">PE</span>
+      </div>
+      <div class="ohlc-layout">
+        <div class="candle-container">
+          <svg class="candle-svg" viewBox="0 0 20 60">
+            <line x1="10" y1="5" x2="10" y2="55" stroke="var(--red-bright)" stroke-width="2.5"/>
+            <rect x="4" y="16" width="12" height="26" fill="var(--red-bright)" rx="1"/>
+          </svg>
+        </div>
+        <div class="ohlc-data">
+          <div>H <span id="peHigh">--</span></div>
+          <div class="ohlc-close red">C <span id="peClose">--</span></div>
+          <div>L <span id="peLow">--</span></div>
+        </div>
+      </div>
+      <div class="diff-row">
+        <span class="diff-label">H-C <span class="diff-val-cyan" id="peHc">--</span></span>
+        <span class="diff-label">C-L <span class="diff-val-red" id="peCl">--</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
     <div class="card">
-        <div class="sub-header-row">
-            <div>
-                <span class="date-badge" id="currentDate">--</span>
-                <div style="margin-top: 6px;">
-                    <div class="atm-label">ATM</div>
-                    <div class="atm-display" id="atmStrike">--</div>
-                </div>
-            </div>
-            <div class="top-right-metric">
-                <div class="tr-val" id="bannerTotal">--</div>
-                <div class="tr-sub">
-                    CE <span id="ceCloseTop">--</span> • PE <span id="peCloseTop">--</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid-2" style="margin-top: 12px;">
-            <!-- CE Split Card -->
-            <div class="split-card">
-                <div class="badge-tag badge-neutral">Neutral</div>
-                <div class="strike-hl-row">
-                    <div class="strike-main"><span id="ceStrikeDisplay">--</span> <span style="font-size: 12px; color: #94a3b8;">CE</span></div>
-                    <div class="hl-box">
-                        H <span id="ceHigh">--</span><br>
-                        C <span id="ceClose">--</span><br>
-                        L <span id="ceLow">--</span>
-                    </div>
-                </div>
-                <div class="hc-row">
-                    <div>H-C <b id="ceHC">--</b></div>
-                    <div>C-L <b id="ceCL">--</b></div>
-                </div>
-            </div>
-
-            <!-- PE Split Card -->
-            <div class="split-card">
-                <div class="badge-tag badge-sellers">Sellers</div>
-                <div class="strike-hl-row">
-                    <div class="strike-main"><span id="peStrikeDisplay">--</span> <span style="font-size: 12px; color: #94a3b8;">PE</span></div>
-                    <div class="hl-box" style="color: #f87171;">
-                        H <span id="peHigh" style="color:#f87171;">--</span><br>
-                        C <span id="peClose" style="color:#f87171;">--</span><br>
-                        L <span id="peLow" style="color:#f87171;">--</span>
-                    </div>
-                </div>
-                <div class="hc-row">
-                    <div>H-C <b id="peHC" style="color:#f87171;">--</b></div>
-                    <div>C-L <b id="peCL" style="color:#f87171;">--</b></div>
-                </div>
-            </div>
-        </div>
+      <div class="card-title">MINIMUM SUPPLY</div>
+      <div class="card-value val-supply" id="minSupply">0.00</div>
     </div>
-
-    <!-- Supply & Demand Grid -->
-    <div class="grid-2">
-        <div class="metric-box">
-            <div class="metric-title">Minimum Supply</div>
-            <div class="metric-val val-red" id="minSupply">--</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-title">Minimum Demand</div>
-            <div class="metric-val val-green" id="minDemand">--</div>
-        </div>
+    <div class="card">
+      <div class="card-title">MINIMUM DEMAND</div>
+      <div class="card-value val-demand" id="minDemand">0.00</div>
     </div>
+  </div>
 
-    <div class="grid-2">
-        <div class="metric-box">
-            <div class="metric-title">Maximum Supply</div>
-            <div class="metric-val val-red" id="maxSupply">--</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-title">Maximum Demand</div>
-            <div class="metric-val val-green" id="maxDemand">--</div>
-        </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">MAXIMUM SUPPLY</div>
+      <div class="card-value val-supply" id="maxSupply">0.00</div>
     </div>
+    <div class="card">
+      <div class="card-title">MAXIMUM DEMAND</div>
+      <div class="card-value val-demand" id="maxDemand">0.00</div>
+    </div>
+  </div>
 
-    <!-- Zones Grid -->
-    <div class="grid-2">
-        <div class="zone-box">
-            <div class="metric-title">Weekly Zone</div>
-            <div class="zone-cols">
-                <div class="zone-col-left" id="wzSupply">--<br>--</div>
-                <div class="zone-col-right" id="wzDemand">--<br>--</div>
-            </div>
-        </div>
-        <div class="zone-box">
-            <div class="metric-title">Monthly Zone</div>
-            <div class="zone-cols">
-                <div class="zone-col-left" id="mzSupply">--<br>--</div>
-                <div class="zone-col-right" id="mzDemand">--<br>--</div>
-            </div>
-        </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" style="text-align: center;">WEEKLY ZONE</div>
+      <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+        <span class="val-supply" style="font-size: 14px;" id="wkSup1">0.00</span>
+        <span class="val-demand" style="font-size: 14px;" id="wkDem1">0.00</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+        <span class="val-supply" style="font-size: 14px;" id="wkSup2">0.00</span>
+        <span class="val-demand" style="font-size: 14px;" id="wkDem2">0.00</span>
+      </div>
     </div>
+    <div class="card">
+      <div class="card-title" style="text-align: center;">MONTHLY ZONE</div>
+      <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+        <span class="val-supply" style="font-size: 14px;" id="mthSup1">0.00</span>
+        <span class="val-demand" style="font-size: 14px;" id="mthDem1">0.00</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+        <span class="val-supply" style="font-size: 14px;" id="mthSup2">0.00</span>
+        <span class="val-demand" style="font-size: 14px;" id="mthDem2">0.00</span>
+      </div>
+    </div>
+  </div>
 
-    <!-- Sniper ATM 1 -->
-    <div class="sniper-container">
-        <div class="sniper-header">
-            <div>
-                <span class="sniper-tag">Sniper ATM</span>
-                <span class="sniper-tag best-tag">best</span>
-            </div>
-        </div>
-        <div class="sniper-main-row">
-            <div>
-                <div style="font-size: 18px; font-weight: 700;" id="s1Strike">--</div>
-                <div class="otm-row">
-                    <div>OTM <span id="s1OtmCeStrike">--</span> CE <span id="s1OtmCe">--</span></div>
-                    <div>|</div>
-                    <div><span id="s1OtmPeStrike">--</span> PE <span id="s1OtmPe">--</span></div>
-                </div>
-            </div>
-            <div class="sniper-right-val">
-                <div class="s-val" id="s1Val">--</div>
-                <div class="s-label">Sniper</div>
-            </div>
-        </div>
+  <div class="sniper-card" style="margin-top: 6px;">
+    <div class="sniper-badge">SNIPER ATM <span style="color: #fff; font-weight: 400;">best</span></div>
+    <div>
+      <div class="sniper-main-strike">
+        <span id="snipStrike1">--</span> &nbsp;
+        <span class="sniper-leg">CE <span id="snipCe1">--</span></span> &nbsp;&bull;&nbsp;
+        <span class="sniper-leg">PE <span id="snipPe1">--</span></span>
+      </div>
+      <div class="sniper-otm">
+        <span>OTM</span><br>
+        <span id="snipOtmCeStrike1">--</span> &nbsp;<span style="color: var(--cyan-accent); text-shadow: 0 0 4px var(--cyan-glow);">CE</span> <span id="snipOtmCe1">--</span> &nbsp;|&nbsp; 
+        <span id="snipOtmPeStrike1">--</span> &nbsp;<span style="color: var(--cyan-accent); text-shadow: 0 0 4px var(--cyan-glow);">PE</span> <span id="snipOtmPe1">--</span>
+      </div>
     </div>
+    <div class="sniper-score">
+      <div class="sniper-score-val" id="sniperScore1">0.00</div>
+      <div class="sniper-score-label">SNIPER</div>
+    </div>
+  </div>
 
-    <!-- Sniper ATM 2 -->
-    <div class="sniper-container">
-        <div class="sniper-header">
-            <div>
-                <span class="sniper-tag">Sniper ATM</span>
-            </div>
-        </div>
-        <div class="sniper-main-row">
-            <div>
-                <div style="font-size: 18px; font-weight: 700;" id="s2Strike">--</div>
-                <div class="otm-row">
-                    <div>OTM <span id="s2OtmCeStrike">--</span> CE <span id="s2OtmCe">--</span></div>
-                    <div>|</div>
-                    <div><span id="s2OtmPeStrike">--</span> PE <span id="s2OtmPe">--</span></div>
-                </div>
-            </div>
-            <div class="sniper-right-val">
-                <div class="s-val" id="s2Val">--</div>
-                <div class="s-label">Sniper</div>
-            </div>
-        </div>
+  <div class="sniper-card" style="margin-top: 6px;">
+    <div class="sniper-badge" style="background-color: #1e293b; color: #ffffff; border: 1px solid #475569; box-shadow: none;">SNIPER ATM</div>
+    <div>
+      <div class="sniper-main-strike">
+        <span id="snipStrike2">--</span> &nbsp;
+        <span class="sniper-leg">CE <span id="snipCe2">--</span></span> &nbsp;&bull;&nbsp;
+        <span class="sniper-leg">PE <span id="snipPe2">--</span></span>
+      </div>
+      <div class="sniper-otm">
+        <span>OTM</span><br>
+        <span id="snipOtmCeStrike2">--</span> &nbsp;<span style="color: var(--cyan-accent); text-shadow: 0 0 4px var(--cyan-glow);">CE</span> <span id="snipOtmCe2">--</span> &nbsp;|&nbsp; 
+        <span id="snipOtmPeStrike2">--</span> &nbsp;<span style="color: var(--cyan-accent); text-shadow: 0 0 4px var(--cyan-glow);">PE</span> <span id="snipOtmPe2">--</span>
+      </div>
     </div>
+    <div class="sniper-score">
+      <div class="sniper-score-val" id="sniperScore2">0.00</div>
+      <div class="sniper-score-label">SNIPER</div>
+    </div>
+  </div>
 
-    <!-- Earth Box -->
-    <div class="earth-box">
-        <div class="earth-label">🌐 Earth</div>
-        <div class="earth-val" id="earthVal">--</div>
-    </div>
+  <div class="footer-card">
+    <div>&#127757; EARTH</div>
+    <div class="footer-val" id="earthVal">0.00</div>
+  </div>
+
 </div>
 
 <script>
-    async function loadDashboardData() {
-        try {
-            const response = await fetch('data.json');
-            if (!response.ok) throw new Error('Failed to load data.json');
-            const data = await response.json();
+  const formatNum = num => num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-            // Header info
-            document.getElementById('spotPrice').innerText = Number(data.spotPrice).toFixed(2);
-            document.getElementById('expiryDate').innerText = data.expiryDate;
-            document.getElementById('currentDate').innerText = data.currentDate;
-            document.getElementById('atmStrike').innerText = data.atmStrike;
-            document.getElementById('bannerTotal').innerText = Number(data.bannerTotal).toFixed(2);
+  function getTag(high, close, low) {
+    const range = high - low;
+    if (!range) return { text: "NEUTRAL", class: "tag-neutral" };
+    const ratio = (close - low) / range;
+    return ratio <= 0.35 
+      ? { text: "SELLERS", class: "tag-sellers" } 
+      : { text: "NEUTRAL", class: "tag-neutral" };
+  }
 
-            // CE & PE Tops & Splits
-            document.getElementById('ceCloseTop').innerText = Number(data.ce.close).toFixed(2);
-            document.getElementById('peCloseTop').innerText = Number(data.pe.close).toFixed(2);
+  function applyTag(elementId, tagInfo) {
+    const el = document.getElementById(elementId);
+    el.textContent = tagInfo.text;
+    el.className = `card-tag ${tagInfo.class}`;
+  }
 
-            document.getElementById('ceStrikeDisplay').innerText = data.atmStrike;
-            document.getElementById('peStrikeDisplay').innerText = data.atmStrike;
+  function calculateSniperScore(ce, pe, otmCe, otmPe, offset) {
+    return (Math.abs(ce - pe) / 2) + Math.abs(otmCe - otmPe) + offset;
+  }
 
-            document.getElementById('ceHigh').innerText = Number(data.ce.high).toFixed(1);
-            document.getElementById('ceClose').innerText = Number(data.ce.close).toFixed(1);
-            document.getElementById('ceLow').innerText = Number(data.ce.low).toFixed(1);
+  async function loadData() {
+    try {
+      const response = await fetch('data.json');
+      const data = await response.json();
 
-            document.getElementById('peHigh').innerText = Number(data.pe.high).toFixed(1);
-            document.getElementById('peClose').innerText = Number(data.pe.close).toFixed(1);
-            document.getElementById('peLow').innerText = Number(data.pe.low).toFixed(1);
+      document.getElementById('spotPriceHeader').textContent = formatNum(data.spotPrice);
+      document.getElementById('expiryHeader').textContent = `EXP  ${data.expiryDate}`;
+      document.getElementById('dateBadge').textContent = data.currentDate;
 
-            // Differences
-            const ceHC = (data.ce.high - data.ce.close).toFixed(1);
-            const ceCL = (data.ce.close - data.ce.low).toFixed(1);
-            const peHC = (data.pe.high - data.pe.close).toFixed(1);
-            const peCL = (data.pe.close - data.pe.low).toFixed(1);
+      document.getElementById('bannerAtm').textContent = data.atmStrike;
+      document.getElementById('bannerTotal').textContent = formatNum(data.bannerTotal);
+      document.getElementById('bannerCe').textContent = formatNum(data.ce.close);
+      document.getElementById('bannerPe').textContent = formatNum(data.pe.close);
 
-            document.getElementById('ceHC').innerText = ceHC;
-            document.getElementById('ceCL').innerText = ceCL;
-            document.getElementById('peHC').innerText = peHC;
-            document.getElementById('peCL').innerText = peCL;
+      // CE Card
+      document.getElementById('ceStrike').textContent = data.atmStrike;
+      document.getElementById('ceHigh').textContent = formatNum(data.ce.high);
+      document.getElementById('ceClose').textContent = formatNum(data.ce.close);
+      document.getElementById('ceLow').textContent = formatNum(data.ce.low);
+      document.getElementById('ceHc').textContent = formatNum(data.ce.high - data.ce.close);
+      document.getElementById('ceCl').textContent = formatNum(data.ce.close - data.ce.low);
+      applyTag('ceTag', getTag(data.ce.high, data.ce.close, data.ce.low));
 
-            // Supply & Demand
-            document.getElementById('minSupply').innerText = Number(data.minSupply).toFixed(2);
-            document.getElementById('minDemand').innerText = Number(data.minDemand).toFixed(2);
-            document.getElementById('maxSupply').innerText = Number(data.maxSupply).toFixed(2);
-            document.getElementById('maxDemand').innerText = Number(data.maxDemand).toFixed(2);
+      // PE Card
+      document.getElementById('peStrike').textContent = data.atmStrike;
+      document.getElementById('peHigh').textContent = formatNum(data.pe.high);
+      document.getElementById('peClose').textContent = formatNum(data.pe.close);
+      document.getElementById('peLow').textContent = formatNum(data.pe.low);
+      document.getElementById('peHc').textContent = formatNum(data.pe.high - data.pe.close);
+      document.getElementById('peCl').textContent = formatNum(data.pe.close - data.pe.low);
+      applyTag('peTag', getTag(data.pe.high, data.pe.close, data.pe.low));
 
-            // Weekly & Monthly Zones
-            document.getElementById('wzSupply').innerHTML = `${Number(data.wzSupply1).toFixed(2)}<br>${Number(data.wzSupply2).toFixed(2)}`;
-            document.getElementById('wzDemand').innerHTML = `${Number(data.wzDemand1).toFixed(2)}<br>${Number(data.wzDemand2).toFixed(2)}`;
-            document.getElementById('mzSupply').innerHTML = `${Number(data.mzSupply1).toFixed(2)}<br>${Number(data.mzSupply2).toFixed(2)}`;
-            document.getElementById('mzDemand').innerHTML = `${Number(data.mzDemand1).toFixed(2)}<br>${Number(data.mzDemand2).toFixed(2)}`;
+      // Supply / Demand
+      const straddle = data.ce.close + data.pe.close;
+      document.getElementById('minSupply').textContent = formatNum(data.atmStrike + data.ce.close);
+      document.getElementById('minDemand').textContent = formatNum(data.atmStrike - data.pe.close);
+      document.getElementById('maxSupply').textContent = formatNum(data.atmStrike + straddle);
+      document.getElementById('maxDemand').textContent = formatNum(data.atmStrike - straddle);
 
-            // Sniper 1
-            document.getElementById('s1Strike').innerText = data.sniper1.strike;
-            document.getElementById('s1OtmCeStrike').innerText = data.sniper1.otmCeStrike;
-            document.getElementById('s1OtmCe').innerText = Number(data.sniper1.otmCe).toFixed(2);
-            document.getElementById('s1OtmPeStrike').innerText = data.sniper1.otmPeStrike;
-            document.getElementById('s1OtmPe').innerText = Number(data.sniper1.otmPe).toFixed(2);
-            document.getElementById('s1Val').innerText = Number(data.sniper1.val).toFixed(2);
+      // Zones
+      document.getElementById('wkSup1').textContent = formatNum(data.spotPrice + 275.00);
+      document.getElementById('wkDem1').textContent = formatNum(data.spotPrice - 226.30);
+      document.getElementById('wkSup2').textContent = formatNum(data.spotPrice + 343.85);
+      document.getElementById('wkDem2').textContent = formatNum(data.spotPrice - 95.15);
 
-            // Sniper 2
-            document.getElementById('s2Strike').innerText = data.sniper2.strike;
-            document.getElementById('s2OtmCeStrike').innerText = data.sniper2.otmCeStrike;
-            document.getElementById('s2OtmCe').innerText = Number(data.sniper2.otmCe).toFixed(2);
-            document.getElementById('s2OtmPeStrike').innerText = data.sniper2.otmPeStrike;
-            document.getElementById('s2OtmPe').innerText = Number(data.sniper2.otmPe).toFixed(2);
-            document.getElementById('s2Val').innerText = Number(data.sniper2.val).toFixed(2);
+      document.getElementById('mthSup1').textContent = formatNum(data.spotPrice + 613.65);
+      document.getElementById('mthDem1').textContent = formatNum(data.spotPrice - 564.95);
+      document.getElementById('mthSup2').textContent = formatNum(data.spotPrice + 684.10);
+      document.getElementById('mthDem2').textContent = formatNum(data.spotPrice - 435.40);
 
-            // Earth
-            document.getElementById('earthVal').innerText = Number(data.earthVal).toFixed(2);
+      // Sniper 1
+      document.getElementById('snipStrike1').textContent = data.sniper1.strike;
+      document.getElementById('snipCe1').textContent = formatNum(data.sniper1.ce);
+      document.getElementById('snipPe1').textContent = formatNum(data.sniper1.pe);
+      document.getElementById('snipOtmCeStrike1').textContent = data.sniper1.otmCeStrike;
+      document.getElementById('snipOtmCe1').textContent = formatNum(data.sniper1.otmCe);
+      document.getElementById('snipOtmPeStrike1').textContent = data.sniper1.otmPeStrike;
+      document.getElementById('snipOtmPe1').textContent = formatNum(data.sniper1.otmPe);
+      document.getElementById('sniperScore1').textContent = formatNum(
+        calculateSniperScore(data.sniper1.ce, data.sniper1.pe, data.sniper1.otmCe, data.sniper1.otmPe, 25.95)
+      );
 
-        } catch (error) {
-            console.error("Error loading dashboard data:", error);
-        }
+      // Sniper 2
+      document.getElementById('snipStrike2').textContent = data.sniper2.strike;
+      document.getElementById('snipCe2').textContent = formatNum(data.sniper2.ce);
+      document.getElementById('snipPe2').textContent = formatNum(data.sniper2.pe);
+      document.getElementById('snipOtmCeStrike2').textContent = data.sniper2.otmCeStrike;
+      document.getElementById('snipOtmCe2').textContent = formatNum(data.sniper2.otmCe);
+      document.getElementById('snipOtmPeStrike2').textContent = data.sniper2.otmPeStrike;
+      document.getElementById('snipOtmPe2').textContent = formatNum(data.sniper2.otmPe);
+      document.getElementById('sniperScore2').textContent = formatNum(
+        calculateSniperScore(data.sniper2.ce, data.sniper2.pe, data.sniper2.otmCe, data.sniper2.otmPe, 14.625)
+      );
+
+      // Earth
+      const range = data.spotHigh - data.spotLow;
+      document.getElementById('earthVal').textContent = formatNum(range * 0.2611);
+
+    } catch (err) {
+      console.error("Failed to fetch data.json:", err);
     }
+  }
 
-    loadDashboardData();
+  window.onload = loadData;
 </script>
 
 </body>
