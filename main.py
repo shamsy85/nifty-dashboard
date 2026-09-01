@@ -12,7 +12,7 @@ def generate_automated_token():
     client_id = os.environ.get("SKZODRJWMB-200")
     secret_key = os.environ.get("Qu61IAGCiTVURBjz")
     pin = os.environ.get("1997")
-    totp_key = os.environ.get("WRUOITZF6ROJOTIQVDQCE3ZLLGIMIRMH")
+    totp_key = os.environ.get("2SGUPUQAPLCQ72R2SD7PV3SOB33ZKUXF")
     fy_id = "XM25300"  # User ID remains hardcoded or can be a secret
 
     if not all([client_id, secret_key, pin, totp_key]):
