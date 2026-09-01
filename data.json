@@ -1,37 +1,41 @@
 {
-  "spotPrice": 24080.40,
-  "spotHigh": 24150.00,
-  "spotLow": 24010.00,
+  "spotPrice": 24080.4,
+  "spotHigh": 24128.7,
+  "spotLow": 23993.6,
   "expiryDate": "01-SEP-2026",
   "currentDate": "01-SEP-2026",
   "atmStrike": 24100,
-  "bannerTotal": 205.80,
+  "bannerTotal": 204.68,
   "ce": {
-    "high": 145.20,
-    "close": 110.50,
-    "low": 85.00
+    "high": 140.87,
+    "close": 108.36,
+    "low": 75.85
   },
   "pe": {
-    "high": 180.00,
-    "close": 95.30,
-    "low": 60.10
+    "high": 134.85,
+    "close": 96.32,
+    "low": 57.79
   },
+  "minSupply": 24199.6,
+  "minDemand": 23974.45,
+  "maxSupply": 24305.55,
+  "maxDemand": 23855.25,
   "sniper1": {
     "strike": 24100,
-    "ce": 110.50,
-    "pe": 95.30,
+    "ce": 108.36,
+    "pe": 96.32,
     "otmCeStrike": 24200,
-    "otmCe": 45.20,
+    "otmCe": 43.34,
     "otmPeStrike": 24000,
-    "otmPe": 38.10
+    "otmPe": 38.53
   },
   "sniper2": {
     "strike": 24150,
-    "ce": 88.00,
-    "pe": 120.40,
+    "ce": 86.69,
+    "pe": 115.58,
     "otmCeStrike": 24250,
-    "otmCe": 30.50,
+    "otmCe": 32.51,
     "otmPeStrike": 24050,
-    "otmPe": 65.20
+    "otmPe": 57.79
   }
 }
