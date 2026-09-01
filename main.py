@@ -7,11 +7,11 @@ from urllib.parse import urlparse, parse_qsl
 from fyers_apiv3 import fyersModel
 
 def generate_automated_token():
-    # Hardcoded directly to avoid environment variable mapping issues
     client_id = "SKZODRJWMB-200"
     secret_key = "Qu61IAGCiTVURBjz"
     pin = "1997"
     totp_key = "WRUOITZF6ROJOTIQVDQCE3ZLLGIMIRMH"
+    fy_id = "XM25300"  # Your actual Fyers account ID
 
     redirect_uri = "https://trade.fyers.in/api-login/redirect-uri/index.html"
     
@@ -27,7 +27,6 @@ def generate_automated_token():
 
     parsed_url = urlparse(login_url)
     app_id_hash = dict(parse_qsl(parsed_url.query)).get("app_id_hash")
-    fy_id = client_id.split("-")[0]
 
     s = requests.Session()
 
