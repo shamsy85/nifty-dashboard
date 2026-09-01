@@ -1,36 +1,112 @@
 import os
 import json
 from datetime import datetime
+import pyotp
+import requests
+from urllib.parse import urlparse, parse_qsl
 from fyers_apiv3 import fyersModel
 
-def fetch_market_data():
+def generate_automated_token():
     client_id = os.environ.get("SKZODRJWMB-200")
-    access_token = os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZDoxIiwiZDoyIiwieDowIiwieDoxIiwieDoyIl0sImF0X2hhc2giOiJnQUFBQUFCcWxsM2Z1Smt1WnRuUEF6QXU0NWhNSU1PRVJRYTNNVU9ZME5YZlJyVGtRd3hRZjVWb19iUE5BNnBBdXM5aElveElHWHRGV2s5THRtUVBuRlFITk9mY2FJMWZFbWF1blpiRjMtYVJzSDZwaFVMTTk3bz0iLCJkaXNwbGF5X25hbWUiOiIiLCJvbXMiOiJLMSIsImhzbV9rZXkiOiIwY2RjMzgzMGYyZmZiYmRkZjM2NTk4N2M3YjI1ZTFjMzM4ZWRiODEwZWI3MTU1NjYyNjAyM2JiNCIsImlzRGRwaUVuYWJsZWQiOiJOIiwiaXNNdGZFbmFibGVkIjoiTiIsImZ5X2lkIjoiWE0yNTMwMCIsImFwcFR5cGUiOjIwMCwiZXhwIjoxNzg4MzA5MDAwLCJpYXQiOjE3ODgyMzkzMjcsImlzcyI6ImFwaS5meWVycy5pbiIsIm5iZiI6MTc4ODIzOTMyNywic3ViIjoiYWNjZXNzX3Rva2VuIn0.nUUSH07RLHNVKiN9XljVwhuyBbq6DT2-MArav4NJu80")
+    secret_key = os.environ.get("Qu61IAGCiTVURBjz")
+    pin = os.environ.get("1997")
+    totp_key = os.environ.get("WRUOITZF6ROJOTIQVDQCE3ZLLGIMIRMH")
 
-    if not client_id or not access_token:
-        raise ValueError("Missing FYERS credentials or access token in environment variables.")
+    if not all([client_id, secret_key, pin, totp_key]):
+        raise ValueError(f"Missing credentials: ID={bool(client_id)}, Secret={bool(secret_key)}, PIN={bool(pin)}, TOTP={bool(totp_key)}")
 
+    redirect_uri = "https://trade.fyers.in/api-login/redirect-uri/index.html"
+    
+    # 1. Initialize Session Model for auth code
+    session = fyersModel.SessionModel(
+        client_id=client_id,
+        secret_key=secret_key,
+        redirect_uri=redirect_uri,
+        response_type="code",
+        grant_type="authorization_code"
+    )
+    login_url = session.generate_authcode()
+
+    parsed_url = urlparse(login_url)
+    app_id_hash = dict(parse_qsl(parsed_url.query)).get("app_id_hash")
+    fy_id = client_id.split("-")[0]
+
+    s = requests.Session()
+
+    # 2. Send Login OTP
+    r1 = s.post("https://api-t1.fyers.in/vagator/v2/send_login_otp_v2", json={"fy_id": fy_id, "app_id": "2"})
+    if r1.status_code != 200:
+        raise Exception(f"Failed to send OTP: {r1.text}")
+    request_key = r1.json().get("request_key")
+
+    # 3. Verify TOTP
+    totp_code = pyotp.TOTP(totp_key).now()
+    r2 = s.post("https://api-t1.fyers.in/vagator/v2/verify_otp", json={"request_key": request_key, "otp": totp_code})
+    if r2.status_code != 200:
+        raise Exception(f"Failed to verify TOTP: {r2.text}")
+    request_key_2 = r2.json().get("request_key")
+
+    # 4. Verify PIN
+    r3 = s.post("https://api-t1.fyers.in/vagator/v2/verify_pin_v2", json={"request_key": request_key_2, "identity_type": "pin", "identifier": pin})
+    if r3.status_code != 200:
+        raise Exception(f"Failed to verify PIN: {r3.text}")
+    access_token_base = r3.json().get("data", {}).get("access_token")
+
+    # 5. Get Auth Code via API token exchange
+    headers = {"authorization": f"Bearer {access_token_base}", "content-type": "application/json"}
+    payload = {
+        "fyers_id": fy_id,
+        "app_id": app_id_hash,
+        "redirect_uri": redirect_uri,
+        "appType": "100",
+        "code_challenge": "",
+        "state": "None",
+        "scope": "",
+        "nonce": "",
+        "response_type": "code"
+    }
+    r4 = s.post("https://api.fyers.in/api/v2/token", json=payload, headers=headers)
+    if r4.status_code != 200:
+        raise Exception(f"Failed to fetch authorization code: {r4.text}")
+    
+    auth_code = r4.json().get("Url").split("auth_code=")[1].split("&")[0]
+
+    # 6. Generate Final Access Token
+    session.set_token(auth_code)
+    response = session.generate_token()
+    access_token = response.get("access_token")
+    
+    return client_id, access_token
+
+def fetch_market_data():
+    client_id, access_token = generate_automated_token()
     fyers = fyersModel.FyersModel(client_id=client_id, token=access_token, log_path="")
 
     # 1. Fetch Nifty Spot Price
-    spot_data = {"symbol": "NSE:NIFTY50-INDEX", "resolution": "D", "date_format": "1", "range_from": datetime.now().strftime("%Y-%m-%d"), "range_to": datetime.now().strftime("%Y-%m-%d"), "cont_flag": "1"}
+    spot_data = {
+        "symbol": "NSE:NIFTY50-INDEX", 
+        "resolution": "D", 
+        "date_format": "1", 
+        "range_from": datetime.now().strftime("%Y-%m-%d"), 
+        "range_to": datetime.now().strftime("%Y-%m-%d"), 
+        "cont_flag": "1"
+    }
     spot_response = fyers.history(data=spot_data)
     
-    # Fallback or extract spot close/ltp
-    spot_price = 24800.00 # Replace or extract dynamically from spot_response if available
-    
-    # 2. Determine Expiry Date format required by your broker/symbols (e.g., '2690324800CE')
-    # Assuming you have your active expiry string, e.g., "26SEP"
-    current_expiry = "26SEP" 
+    spot_price = 24800.00
+    if spot_response.get("s") == "ok" and spot_response.get("candles"):
+        spot_price = spot_response["candles"][-1][4]
+
+    # 2. Determine Optimal ATM based on smallest CE and PE close difference
+    current_expiry = "26SEP"
     base_atm = round(spot_price / 50) * 50
     strike_range = [base_atm + (i * 50) for i in range(-3, 4)]
     
     best_strike = base_atm
     min_diff = float('inf')
-    best_ce_data = {}
-    best_pe_data = {}
+    best_ce_data = {"high": 0, "close": 0, "low": 0}
+    best_pe_data = {"high": 0, "close": 0, "low": 0}
 
-    # Find ATM strike based on smallest CE and PE close difference
     for strike in strike_range:
         ce_symbol = f"NSE:NIFTY{current_expiry}{strike}CE"
         pe_symbol = f"NSE:NIFTY{current_expiry}{strike}PE"
@@ -50,7 +126,7 @@ def fetch_market_data():
                     min_diff = diff
                     best_strike = strike
                     best_ce_data = {"high": ce_q.get('high', 0), "close": ce_close, "low": ce_q.get('low', 0)}
-                    best_pe_data = {"high": pe_q.get('high', 0), "close": pe_close, "low": pe_q.get('low', 0)}
+                    best_pe_data = {"high": pe_q.get('high', 0), "close": pe_close, "low": pe_close}
 
     # 3. Compile Dashboard Payload
     dashboard_payload = {
@@ -61,13 +137,29 @@ def fetch_market_data():
         "bannerTotal": best_ce_data.get("close", 0) + best_pe_data.get("close", 0),
         "ce": best_ce_data,
         "pe": best_pe_data,
-        "sniper1": {"strike": best_strike, "ce": best_ce_data.get("close", 0), "pe": best_pe_data.get("close", 0), "otmCeStrike": best_strike+100, "otmCe": 0, "otmPeStrike": best_strike-100, "otmPe": 0},
-        "sniper2": {"strike": best_strike, "ce": best_ce_data.get("close", 0), "pe": best_pe_data.get("close", 0), "otmCeStrike": best_strike+200, "otmCe": 0, "otmPeStrike": best_strike-200, "otmPe": 0}
+        "sniper1": {
+            "strike": best_strike, 
+            "ce": best_ce_data.get("close", 0), 
+            "pe": best_pe_data.get("close", 0), 
+            "otmCeStrike": best_strike + 100, 
+            "otmCe": 0, 
+            "otmPeStrike": best_strike - 100, 
+            "otmPe": 0
+        },
+        "sniper2": {
+            "strike": best_strike, 
+            "ce": best_ce_data.get("close", 0), 
+            "pe": best_pe_data.get("close", 0), 
+            "otmCeStrike": best_strike + 200, 
+            "otmCe": 0, 
+            "otmPeStrike": best_strike - 200, 
+            "otmPe": 0
+        }
     }
 
     with open("data.json", "w") as f:
         json.dump(dashboard_payload, f, indent=4)
-    print("Successfully calculated optimal ATM and saved data.json")
+    print("Successfully generated token, calculated ATM, and saved data.json")
 
 if __name__ == "__main__":
     fetch_market_data()
