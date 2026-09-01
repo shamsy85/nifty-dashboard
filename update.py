@@ -1,97 +1,85 @@
 
 import requests
+import pandas as pd
 import json
-import time
 from datetime import datetime
 
-HOME = "https://www.nseindia.com/"
-API = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
+CSV_URL = "https://www.nseindia.com/api/reports?archives=[%7B%22name%22:%22Option%20Chain%20-%20NIFTY%22,%22type%22:%22csv%22%7D]"
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0 Safari/537.36",
-    "Accept": "application/json,text/plain,*/*",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Referer": "https://www.nseindia.com/option-chain",
-    "Origin": "https://www.nseindia.com",
-    "Connection": "keep-alive",
+    "User-Agent": "Mozilla/5.0",
+    "Referer": "https://www.nseindia.com/option-chain?symbol=NIFTY",
+    "Accept": "*/*"
 }
 
 session = requests.Session()
-session.headers.update(headers)
 
-# Get NSE cookies first
-session.get(HOME, timeout=20)
-time.sleep(2)
+# Get cookies
+session.get("https://www.nseindia.com", headers=headers, timeout=30)
 
-r = session.get(API, timeout=20)
-
-# Retry once if NSE blocks the request
-if r.status_code != 200:
-    session.get(HOME, timeout=20)
-    time.sleep(2)
-    r = session.get(API, timeout=20)
-
+r = session.get(CSV_URL, headers=headers, timeout=30)
 r.raise_for_status()
 
-data = r.json()
+with open("optionchain.csv","wb") as f:
+    f.write(r.content)
 
-spot = data["records"]["underlyingValue"]
-expiry = data["records"]["expiryDates"][0]
-atm = round(spot / 50) * 50
+df = pd.read_csv("optionchain.csv")
 
-ce = pe = None
+# Find underlying value
+spot = float(df["Underlying Value"].dropna().iloc[0])
 
-for item in data["records"]["data"]:
-    if item["strikePrice"] == atm:
-        ce = item.get("CE")
-        pe = item.get("PE")
-        break
+atm = round(spot/50)*50
+
+row = df[df["Strike Price"]==atm].iloc[0]
+
+ce_close = float(row["CE LTP"])
+pe_close = float(row["PE LTP"])
 
 output = {
     "currentDate": datetime.now().strftime("%d %b %Y"),
-    "expiryDate": expiry,
+    "expiryDate": str(df["Expiry Date"].dropna().iloc[0]),
     "spotPrice": spot,
     "atmStrike": atm,
 
-    "ce": {
-        "high": ce["highPrice"],
-        "close": ce["lastPrice"],
-        "low": ce["lowPrice"]
+    "ce":{
+        "high": float(row["CE High Price"]),
+        "close": ce_close,
+        "low": float(row["CE Low Price"])
     },
 
-    "pe": {
-        "high": pe["highPrice"],
-        "close": pe["lastPrice"],
-        "low": pe["lowPrice"]
+    "pe":{
+        "high": float(row["PE High Price"]),
+        "close": pe_close,
+        "low": float(row["PE Low Price"])
     },
 
-    "bannerTotal": ce["lastPrice"] + pe["lastPrice"],
+    "bannerTotal": ce_close+pe_close,
 
     "spotHigh": spot,
     "spotLow": spot,
 
-    "sniper1": {
-        "strike": atm,
-        "ce": ce["lastPrice"],
-        "pe": pe["lastPrice"],
-        "otmCeStrike": atm + 50,
-        "otmPeStrike": atm - 50,
-        "otmCe": 0,
-        "otmPe": 0
+    "sniper1":{
+        "strike":atm,
+        "ce":ce_close,
+        "pe":pe_close,
+        "otmCeStrike":atm+50,
+        "otmPeStrike":atm-50,
+        "otmCe":0,
+        "otmPe":0
     },
 
-    "sniper2": {
-        "strike": atm,
-        "ce": ce["lastPrice"],
-        "pe": pe["lastPrice"],
-        "otmCeStrike": atm + 100,
-        "otmPeStrike": atm - 100,
-        "otmCe": 0,
-        "otmPe": 0
+    "sniper2":{
+        "strike":atm,
+        "ce":ce_close,
+        "pe":pe_close,
+        "otmCeStrike":atm+100,
+        "otmPeStrike":atm-100,
+        "otmCe":0,
+        "otmPe":0
     }
 }
 
-with open("data.json", "w") as f:
-    json.dump(output, f, indent=2)
+with open("data.json","w") as f:
+    json.dump(output,f,indent=2)
 
-print("data.json updated successfully")
+print("data.json created successfully.")
