@@ -1,0 +1,15 @@
+import os
+from fyers_apiv3 import fyersModel
+
+# Retrieve credentials from GitHub Actions environment secrets
+client_id = os.environ.get("SKZODRJWMB-200")
+access_token = os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZDoxIiwiZDoyIiwieDowIiwieDoxIiwieDoyIl0sImF0X2hhc2giOiJnQUFBQUFCcWxsM2Z1Smt1WnRuUEF6QXU0NWhNSU1PRVJRYTNNVU9ZME5YZlJyVGtRd3hRZjVWb19iUE5BNnBBdXM5aElveElHWHRGV2s5THRtUVBuRlFITk9mY2FJMWZFbWF1blpiRjMtYVJzSDZwaFVMTTk3bz0iLCJkaXNwbGF5X25hbWUiOiIiLCJvbXMiOiJLMSIsImhzbV9rZXkiOiIwY2RjMzgzMGYyZmZiYmRkZjM2NTk4N2M3YjI1ZTFjMzM4ZWRiODEwZWI3MTU1NjYyNjAyM2JiNCIsImlzRGRwaUVuYWJsZWQiOiJOIiwiaXNNdGZFbmFibGVkIjoiTiIsImZ5X2lkIjoiWE0yNTMwMCIsImFwcFR5cGUiOjIwMCwiZXhwIjoxNzg4MzA5MDAwLCJpYXQiOjE3ODgyMzkzMjcsImlzcyI6ImFwaS5meWVycy5pbiIsIm5iZiI6MTc4ODIzOTMyNywic3ViIjoiYWNjZXNzX3Rva2VuIn0.nUUSH07RLHNVKiN9XljVwhuyBbq6DT2-MArav4NJu80")
+
+# Initialize the FYERS model with the daily access token
+fyers = fyersModel.FyersModel(
+    client_id=client_id, token=access_token, log_path=""
+)
+
+# Example API call: Fetch profile info to verify connection
+response = fyers.get_profile()
+print("API Response:", response)
