@@ -1,7 +1,20 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import yfinance as yf
+
+
+def get_upcoming_expiry():
+    """Calculates the upcoming Thursday expiry date for NIFTY options."""
+    today = datetime.now()
+    # Thursday is weekday index 3 (Monday is 0)
+    days_until_thursday = (3 - today.weekday()) % 7
+    # If today is Thursday after market hours, target next week's Thursday
+    if days_until_thursday == 0 and today.hour >= 16:
+        days_until_thursday = 7
+
+    expiry_date = today + timedelta(days=days_until_thursday)
+    return expiry_date.strftime("%d-%b-%Y").upper()
 
 
 def fetch_nifty_data():
@@ -19,22 +32,23 @@ def fetch_nifty_data():
     # 2. Dynamic ATM Strike Calculation (Rounded to nearest 50)
     atm_strike = int(round(spot_close / 50.0) * 50)
 
-    # 3. Expiry & Date Formats
+    # 3. Dynamic Date Formats
     current_date_str = datetime.now().strftime("%d-%b-%Y").upper()
+    expiry_date_str = get_upcoming_expiry()
 
-    # Note: Replace dummy values below with your live broker API or option chain fetcher logic
+    # Note: Replace dummy option price values below with your option API data source
     ce_data = {"high": 145.20, "close": 110.50, "low": 85.00}
 
     pe_data = {"high": 180.00, "close": 95.30, "low": 60.10}
 
     banner_total = ce_data["close"] + pe_data["close"]
 
-    # 4. Construct JSON output expected by your index.html script
+    # 4. Construct JSON payload
     payload = {
         "spotPrice": spot_close,
         "spotHigh": spot_high,
         "spotLow": spot_low,
-        "expiryDate": "27-MAR-2026",
+        "expiryDate": expiry_date_str,
         "currentDate": current_date_str,
         "atmStrike": atm_strike,
         "bannerTotal": banner_total,
@@ -63,7 +77,9 @@ def fetch_nifty_data():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print("data.json successfully updated.")
+    print(
+        f"data.json updated: Current Date {current_date_str}, Expiry {expiry_date_str}"
+    )
 
 
 if __name__ == "__main__":
