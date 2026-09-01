@@ -2,8 +2,10 @@ name: Update Nifty Dashboard Data
 
 on:
   schedule:
-    # 10:10 UTC = 3:40 PM IST (Mon-Fri) - 10 mins after market close
-    - cron: "10 10 * * 1-5"
+    # 11:00 UTC = 4:30 PM IST (Mon-Fri)
+    - cron: "0 11 * * 1-5"
+    # 12:30 UTC = 6:00 PM IST (Mon-Fri)
+    - cron: "30 12 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -28,7 +30,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run update script
-        continue-on-error: true
         run: python update.py
 
       - name: Commit and push updated data
