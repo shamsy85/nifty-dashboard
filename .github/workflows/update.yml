@@ -2,7 +2,7 @@ name: Update NIFTY Dashboard
 
 on:
   schedule:
-    # 10:10 UTC = 3:40 PM IST (Mon-Fri) - Post Market Close
+    # 10:10 UTC = 3:40 PM IST (Mon-Fri) - 10 mins after market close
     - cron: "10 10 * * 1-5"
   workflow_dispatch:
 
@@ -27,10 +27,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pandas
 
-      - name: Run script
+      - name: Run update script
         run: python update.py
 
-      - name: Commit and push changes
+      - name: Commit and push updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
