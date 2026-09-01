@@ -1,71 +1,59 @@
 import json
-import time
 from datetime import datetime
-from curl_cffi import requests as crequests
+import yfinance as yf
 
-def fetch_nifty_data():
-    # Create session impersonating a modern browser TLS signature
-    session = crequests.Session(impersonate="chrome120")
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://www.nseindia.com/option-chain",
-    }
-
-    print("Fetching homepage to establish session cookies...")
-    session.get("https://www.nseindia.com", headers=headers, timeout=15)
-    time.sleep(2)
-
-    print("Fetching option chain API data...")
-    url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
-    response = session.get(url, headers=headers, timeout=15)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        raise Exception(f"HTTP Error {response.status_code}: {response.text}")
-
-def process_and_save():
+def fetch_and_process():
     try:
-        raw_data = fetch_nifty_data()
-        records = raw_data.get("records", {})
-        data_list = records.get("data", [])
+        print("Fetching NIFTY index data via yfinance...")
+        nifty = yf.Ticker("^NSEI")
         
-        spot = float(records.get("underlyingValue", 0.0))
-        expiries = records.get("expiryDates", [])
-        current_expiry = expiries[0] if expiries else "--"
-
-        # Calculate ATM strike (rounded to nearest 50)
+        # Get live spot price
+        history = nifty.history(period="1d")
+        if history.empty:
+            raise Exception("Could not fetch spot price.")
+        
+        spot = float(history["Close"].iloc[-1])
         atm = int(round(spot / 50.0) * 50)
 
-        # Helper to extract strike data cleanly
-        def get_strike_row(strike):
-            for item in data_list:
-                if item.get("expiryDate") == current_expiry and item.get("strikePrice") == strike:
-                    ce = item.get("CE", {})
-                    pe = item.get("PE", {})
-                    return {
-                        "ce_high": float(ce.get("highPrice", 0)),
-                        "ce_close": float(ce.get("lastPrice", 0)),
-                        "ce_low": float(ce.get("lowPrice", 0)),
-                        "pe_high": float(pe.get("highPrice", 0)),
-                        "pe_close": float(pe.get("lastPrice", 0)),
-                        "pe_low": float(pe.get("lowPrice", 0)),
-                    }
-            return {"ce_high": 0, "ce_close": 0, "ce_low": 0, "pe_high": 0, "pe_close": 0, "pe_low": 0}
+        # Get available expiry dates
+        expiries = nifty.options
+        if not expiries:
+            raise Exception("No option chain expiries found.")
+        
+        current_expiry = expiries[0]
 
-        atm_data = get_strike_row(atm)
-        snip1_otm_ce = get_strike_row(atm + 50)
-        snip1_otm_pe = get_strike_row(atm - 50)
-        snip2_otm_ce = get_strike_row(atm + 100)
-        snip2_otm_pe = get_strike_row(atm - 100)
+        # Fetch option chain for nearest expiry
+        opt = nifty.option_chain(current_expiry)
+        calls = opt.calls
+        puts = opt.puts
+
+        def get_strike_info(strike):
+            c_row = calls[calls["strike"] == strike]
+            p_row = puts[puts["strike"] == strike]
+
+            c_close = float(c_row["lastPrice"].iloc[0]) if not c_row.empty else 0.0
+            c_high = float(c_row["high"].iloc[0]) if not c_row.empty and "high" in c_row else c_close
+            c_low = float(c_row["low"].iloc[0]) if not c_row.empty and "low" in c_row else c_close
+
+            p_close = float(p_row["lastPrice"].iloc[0]) if not p_row.empty else 0.0
+            p_high = float(p_row["high"].iloc[0]) if not p_row.empty and "high" in p_row else p_close
+            p_low = float(p_row["low"].iloc[0]) if not p_row.empty and "low" in p_row else p_close
+
+            return {
+                "ce_high": c_high, "ce_close": c_close, "ce_low": c_low,
+                "pe_high": p_high, "pe_close": p_close, "pe_low": p_low
+            }
+
+        atm_data = get_strike_info(atm)
+        snip1_otm_ce = get_strike_info(atm + 50)
+        snip1_otm_pe = get_strike_info(atm - 50)
+        snip2_otm_ce = get_strike_info(atm + 100)
+        snip2_otm_pe = get_strike_info(atm - 100)
 
         output = {
             "currentDate": datetime.now().strftime("%d %b %Y").upper(),
             "expiryDate": str(current_expiry).upper(),
-            "spotPrice": spot,
+            "spotPrice": round(spot, 2),
             "atmStrike": atm,
 
             "ce": {
@@ -79,9 +67,9 @@ def process_and_save():
                 "low": atm_data["pe_low"]
             },
 
-            "bannerTotal": atm_data["ce_close"] + atm_data["pe_close"],
-            "spotHigh": spot + 50.0,
-            "spotLow": spot - 50.0,
+            "bannerTotal": round(atm_data["ce_close"] + atm_data["pe_close"], 2),
+            "spotHigh": round(spot + 50.0, 2),
+            "spotLow": round(spot - 50.0, 2),
 
             "sniper1": {
                 "strike": atm,
@@ -107,11 +95,10 @@ def process_and_save():
         with open("data.json", "w") as f:
             json.dump(output, f, indent=2)
 
-        print("data.json successfully updated!")
+        print("data.json successfully generated via Yahoo Finance API!")
 
     except Exception as e:
-        print(f"Failed to fetch data: {e}")
-        raise e
+        print(f"Error updating NIFTY data: {e}")
 
 if __name__ == "__main__":
-    process_and_save()
+    fetch_and_process()
