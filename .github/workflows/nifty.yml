@@ -3,7 +3,7 @@ name: Post-Market Nifty Report Automation
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 12 * * 1-5' # Runs automatically at 6:00 PM IST (12:30 UTC) Monday-Friday
+    - cron: '30 12 * * 1-5' # Runs automatically at 6:00 PM IST (12:30 UTC) Monday to Friday
 
 jobs:
   build-and-deploy:
@@ -17,11 +17,11 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: |
-          pip install requests pandas yfinance
+          pip install requests pandas
 
-      - name: Fetch Live Data
+      - name: Fetch Live Data from NSE API
         run: |
           python fetch_data.py
 
@@ -30,5 +30,5 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add data.json
-          git commit -m "Automated Live Data Update" || exit 0
+          git commit -m "Automated Post-Market Data Update" || exit 0
           git push
