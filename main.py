@@ -7,13 +7,11 @@ from urllib.parse import urlparse, parse_qsl
 from fyers_apiv3 import fyersModel
 
 def generate_automated_token():
-    client_id = os.environ.get("SKZODRJWMB-200")
-    secret_key = os.environ.get("Qu61IAGCiTVURBjz")
-    pin = os.environ.get("1997")
-    totp_key = os.environ.get("WRUOITZF6ROJOTIQVDQCE3ZLLGIMIRMH")
-
-    if not all([client_id, secret_key, pin, totp_key]):
-        raise ValueError(f"Missing credentials: ID={bool(client_id)}, Secret={bool(secret_key)}, PIN={bool(pin)}, TOTP={bool(totp_key)}")
+    # Hardcoded directly to avoid environment variable mapping issues
+    client_id = "SKZODRJWMB-200"
+    secret_key = "Qu61IAGCiTVURBjz"
+    pin = "1997"
+    totp_key = "WRUOITZF6ROJOTIQVDQCE3ZLLGIMIRMH"
 
     redirect_uri = "https://trade.fyers.in/api-login/redirect-uri/index.html"
     
