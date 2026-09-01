@@ -1,1 +1,37 @@
-{}
+{
+  "currentDate": "01 SEP 2026",
+  "expiryDate": "ACTIVE",
+  "spotPrice": 24055.8,
+  "atmStrike": 24050,
+  "ce": {
+    "high": 120.0,
+    "close": 110.0,
+    "low": 90.0
+  },
+  "pe": {
+    "high": 115.0,
+    "close": 105.0,
+    "low": 85.0
+  },
+  "bannerTotal": 215.0,
+  "spotHigh": 24105.8,
+  "spotLow": 24005.8,
+  "sniper1": {
+    "strike": 24050,
+    "ce": 110.0,
+    "pe": 105.0,
+    "otmCeStrike": 24100,
+    "otmPeStrike": 24000,
+    "otmCe": 80.0,
+    "otmPe": 75.0
+  },
+  "sniper2": {
+    "strike": 24050,
+    "ce": 110.0,
+    "pe": 105.0,
+    "otmCeStrike": 24150,
+    "otmPeStrike": 23950,
+    "otmCe": 55.0,
+    "otmPe": 50.0
+  }
+}
