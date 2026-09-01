@@ -1,82 +1,66 @@
-import os
 import json
 import time
-import requests
 from datetime import datetime
+from curl_cffi import requests as crequests
 
-# URL and fallback headers
-API_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
-HOME_URL = "https://www.nseindia.com/option-chain"
+def fetch_nifty_data():
+    # Create session impersonating a modern browser TLS signature
+    session = crequests.Session(impersonate="chrome120")
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.nseindia.com/option-chain",
+    }
 
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Referer": "https://www.nseindia.com/",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
-}
+    print("Fetching homepage to establish session cookies...")
+    session.get("https://www.nseindia.com", headers=headers, timeout=15)
+    time.sleep(2)
 
-def fetch_data():
-    session = requests.Session()
-    session.headers.update(headers)
+    print("Fetching option chain API data...")
+    url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
+    response = session.get(url, headers=headers, timeout=15)
 
-    # Step 1: Hit main page to get initial cookies
-    response = session.get("https://www.nseindia.com", timeout=15)
-    time.sleep(1)
-
-    # Step 2: Hit option-chain landing page to solidify session
-    response = session.get(HOME_URL, timeout=15)
-    time.sleep(1)
-
-    # Step 3: Switch headers to JSON request mode
-    session.headers.update({
-        "Accept": "application/json, text/plain, */*",
-        "Referer": HOME_URL,
-        "X-Requested-With": "XMLHttpRequest"
-    })
-
-    # Step 4: Fetch API payload
-    res = session.get(API_URL, timeout=30)
-    res.raise_for_status()
-    return res.json()
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"HTTP Error {response.status_code}: {response.text}")
 
 def process_and_save():
     try:
-        raw_data = fetch_data()
+        raw_data = fetch_nifty_data()
         records = raw_data.get("records", {})
         data_list = records.get("data", [])
+        
+        spot = float(records.get("underlyingValue", 0.0))
+        expiries = records.get("expiryDates", [])
+        current_expiry = expiries[0] if expiries else "--"
 
-        spot = float(records.get("underlyingValue", 0))
-        if spot == 0 and data_list:
-            spot = float(data_list[0].get("PE", {}).get("underlyingValue") or data_list[0].get("CE", {}).get("underlyingValue") or 0)
-
+        # Calculate ATM strike (rounded to nearest 50)
         atm = int(round(spot / 50.0) * 50)
-        expiry_dates = records.get("expiryDates", [])
-        current_expiry = expiry_dates[0] if expiry_dates else "--"
 
-        strike_map = {}
-        for item in data_list:
-            if item.get("expiryDate") == current_expiry:
-                strike_map[item.get("strikePrice")] = item
+        # Helper to extract strike data cleanly
+        def get_strike_row(strike):
+            for item in data_list:
+                if item.get("expiryDate") == current_expiry and item.get("strikePrice") == strike:
+                    ce = item.get("CE", {})
+                    pe = item.get("PE", {})
+                    return {
+                        "ce_high": float(ce.get("highPrice", 0)),
+                        "ce_close": float(ce.get("lastPrice", 0)),
+                        "ce_low": float(ce.get("lowPrice", 0)),
+                        "pe_high": float(pe.get("highPrice", 0)),
+                        "pe_close": float(pe.get("lastPrice", 0)),
+                        "pe_low": float(pe.get("lowPrice", 0)),
+                    }
+            return {"ce_high": 0, "ce_close": 0, "ce_low": 0, "pe_high": 0, "pe_close": 0, "pe_low": 0}
 
-        def get_strike_info(strike):
-            item = strike_map.get(strike, {})
-            ce = item.get("CE", {})
-            pe = item.get("PE", {})
-            return {
-                "ce_high": float(ce.get("highPrice", 0)),
-                "ce_close": float(ce.get("lastPrice", 0)),
-                "ce_low": float(ce.get("lowPrice", 0)),
-                "pe_high": float(pe.get("highPrice", 0)),
-                "pe_close": float(pe.get("lastPrice", 0)),
-                "pe_low": float(pe.get("lowPrice", 0)),
-            }
-
-        atm_data = get_strike_info(atm)
-        snip1_otm_ce = get_strike_info(atm + 50)
-        snip1_otm_pe = get_strike_info(atm - 50)
-        snip2_otm_ce = get_strike_info(atm + 100)
-        snip2_otm_pe = get_strike_info(atm - 100)
+        atm_data = get_strike_row(atm)
+        snip1_otm_ce = get_strike_row(atm + 50)
+        snip1_otm_pe = get_strike_row(atm - 50)
+        snip2_otm_ce = get_strike_row(atm + 100)
+        snip2_otm_pe = get_strike_row(atm - 100)
 
         output = {
             "currentDate": datetime.now().strftime("%d %b %Y").upper(),
@@ -96,7 +80,6 @@ def process_and_save():
             },
 
             "bannerTotal": atm_data["ce_close"] + atm_data["pe_close"],
-
             "spotHigh": spot + 50.0,
             "spotLow": spot - 50.0,
 
@@ -124,11 +107,10 @@ def process_and_save():
         with open("data.json", "w") as f:
             json.dump(output, f, indent=2)
 
-        print("data.json generated successfully.")
+        print("data.json successfully updated!")
 
     except Exception as e:
         print(f"Failed to fetch data: {e}")
-        # Re-raise to flag failure in GitHub Actions UI if it fails completely
         raise e
 
 if __name__ == "__main__":
