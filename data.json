@@ -1,37 +1,37 @@
 {
-  "spotPrice": 24500.00,
-  "spotHigh": 24580.00,
-  "spotLow": 24420.00,
+  "spotPrice": 24080.400390625,
+  "spotHigh": 24128.69921875,
+  "spotLow": 23993.599609375,
   "expiryDate": "27-MAR-2026",
   "currentDate": "01-SEP-2026",
-  "atmStrike": 24500,
-  "bannerTotal": 205.80,
+  "atmStrike": 24100,
+  "bannerTotal": 205.8,
   "ce": {
-    "high": 145.20,
-    "close": 110.50,
-    "low": 85.00
+    "high": 145.2,
+    "close": 110.5,
+    "low": 85.0
   },
   "pe": {
-    "high": 180.00,
-    "close": 95.30,
-    "low": 60.10
+    "high": 180.0,
+    "close": 95.3,
+    "low": 60.1
   },
   "sniper1": {
-    "strike": 24500,
-    "ce": 110.50,
-    "pe": 95.30,
-    "otmCeStrike": 24600,
-    "otmCe": 45.20,
-    "otmPeStrike": 24400,
-    "otmPe": 38.10
+    "strike": 24100,
+    "ce": 110.5,
+    "pe": 95.3,
+    "otmCeStrike": 24200,
+    "otmCe": 45.2,
+    "otmPeStrike": 24000,
+    "otmPe": 38.1
   },
   "sniper2": {
-    "strike": 24550,
-    "ce": 88.00,
-    "pe": 120.40,
-    "otmCeStrike": 24700,
-    "otmCe": 30.50,
-    "otmPeStrike": 24350,
-    "otmPe": 65.20
+    "strike": 24150,
+    "ce": 88.0,
+    "pe": 120.4,
+    "otmCeStrike": 24250,
+    "otmCe": 30.5,
+    "otmPeStrike": 24050,
+    "otmPe": 65.2
   }
 }
