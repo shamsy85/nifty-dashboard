@@ -107,7 +107,6 @@ def process_data():
 
     except Exception as e:
         print(f"Primary fetch failed: {e}. Writing fallback payload...")
-        # Fallback to keep data.json valid even outside market hours or during temporary API blocks
         fallback_spot = 24055.80
         fallback_atm = 24050
         output = {
