@@ -3,7 +3,7 @@ name: Post-Market Nifty Report Automation
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 12 * * 1-5' # Runs automatically at 6:00 PM IST (12:30 UTC) Monday to Friday
+    - cron: '30 12 * * 1-5' # 6:00 PM IST (12:30 UTC) Monday-Friday
 
 jobs:
   build-and-deploy:
@@ -17,11 +17,12 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Python Dependencies
+      - name: Install Dependencies
         run: |
-          pip install requests pandas
+          python -m pip install --upgrade pip
+          pip install yfinance pandas requests
 
-      - name: Fetch Live Data from NSE API
+      - name: Run Fetch Script
         run: |
           python fetch_data.py
 
