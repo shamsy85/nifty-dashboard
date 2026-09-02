@@ -4,34 +4,34 @@
   "spotPrice": 23914.45,
   "atmStrike": 23900,
   "ce": {
-    "high": 123.76,
-    "close": 107.62,
-    "low": 86.1
+    "high": 121.0,
+    "close": 110.0,
+    "low": 88.0
   },
   "pe": {
-    "high": 118.25,
-    "close": 102.83,
-    "low": 82.26
+    "high": 115.5,
+    "close": 105.0,
+    "low": 84.0
   },
-  "bannerTotal": 210.45,
-  "spotHigh": 23959.45,
-  "spotLow": 23869.45,
+  "bannerTotal": 215.0,
+  "spotHigh": 23914.45,
+  "spotLow": 23786.8,
   "sniper1": {
     "strike": 23900,
-    "ce": 107.62,
-    "pe": 102.83,
+    "ce": 110.0,
+    "pe": 105.0,
     "otmCeStrike": 23950,
     "otmPeStrike": 23850,
-    "otmCe": 77.49,
-    "otmPe": 73.01
+    "otmCe": 80.0,
+    "otmPe": 75.0
   },
   "sniper2": {
     "strike": 23900,
-    "ce": 107.62,
-    "pe": 102.83,
+    "ce": 110.0,
+    "pe": 105.0,
     "otmCeStrike": 24000,
     "otmPeStrike": 23800,
-    "otmCe": 53.81,
-    "otmPe": 49.36
+    "otmCe": 55.0,
+    "otmPe": 50.0
   }
 }
