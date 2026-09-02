@@ -1,4 +1,29 @@
-- name: Generate Fresh Access Token
+name: Automated Option Data Pipeline
+
+on:
+  schedule:
+    - cron: '*/5 3-10 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies & Playwright
+        run: |
+          pip install requests yfinance playwright pyotp
+          playwright install chromium
+
+      - name: Generate Fresh Access Token
         env:
           UPSTOX_API_KEY: ${{ secrets.UPSTOX_API_KEY }}
           UPSTOX_API_SECRET: ${{ secrets.UPSTOX_API_SECRET }}
@@ -14,3 +39,13 @@
         with:
           name: error-screenshot
           path: error_debug.png
+
+      - name: Run Market Update Script
+        run: python update.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json token.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update market data and token [skip ci]" && git push)
