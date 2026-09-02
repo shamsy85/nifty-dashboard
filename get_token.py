@@ -17,7 +17,6 @@ def refresh_token():
     auth_code = None
 
     with sync_playwright() as p:
-        # Extra arguments to evade bot detection on cloud runners
         browser = p.chromium.launch(
             headless=True, 
             args=[
@@ -50,14 +49,14 @@ def refresh_token():
         except Exception as e:
             print(f"Navigation warning: {e}")
 
-        # Save screenshot for debugging if it fails
         try:
             print("Waiting for mobile input field...")
             page.wait_for_selector('input[type="tel"], input[name="mobile"]', timeout=30000)
         except Exception as err:
             page.screenshot(path="error_debug.png")
             print(f"Page Title at failure: {page.title()}")
-            print(f"Page URL at failure: {page.url()}")
+            # Fixed: page.url is a property, removed parentheses ()
+            print(f"Page URL at failure: {page.url}")
             raise err
         
         mobile_input = page.locator('input[type="tel"], input[name="mobile"]').first
