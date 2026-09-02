@@ -5,19 +5,26 @@ import requests
 import yfinance as yf
 
 def get_upstox_headers():
-    api_key = os.environ.get("UPSTOX_API_KEY")
     access_token = os.environ.get("UPSTOX_ACCESS_TOKEN", "")
-    
     return {
         "Accept": "application/json",
         "Authorization": f"Bearer {access_token}",
         "Api-Version": "2.0"
     }
 
+def get_next_expiry():
+    """Calculates upcoming Thursday expiry date for NIFTY options."""
+    today = datetime.date.today()
+    days_ahead = (3 - today.weekday()) % 7  # 3 = Thursday
+    if days_ahead == 0 and datetime.datetime.now().hour >= 16:
+        days_ahead = 7
+    next_thursday = today + datetime.timedelta(days=days_ahead)
+    return next_thursday.strftime("%Y-%m-%d")
+
 def fetch_and_build_dashboard():
     print("Initializing NIFTY options update pipeline...")
     
-    # 1. Fetch Spot data via yfinance as underlying anchor
+    # 1. Fetch Spot data via yfinance
     ticker = yf.Ticker("^NSEI")
     todays_data = ticker.history(period="1d")
 
@@ -30,39 +37,39 @@ def fetch_and_build_dashboard():
 
     atm_strike = int(round(spot / 50.0) * 50)
     
-    # Defaults / Upstox API Target Values
-    ce_high, ce_low, ce_close = 170.55, 100.60, round(spot * 0.0052, 2)
-    pe_high, pe_low, pe_close = 170.00, 101.20, round(spot * 0.0051, 2)
+    # Baseline defaults
+    ce_high, ce_low, ce_close = round(spot * 0.007, 2), round(spot * 0.004, 2), round(spot * 0.0052, 2)
+    pe_high, pe_low, pe_close = round(spot * 0.007, 2), round(spot * 0.004, 2), round(spot * 0.0051, 2)
     
-    # 2. Attempt fetching exact settlement values via Upstox Market API
-    upstox_key = os.environ.get("UPSTOX_API_KEY")
-    if upstox_key:
+    # 2. Query Upstox Option Chain API
+    token = os.environ.get("UPSTOX_ACCESS_TOKEN", "")
+    if token:
         try:
-            print("Querying Upstox API for exact option chain HCL values...")
-            url = f"https://api.upstox.com/v2/option/chain?instrument_key=NSE_INDEX|Nifty%2050&expiry_date=2026-09-08"
-            response = requests.get(url, headers=get_upstox_headers(), timeout=5)
+            expiry_date = get_next_expiry()
+            print(f"Querying Upstox API for expiry date {expiry_date}...")
+            url = f"https://api.upstox.com/v2/option/chain?instrument_key=NSE_INDEX|Nifty%2050&expiry_date={expiry_date}"
+            response = requests.get(url, headers=get_upstox_headers(), timeout=8)
             
             if response.status_code == 200:
                 data = response.json().get("data", [])
                 for item in data:
                     if item.get("strike_price") == atm_strike:
+                        market_data = item.get("market_data", {})
                         if item.get("option_type") == "CE":
-                            market_data = item.get("market_data", {})
                             ce_high = round(market_data.get("high", ce_high), 2)
                             ce_low = round(market_data.get("low", ce_low), 2)
                             ce_close = round(market_data.get("close", ce_close), 2)
                         elif item.get("option_type") == "PE":
-                            market_data = item.get("market_data", {})
                             pe_high = round(market_data.get("high", pe_high), 2)
                             pe_low = round(market_data.get("low", pe_low), 2)
                             pe_close = round(market_data.get("close", pe_close), 2)
                 print("Successfully fetched live exchange HCL data from Upstox!")
             else:
-                print(f"Upstox API returned status {response.status_code}. Using fallback dynamic pricing model.")
+                print(f"Upstox API returned status {response.status_code}: {response.text}")
         except Exception as err:
-            print(f"Upstox connection skipped: {err}")
+            print(f"Upstox request failed: {err}")
 
-    # 3. Build payload
+    # 3. Save JSON Payload
     payload = {
         "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper(),
         "expiryDate": "ACTIVE",
