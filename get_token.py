@@ -17,10 +17,22 @@ def refresh_token():
     auth_code = None
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        # Extra arguments to evade bot detection on cloud runners
+        browser = p.chromium.launch(
+            headless=True, 
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-setuid-sandbox",
+                "--disable-infobars",
+                "--window-size=1920,1080"
+            ]
+        )
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 800}
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            viewport={"width": 1920, "height": 1080},
+            device_scale_factor=1,
         )
         page = context.new_page()
 
@@ -33,13 +45,22 @@ def refresh_token():
         page.on("request", capture_code)
         
         print("Navigating to Upstox login page...")
-        page.goto(login_url, timeout=60000)
+        try:
+            page.goto(login_url, timeout=60000, wait_until="networkidle")
+        except Exception as e:
+            print(f"Navigation warning: {e}")
 
-        print("Waiting for mobile input field...")
-        # Fixed selector syntax here:
-        page.wait_for_selector('input[type="tel"], input[name="mobile"], [id="mobileNum"]', timeout=45000)
+        # Save screenshot for debugging if it fails
+        try:
+            print("Waiting for mobile input field...")
+            page.wait_for_selector('input[type="tel"], input[name="mobile"]', timeout=30000)
+        except Exception as err:
+            page.screenshot(path="error_debug.png")
+            print(f"Page Title at failure: {page.title()}")
+            print(f"Page URL at failure: {page.url()}")
+            raise err
         
-        mobile_input = page.locator('input[type="tel"], input[name="mobile"], [id="mobileNum"]').first
+        mobile_input = page.locator('input[type="tel"], input[name="mobile"]').first
         mobile_input.fill(MOBILE_NO)
         time.sleep(1)
 
