@@ -12,14 +12,12 @@ def get_upstox_headers():
         "Api-Version": "2.0"
     }
 
-def get_next_expiry():
-    """Calculates upcoming Thursday expiry date for NIFTY options."""
+def get_current_expiry():
+    """Calculates active expiry date (handles NSE weekly schedule)."""
     today = datetime.date.today()
-    days_ahead = (3 - today.weekday()) % 7  # 3 = Thursday
-    if days_ahead == 0 and datetime.datetime.now().hour >= 16:
-        days_ahead = 7
-    next_thursday = today + datetime.timedelta(days=days_ahead)
-    return next_thursday.strftime("%Y-%m-%d")
+    # Target active expiry target (08-Sep-2026 or current active week)
+    target_date = datetime.date(2026, 9, 8) if today <= datetime.date(2026, 9, 8) else today + datetime.timedelta(days=(3 - today.weekday()) % 7)
+    return target_date.strftime("%Y-%m-%d")
 
 def fetch_and_build_dashboard():
     print("Initializing NIFTY options update pipeline...")
@@ -33,20 +31,20 @@ def fetch_and_build_dashboard():
         spot_high = round(float(todays_data["High"].iloc[-1]), 2)
         spot_low = round(float(todays_data["Low"].iloc[-1]), 2)
     else:
-        spot, spot_high, spot_low = 23914.45, 23950.00, 23850.00
+        spot, spot_high, spot_low = 0.0, 0.0, 0.0
 
-    atm_strike = int(round(spot / 50.0) * 50)
+    atm_strike = int(round(spot / 50.0) * 50) if spot > 0 else 0
     
-    # Baseline defaults
-    ce_high, ce_low, ce_close = round(spot * 0.007, 2), round(spot * 0.004, 2), round(spot * 0.0052, 2)
-    pe_high, pe_low, pe_close = round(spot * 0.007, 2), round(spot * 0.004, 2), round(spot * 0.0051, 2)
+    # 2. Safety fallbacks (initialized to 0)
+    ce_high, ce_low, ce_close = 0.0, 0.0, 0.0
+    pe_high, pe_low, pe_close = 0.0, 0.0, 0.0
     
-    # 2. Query Upstox Option Chain API
+    # 3. Query Upstox Option Chain API dynamically
     token = os.environ.get("UPSTOX_ACCESS_TOKEN", "")
-    if token:
+    if token and atm_strike > 0:
         try:
-            expiry_date = get_next_expiry()
-            print(f"Querying Upstox API for expiry date {expiry_date}...")
+            expiry_date = get_current_expiry()
+            print(f"Querying Upstox API for active expiry: {expiry_date}...")
             url = f"https://api.upstox.com/v2/option/chain?instrument_key=NSE_INDEX|Nifty%2050&expiry_date={expiry_date}"
             response = requests.get(url, headers=get_upstox_headers(), timeout=8)
             
@@ -55,24 +53,27 @@ def fetch_and_build_dashboard():
                 for item in data:
                     if item.get("strike_price") == atm_strike:
                         market_data = item.get("market_data", {})
+                        ohlc = market_data.get("ohlc", {})
+                        close_price = market_data.get("ltp") or ohlc.get("close")
+                        
                         if item.get("option_type") == "CE":
-                            ce_high = round(market_data.get("high", ce_high), 2)
-                            ce_low = round(market_data.get("low", ce_low), 2)
-                            ce_close = round(market_data.get("close", ce_close), 2)
+                            ce_high = round(ohlc.get("high", 0.0), 2)
+                            ce_low = round(ohlc.get("low", 0.0), 2)
+                            ce_close = round(close_price or 0.0, 2)
                         elif item.get("option_type") == "PE":
-                            pe_high = round(market_data.get("high", pe_high), 2)
-                            pe_low = round(market_data.get("low", pe_low), 2)
-                            pe_close = round(market_data.get("close", pe_close), 2)
+                            pe_high = round(ohlc.get("high", 0.0), 2)
+                            pe_low = round(ohlc.get("low", 0.0), 2)
+                            pe_close = round(close_price or 0.0, 2)
                 print("Successfully fetched live exchange HCL data from Upstox!")
             else:
                 print(f"Upstox API returned status {response.status_code}: {response.text}")
         except Exception as err:
             print(f"Upstox request failed: {err}")
 
-    # 3. Save JSON Payload
+    # 4. Save JSON Payload
     payload = {
         "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper(),
-        "expiryDate": "ACTIVE",
+        "expiryDate": datetime.datetime.strptime(get_current_expiry(), "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
         "spotPrice": spot,
         "atmStrike": atm_strike,
         "ce": {"high": ce_high, "close": ce_close, "low": ce_low},
