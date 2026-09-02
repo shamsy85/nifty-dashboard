@@ -17,7 +17,6 @@ def refresh_token():
     auth_code = None
 
     with sync_playwright() as p:
-        # Launch with broader viewport and arguments to avoid bot detection blocks
         browser = p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -36,21 +35,18 @@ def refresh_token():
         print("Navigating to Upstox login page...")
         page.goto(login_url, timeout=60000)
 
-        # Wait longer and look for mobile input fields safely
         print("Waiting for mobile input field...")
-        page.wait_for_selector('input[type="tel"], input[name="mobile"], inputId="mobileNum"', timeout=45000)
+        # Fixed selector syntax here:
+        page.wait_for_selector('input[type="tel"], input[name="mobile"], [id="mobileNum"]', timeout=45000)
         
-        # Target the phone input box and fill mobile number
-        mobile_input = page.locator('input[type="tel"], input[name="mobile"]').first
+        mobile_input = page.locator('input[type="tel"], input[name="mobile"], [id="mobileNum"]').first
         mobile_input.fill(MOBILE_NO)
         time.sleep(1)
 
-        # Click 'Get OTP' button
         print("Submitting mobile number...")
         get_otp_btn = page.locator('button:has-text("Get OTP"), button[type="submit"]').first
         get_otp_btn.click()
 
-        # Generate & Enter TOTP
         print("Generating and entering TOTP...")
         totp = pyotp.TOTP(TOTP_SECRET).now()
         page.wait_for_selector('input[name="otp"], input[type="text"]', timeout=15000)
@@ -62,7 +58,6 @@ def refresh_token():
         continue_btn = page.locator('button:has-text("Continue"), button[type="submit"]').first
         continue_btn.click()
 
-        # Enter PIN
         print("Entering PIN...")
         page.wait_for_selector('input[type="password"]', timeout=15000)
         pin_input = page.locator('input[type="password"]').first
@@ -78,7 +73,6 @@ def refresh_token():
     if not auth_code:
         raise Exception("Failed to retrieve authentication code. The login flow did not redirect properly.")
 
-    # Exchange Authorization Code for Access Token
     url = "https://api.upstox.com/v2/login/authorization/token"
     headers = {"accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"}
     data = {
