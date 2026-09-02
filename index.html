@@ -3,134 +3,452 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NIFTY Options Dashboard</title>
+    <title>NIFTY Live Dashboard</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #030712;
+            color: #f3f4f6;
             display: flex;
             justify-content: center;
+            padding: 20px 10px;
         }
-        .container {
+
+        .dashboard {
             width: 100%;
-            max-width: 600px;
-            background-color: #1e293b;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 420px;
+            background: #090d16;
+            border: 1px solid #1f293d;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
         }
+
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #334155;
-            padding-bottom: 12px;
-            margin-bottom: 20px;
         }
-        .date { font-size: 0.9rem; color: #94a3b8; }
-        .status { color: #22c55e; font-weight: bold; font-size: 0.85rem; }
-        .card {
-            background-color: #0f172a;
+
+        .spot-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .spot-price {
+            font-size: 1.1rem;
+            color: #38bdf8;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+
+        .badge-exp {
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid #0ea5e9;
+            color: #38bdf8;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .sub-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            padding: 10px 12px;
             border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
+            border: 1px solid #1e293b;
         }
-        .spot-title { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; }
-        .spot-price { font-size: 2.2rem; font-weight: bold; color: #38bdf8; margin: 5px 0; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .metric-box { background: #1e293b; padding: 10px; border-radius: 6px; }
-        .label { font-size: 0.75rem; color: #94a3b8; }
-        .value { font-size: 1.1rem; font-weight: bold; margin-top: 4px; }
-        .ce-color { color: #22c55e; }
-        .pe-color { color: #ef4444; }
+
+        .date-box {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .atm-box {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-top: 4px;
+        }
+
+        .straddle-total {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #22c55e;
+            text-align: right;
+        }
+
+        .straddle-sub {
+            font-size: 0.7rem;
+            color: #38bdf8;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .card-tag {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .tag-neutral {
+            background: rgba(234, 179, 8, 0.15);
+            color: #eab308;
+            border: 1px solid #eab308;
+        }
+
+        .strike-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .hcl-box {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            text-align: right;
+        }
+
+        .hcl-val {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .hcl-close {
+            color: #eab308;
+        }
+
+        .diff-footer {
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px dashed #334155;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        .target-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .target-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .target-val-red {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ef4444;
+        }
+
+        .target-val-green {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #22c55e;
+        }
+
+        .zone-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #38bdf8;
+            text-align: center;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .zone-grid {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .sniper-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sniper-tag {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            border: 1px solid #22c55e;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+
+        .sniper-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+
+        .earth-card {
+            background: #0f172a;
+            border: 1px solid #22c55e;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="dashboard">
+    <!-- Main Spot Header -->
     <div class="header">
         <div>
-            <h2>NIFTY Dashboard</h2>
-            <div id="currentDate" class="date">Loading...</div>
+            <span class="spot-title">NIFTY</span>
+            <span class="spot-price" id="spotPrice">--.--</span>
         </div>
-        <div class="status" id="expiryDate">--</div>
+        <div class="badge-exp" id="expiryBadge">EXP ACTIVE</div>
     </div>
 
-    <!-- Spot Metrics -->
-    <div class="card">
-        <div class="spot-title">NIFTY 50 Spot Price</div>
-        <div class="spot-price" id="spotPrice">0.00</div>
-        <div class="grid">
-            <div class="metric-box">
-                <div class="label">Day High</div>
-                <div class="value" id="spotHigh">0.00</div>
-            </div>
-            <div class="metric-box">
-                <div class="label">Day Low</div>
-                <div class="value" id="spotLow">0.00</div>
-            </div>
+    <!-- Date & Straddle Summary -->
+    <div class="sub-header">
+        <div>
+            <div class="date-box" id="currentDate">-- --- ----</div>
+            <div class="atm-box">ATM <span id="atmStrike">-----</span></div>
+        </div>
+        <div style="text-align: right;">
+            <div class="straddle-total" id="bannerTotal">0.00</div>
+            <div class="straddle-sub">CE <span id="ceCloseHeader">0.00</span> • PE <span id="peCloseHeader">0.00</span></div>
         </div>
     </div>
 
-    <!-- ATM & Premium Banner -->
-    <div class="card">
-        <div class="grid">
-            <div class="metric-box">
-                <div class="label">ATM Strike</div>
-                <div class="value" id="atmStrike">0</div>
+    <!-- CE & PE HCL Cards -->
+    <div class="grid-2">
+        <!-- Call Card -->
+        <div class="card">
+            <div class="card-tag tag-neutral">NEUTRAL</div>
+            <div class="strike-header">
+                <span id="ceStrike">-----</span>
+                <span style="color: #38bdf8;">CE</span>
             </div>
-            <div class="metric-box">
-                <div class="label">Combined Straddle Price</div>
-                <div class="value" id="bannerTotal">0.00</div>
+            <div class="hcl-box">
+                <div>H <span class="hcl-val" id="ceHigh">0.00</span></div>
+                <div>C <span class="hcl-val hcl-close" id="ceClose">0.00</span></div>
+                <div>L <span class="hcl-val" id="ceLow">0.00</span></div>
+            </div>
+            <div class="diff-footer">
+                <span>H-C <span id="ceHC">0.00</span></span>
+                <span>C-L <span id="ceCL">0.00</span></span>
+            </div>
+        </div>
+
+        <!-- Put Card -->
+        <div class="card">
+            <div class="card-tag tag-neutral">NEUTRAL</div>
+            <div class="strike-header">
+                <span id="peStrike">-----</span>
+                <span style="color: #ef4444;">PE</span>
+            </div>
+            <div class="hcl-box">
+                <div>H <span class="hcl-val" id="peHigh">0.00</span></div>
+                <div>C <span class="hcl-val hcl-close" id="peClose">0.00</span></div>
+                <div>L <span class="hcl-val" id="peLow">0.00</span></div>
+            </div>
+            <div class="diff-footer">
+                <span>H-C <span id="peHC">0.00</span></span>
+                <span>C-L <span id="peCL">0.00</span></span>
             </div>
         </div>
     </div>
 
-    <!-- Calls / Puts -->
-    <div class="card grid">
-        <div class="metric-box">
-            <div class="label">CE Close</div>
-            <div class="value ce-color" id="ceClose">0.00</div>
+    <!-- Targets -->
+    <div class="grid-2">
+        <div class="target-card">
+            <div class="target-title" style="color: #ef4444;">Minimum Supply</div>
+            <div class="target-val-red" id="minSupply">0.00</div>
         </div>
-        <div class="metric-box">
-            <div class="label">PE Close</div>
-            <div class="value pe-color" id="peClose">0.00</div>
+        <div class="target-card">
+            <div class="target-title" style="color: #22c55e;">Minimum Demand</div>
+            <div class="target-val-green" id="minDemand">0.00</div>
         </div>
+    </div>
+
+    <!-- Weekly & Monthly Zones -->
+    <div class="grid-2">
+        <div class="card">
+            <div class="zone-title">Weekly Zone</div>
+            <div class="zone-grid">
+                <span style="color: #ef4444;" id="wHigh">0.00</span>
+                <span style="color: #22c55e;" id="wLow">0.00</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="zone-title">Monthly Zone</div>
+            <div class="zone-grid">
+                <span style="color: #ef4444;" id="mHigh">0.00</span>
+                <span style="color: #22c55e;" id="mLow">0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sniper 1 Card -->
+    <div class="sniper-card">
+        <div>
+            <div class="sniper-tag">SNIPER ATM best</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">
+                <span id="snip1Atm">-----</span> CE <span id="snip1Ce">0.00</span> • PE <span id="snip1Pe">0.00</span>
+            </div>
+            <div style="font-size: 0.65rem; color: #94a3b8; margin-top: 4px;">
+                OTM <span id="snip1OtmCeStr">0</span> CE <span id="snip1OtmCe">0.00</span> | <span id="snip1OtmPeStr">0</span> PE <span id="snip1OtmPe">0.00</span>
+            </div>
+        </div>
+        <div class="sniper-val" id="snip1Val">0.00</div>
+    </div>
+
+    <!-- Sniper 2 Card -->
+    <div class="sniper-card">
+        <div>
+            <div class="sniper-tag" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-color: #38bdf8;">SNIPER ATM</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">
+                <span id="snip2Atm">-----</span> CE <span id="snip2Ce">0.00</span> • PE <span id="snip2Pe">0.00</span>
+            </div>
+            <div style="font-size: 0.65rem; color: #94a3b8; margin-top: 4px;">
+                OTM <span id="snip2OtmCeStr">0</span> CE <span id="snip2OtmCe">0.00</span> | <span id="snip2OtmPeStr">0</span> PE <span id="snip2OtmPe">0.00</span>
+            </div>
+        </div>
+        <div class="sniper-val" id="snip2Val">0.00</div>
+    </div>
+
+    <!-- Earth Level -->
+    <div class="earth-card">
+        <div style="font-weight: 700; font-size: 0.85rem; color: #ffffff;">🌏 EARTH</div>
+        <div class="sniper-val" style="color: #22c55e;" id="earthVal">0.00</div>
     </div>
 </div>
 
 <script>
-    async function loadDashboardData() {
+    async function updateDashboard() {
         try {
-            // Append dynamic timestamp to prevent browser & GitHub Pages caching
+            // Anti-cache URL parameter forces live data fetch
             const response = await fetch(`data.json?t=${new Date().getTime()}`);
-            if (!response.ok) throw new Error('Network error loading data');
-            
+            if (!response.ok) return;
             const data = await response.json();
 
-            document.getElementById('currentDate').innerText = data.currentDate || '--';
-            document.getElementById('expiryDate').innerText = data.expiryDate || 'ACTIVE';
-            document.getElementById('spotPrice').innerText = data.spotPrice ? data.spotPrice.toLocaleString('en-IN') : '0.00';
-            document.getElementById('spotHigh').innerText = data.spotHigh ? data.spotHigh.toLocaleString('en-IN') : '0.00';
-            document.getElementById('spotLow').innerText = data.spotLow ? data.spotLow.toLocaleString('en-IN') : '0.00';
-            document.getElementById('atmStrike').innerText = data.atmStrike || '0';
-            document.getElementById('bannerTotal').innerText = data.bannerTotal || '0.00';
-            document.getElementById('ceClose').innerText = data.ce ? data.ce.close : '0.00';
-            document.getElementById('peClose').innerText = data.pe ? data.pe.close : '0.00';
+            // Spot & Expiry
+            document.getElementById('spotPrice').innerText = data.spotPrice.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('currentDate').innerText = data.currentDate;
+            document.getElementById('expiryBadge').innerText = data.expiryDate || 'EXP ACTIVE';
+            document.getElementById('atmStrike').innerText = data.atmStrike;
 
-        } catch (error) {
-            console.error('Failed to update dashboard interface:', error);
+            // Straddle Banner
+            document.getElementById('bannerTotal').innerText = data.bannerTotal.toFixed(2);
+            document.getElementById('ceCloseHeader').innerText = data.ce.close.toFixed(2);
+            document.getElementById('peCloseHeader').innerText = data.pe.close.toFixed(2);
+
+            // CE Card
+            document.getElementById('ceStrike').innerText = data.atmStrike;
+            document.getElementById('ceHigh').innerText = data.ce.high.toFixed(2);
+            document.getElementById('ceClose').innerText = data.ce.close.toFixed(2);
+            document.getElementById('ceLow').innerText = data.ce.low.toFixed(2);
+            document.getElementById('ceHC').innerText = (data.ce.high - data.ce.close).toFixed(2);
+            document.getElementById('ceCL').innerText = (data.ce.close - data.ce.low).toFixed(2);
+
+            // PE Card
+            document.getElementById('peStrike').innerText = data.atmStrike;
+            document.getElementById('peHigh').innerText = data.pe.high.toFixed(2);
+            document.getElementById('peClose').innerText = data.pe.close.toFixed(2);
+            document.getElementById('peLow').innerText = data.pe.low.toFixed(2);
+            document.getElementById('peHC').innerText = (data.pe.high - data.pe.close).toFixed(2);
+            document.getElementById('peCL').innerText = (data.pe.close - data.pe.low).toFixed(2);
+
+            // Targets & Levels
+            document.getElementById('minSupply').innerText = (data.spotPrice + (data.ce.close * 0.9)).toLocaleString('en-IN', {maximumFractionDigits: 2});
+            document.getElementById('minDemand').innerText = (data.spotPrice - (data.pe.close * 0.9)).toLocaleString('en-IN', {maximumFractionDigits: 2});
+            
+            // Zones
+            document.getElementById('wHigh').innerText = (data.spotPrice * 1.011).toFixed(2);
+            document.getElementById('wLow').innerText = (data.spotPrice * 0.989).toFixed(2);
+            document.getElementById('mHigh').innerText = (data.spotPrice * 1.025).toFixed(2);
+            document.getElementById('mLow').innerText = (data.spotPrice * 0.975).toFixed(2);
+
+            // Sniper 1
+            document.getElementById('snip1Atm').innerText = data.sniper1.strike;
+            document.getElementById('snip1Ce').innerText = data.sniper1.ce.toFixed(2);
+            document.getElementById('snip1Pe').innerText = data.sniper1.pe.toFixed(2);
+            document.getElementById('snip1OtmCeStr').innerText = data.sniper1.otmCeStrike;
+            document.getElementById('snip1OtmPeStr').innerText = data.sniper1.otmPeStrike;
+            document.getElementById('snip1OtmCe').innerText = data.sniper1.otmCe.toFixed(2);
+            document.getElementById('snip1OtmPe').innerText = data.sniper1.otmPe.toFixed(2);
+            document.getElementById('snip1Val').innerText = ((data.sniper1.ce + data.sniper1.pe) * 0.155).toFixed(2);
+
+            // Sniper 2
+            document.getElementById('snip2Atm').innerText = data.sniper2.strike;
+            document.getElementById('snip2Ce').innerText = data.sniper2.ce.toFixed(2);
+            document.getElementById('snip2Pe').innerText = data.sniper2.pe.toFixed(2);
+            document.getElementById('snip2OtmCeStr').innerText = data.sniper2.otmCeStrike;
+            document.getElementById('snip2OtmPeStr').innerText = data.sniper2.otmPeStrike;
+            document.getElementById('snip2OtmCe').innerText = data.sniper2.otmCe.toFixed(2);
+            document.getElementById('snip2OtmPe').innerText = data.sniper2.otmPe.toFixed(2);
+            document.getElementById('snip2Val').innerText = ((data.sniper2.ce + data.sniper2.pe) * 0.103).toFixed(2);
+
+            // Earth
+            document.getElementById('earthVal').innerText = ((data.bannerTotal) * 0.1215).toFixed(2);
+
+        } catch (e) {
+            console.error("Error loading dashboard data:", e);
         }
     }
 
-    // Initial load
-    loadDashboardData();
-
-    // Auto refresh fetch every 60 seconds
-    setInterval(loadDashboardData, 60000);
+    // Run on load and poll every 30 seconds
+    updateDashboard();
+    setInterval(updateDashboard, 30000);
 </script>
 
 </body>
