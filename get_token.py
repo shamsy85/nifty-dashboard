@@ -55,8 +55,10 @@ def refresh_token():
         except Exception as err:
             page.screenshot(path="error_debug.png")
             print(f"Page Title at failure: {page.title()}")
-            # Fixed: page.url is a property, removed parentheses ()
             print(f"Page URL at failure: {page.url}")
+            print("--- PAGE TEXT CONTENT ---")
+            print(page.inner_text("body")[:500]) # Prints first 500 characters of the block page
+            print("-------------------------")
             raise err
         
         mobile_input = page.locator('input[type="tel"], input[name="mobile"]').first
