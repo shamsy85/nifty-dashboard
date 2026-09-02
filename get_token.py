@@ -51,17 +51,15 @@ def refresh_token():
 
         try:
             print("Waiting for mobile input field...")
-            page.wait_for_selector('input[type="tel"], input[name="mobile"]', timeout=30000)
+            # Updated selector to target input fields inside Upstox's login form
+            page.wait_for_selector('input#mobileNum, input[placeholder*="mobile" i], input[placeholder*="number" i]', timeout=30000)
         except Exception as err:
             page.screenshot(path="error_debug.png")
             print(f"Page Title at failure: {page.title()}")
             print(f"Page URL at failure: {page.url}")
-            print("--- PAGE TEXT CONTENT ---")
-            print(page.inner_text("body")[:500]) # Prints first 500 characters of the block page
-            print("-------------------------")
             raise err
         
-        mobile_input = page.locator('input[type="tel"], input[name="mobile"]').first
+        mobile_input = page.locator('input#mobileNum, input[placeholder*="mobile" i], input[placeholder*="number" i]').first
         mobile_input.fill(MOBILE_NO)
         time.sleep(1)
 
