@@ -1,30 +1,4 @@
-name: Automated Option Data Pipeline
-
-on:
-  schedule:
-    # Runs every 5 minutes during Indian Market Hours (9:15 AM - 3:30 PM IST / 03:45 - 10:00 UTC)
-    - cron: '*/5 3-10 * * 1-5'
-  workflow_dispatch:
-
-jobs:
-  run-pipeline:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Dependencies & Playwright
-        run: |
-          pip install requests yfinance playwright pyotp
-          playwright install chromium
-
-      - name: Generate Fresh Access Token
+- name: Generate Fresh Access Token
         env:
           UPSTOX_API_KEY: ${{ secrets.UPSTOX_API_KEY }}
           UPSTOX_API_SECRET: ${{ secrets.UPSTOX_API_SECRET }}
@@ -34,12 +8,9 @@ jobs:
           UPSTOX_TOTP_SECRET: ${{ secrets.UPSTOX_TOTP_SECRET }}
         run: python get_token.py
 
-      - name: Run Market Update Script
-        run: python update.py
-
-      - name: Commit and Push Changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json token.txt
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update market data and token [skip ci]" && git push)
+      - name: Upload Debug Screenshot on Failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: error-screenshot
+          path: error_debug.png
