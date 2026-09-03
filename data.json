@@ -5,33 +5,33 @@
   "atmStrike": 23850,
   "ce": {
     "high": 0.0,
-    "close": 0.0,
+    "close": 129.65,
     "low": 0.0
   },
   "pe": {
     "high": 0.0,
-    "close": 0.0,
+    "close": 89.2,
     "low": 0.0
   },
-  "bannerTotal": 0.0,
+  "bannerTotal": 218.85,
   "spotHigh": 24025.4,
   "spotLow": 23873.45,
   "sniper1": {
     "strike": 23850,
-    "ce": 0.0,
-    "pe": 0.0,
+    "ce": 129.65,
+    "pe": 89.2,
     "otmCeStrike": 23900,
     "otmPeStrike": 23800,
-    "otmCe": 0.0,
-    "otmPe": 0.0
+    "otmCe": 90.75,
+    "otmPe": 60.66
   },
   "sniper2": {
     "strike": 23850,
-    "ce": 0.0,
-    "pe": 0.0,
+    "ce": 129.65,
+    "pe": 89.2,
     "otmCeStrike": 23950,
     "otmPeStrike": 23750,
-    "otmCe": 0.0,
-    "otmPe": 0.0
+    "otmCe": 62.23,
+    "otmPe": 41.03
   }
 }
