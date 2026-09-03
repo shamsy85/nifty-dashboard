@@ -15,7 +15,6 @@ def get_upstox_headers():
 def get_current_expiry():
     """Calculates active expiry date (handles NSE weekly schedule)."""
     today = datetime.date.today()
-    # Target active expiry target (08-Sep-2026 or current active week)
     target_date = datetime.date(2026, 9, 8) if today <= datetime.date(2026, 9, 8) else today + datetime.timedelta(days=(3 - today.weekday()) % 7)
     return target_date.strftime("%Y-%m-%d")
 
@@ -52,18 +51,27 @@ def fetch_and_build_dashboard():
                 data = response.json().get("data", [])
                 for item in data:
                     if item.get("strike_price") == atm_strike:
-                        market_data = item.get("market_data", {})
-                        ohlc = market_data.get("ohlc", {})
-                        close_price = market_data.get("ltp") or ohlc.get("close")
+                        # Extract Call Options data
+                        call_opts = item.get("call_options", {})
+                        call_market = call_opts.get("market_data", {})
+                        call_ohlc = call_market.get("ohlc", {})
+                        ce_close_val = call_market.get("ltp") or call_market.get("close_price") or call_ohlc.get("close")
                         
-                        if item.get("option_type") == "CE":
-                            ce_high = round(ohlc.get("high", 0.0), 2)
-                            ce_low = round(ohlc.get("low", 0.0), 2)
-                            ce_close = round(close_price or 0.0, 2)
-                        elif item.get("option_type") == "PE":
-                            pe_high = round(ohlc.get("high", 0.0), 2)
-                            pe_low = round(ohlc.get("low", 0.0), 2)
-                            pe_close = round(close_price or 0.0, 2)
+                        ce_high = round(call_market.get("high") or call_ohlc.get("high", 0.0), 2)
+                        ce_low = round(call_market.get("low") or call_ohlc.get("low", 0.0), 2)
+                        ce_close = round(ce_close_val or 0.0, 2)
+
+                        # Extract Put Options data
+                        put_opts = item.get("put_options", {})
+                        put_market = put_opts.get("market_data", {})
+                        put_ohlc = put_market.get("ohlc", {})
+                        pe_close_val = put_market.get("ltp") or put_market.get("close_price") or put_ohlc.get("close")
+                        
+                        pe_high = round(put_market.get("high") or put_ohlc.get("high", 0.0), 2)
+                        pe_low = round(put_market.get("low") or put_ohlc.get("low", 0.0), 2)
+                        pe_close = round(pe_close_val or 0.0, 2)
+                        
+                        break
                 print("Successfully fetched live exchange HCL data from Upstox!")
             else:
                 print(f"Upstox API returned status {response.status_code}: {response.text}")
