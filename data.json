@@ -4,14 +4,14 @@
   "spotPrice": 23873.45,
   "atmStrike": 23850,
   "ce": {
-    "high": 0.0,
+    "high": 129.65,
     "close": 129.65,
-    "low": 0.0
+    "low": 129.65
   },
   "pe": {
-    "high": 0.0,
+    "high": 89.2,
     "close": 89.2,
-    "low": 0.0
+    "low": 89.2
   },
   "bannerTotal": 218.85,
   "spotHigh": 24025.4,
