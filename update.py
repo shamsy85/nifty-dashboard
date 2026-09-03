@@ -64,32 +64,42 @@ def fetch_and_build_dashboard():
                         put_instrument_key = put_opts.get("instrument_key")
                         break
                 
-                # Fetch precise Market Quotes (OHLC + LTP) using individual instrument keys
-                if call_instrument_key or put_instrument_key:
-                    keys = ",".join([k for k in [call_instrument_key, put_instrument_key] if k])
-                    quote_url = f"https://api.upstox.com/v2/market-quote/quotes?instrument_key={keys}"
+                print(f"Target ATM Strike: {atm_strike} | Call Key: {call_instrument_key} | Put Key: {put_instrument_key}")
+                
+                # Fetch Full Market Quotes for High, Close, Low using exact instrument keys
+                keys_to_fetch = []
+                if call_instrument_key: keys_to_fetch.append(call_instrument_key)
+                if put_instrument_key: keys_to_fetch.append(put_instrument_key)
+                
+                if keys_to_fetch:
+                    quote_url = f"https://api.upstox.com/v2/market-quote/quotes?instrument_key={','.join(keys_to_fetch)}"
                     quote_res = requests.get(quote_url, headers=headers, timeout=8)
                     
                     if quote_res.status_code == 200:
                         q_data = quote_res.json().get("data", {})
                         
-                        if call_instrument_key and call_instrument_key in q_data:
-                            c_item = q_data[call_instrument_key]
-                            c_ohlc = c_item.get("ohlc", {})
-                            ce_high = round(float(c_ohlc.get("high") or c_item.get("last_price", 0.0)), 2)
-                            ce_low = round(float(c_ohlc.get("low") or c_item.get("last_price", 0.0)), 2)
-                            ce_close = round(float(c_item.get("last_price") or c_ohlc.get("close", 0.0)), 2)
-                        
-                        if put_instrument_key and put_instrument_key in q_data:
-                            p_item = q_data[put_instrument_key]
-                            p_ohlc = p_item.get("ohlc", {})
-                            pe_high = round(float(p_ohlc.get("high") or p_item.get("last_price", 0.0)), 2)
-                            pe_low = round(float(p_ohlc.get("low") or p_item.get("last_price", 0.0)), 2)
-                            pe_close = round(float(p_item.get("last_price") or p_ohlc.get("close", 0.0)), 2)
+                        def extract_ohlc(ikey):
+                            if not ikey:
+                                return 0.0, 0.0, 0.0
+                            item = q_data.get(ikey) or q_data.get(ikey.replace("|", ":")) or {}
+                            ohlc = item.get("ohlc", {})
+                            market_data = item.get("market_data", {})
+                            
+                            high = float(ohlc.get("high") or market_data.get("high") or 0.0)
+                            close = float(item.get("last_price") or ohlc.get("close") or market_data.get("close") or 0.0)
+                            low = float(ohlc.get("low") or market_data.get("low") or 0.0)
+                            return high, close, low
+
+                        if call_instrument_key:
+                            ce_high, ce_close, ce_low = extract_ohlc(call_instrument_key)
+                        if put_instrument_key:
+                            pe_high, pe_close, pe_low = extract_ohlc(put_instrument_key)
                             
                         print(f"Fetched Quotes -> CE [H:{ce_high}, C:{ce_close}, L:{ce_low}] | PE [H:{pe_high}, C:{pe_close}, L:{pe_low}]")
+                    else:
+                        print(f"Quote API error response: {quote_res.text}")
             else:
-                print(f"Upstox API error response: {response.text}")
+                print(f"Option Chain API error response: {response.text}")
         except Exception as err:
             print(f"Upstox request failed with exception: {err}")
 
