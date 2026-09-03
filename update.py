@@ -41,53 +41,53 @@ def fetch_and_build_dashboard():
     ce_high, ce_low, ce_close = 0.0, 0.0, 0.0
     pe_high, pe_low, pe_close = 0.0, 0.0, 0.0
     
-    # 3. Query Upstox Option Chain API dynamically
     headers = get_upstox_headers()
     if headers.get("Authorization") != "Bearer " and atm_strike > 0:
         try:
             expiry_date = get_current_expiry()
-            print(f"Querying Upstox API for active expiry: {expiry_date} at strike {atm_strike}...")
+            print(f"Querying Upstox Option Chain for active expiry: {expiry_date} at strike {atm_strike}...")
             url = f"https://api.upstox.com/v2/option/chain?instrument_key=NSE_INDEX|Nifty%2050&expiry_date={expiry_date}"
             response = requests.get(url, headers=headers, timeout=8)
             
-            print(f"Upstox API Response Status: {response.status_code}")
-            
             if response.status_code == 200:
-                res_json = response.json()
-                data = res_json.get("data", [])
-                print(f"Total strikes returned in chain: {len(data)}")
+                data = response.json().get("data", [])
+                call_instrument_key = None
+                put_instrument_key = None
                 
-                found = False
                 for item in data:
                     item_strike = item.get("strike_price")
                     if item_strike is not None and float(item_strike) == float(atm_strike):
-                        found = True
-                        
-                        # Extract Call Options data
                         call_opts = item.get("call_options", {})
-                        call_market = call_opts.get("market_data", {})
-                        call_ohlc = call_market.get("ohlc", {})
-                        ce_close_val = call_market.get("ltp") or call_market.get("close_price") or call_ohlc.get("close")
-                        
-                        ce_high = round(float(call_market.get("high") or call_ohlc.get("high") or call_market.get("high_price") or ce_close_val or 0.0), 2)
-                        ce_low = round(float(call_market.get("low") or call_ohlc.get("low") or call_market.get("low_price") or ce_close_val or 0.0), 2)
-                        ce_close = round(float(ce_close_val or 0.0), 2)
-
-                        # Extract Put Options data
                         put_opts = item.get("put_options", {})
-                        put_market = put_opts.get("market_data", {})
-                        put_ohlc = put_market.get("ohlc", {})
-                        pe_close_val = put_market.get("ltp") or put_market.get("close_price") or put_ohlc.get("close")
                         
-                        pe_high = round(float(put_market.get("high") or put_ohlc.get("high") or put_market.get("high_price") or pe_close_val or 0.0), 2)
-                        pe_low = round(float(put_market.get("low") or put_ohlc.get("low") or put_market.get("low_price") or pe_close_val or 0.0), 2)
-                        pe_close = round(float(pe_close_val or 0.0), 2)
-                        
-                        print(f"Matched ATM {atm_strike} -> CE Close: {ce_close}, PE Close: {pe_close}")
+                        call_instrument_key = call_opts.get("instrument_key")
+                        put_instrument_key = put_opts.get("instrument_key")
                         break
                 
-                if not found:
-                    print(f"Warning: ATM strike {atm_strike} was not found in the option chain response data.")
+                # Fetch precise Market Quotes (OHLC + LTP) using individual instrument keys
+                if call_instrument_key or put_instrument_key:
+                    keys = ",".join([k for k in [call_instrument_key, put_instrument_key] if k])
+                    quote_url = f"https://api.upstox.com/v2/market-quote/quotes?instrument_key={keys}"
+                    quote_res = requests.get(quote_url, headers=headers, timeout=8)
+                    
+                    if quote_res.status_code == 200:
+                        q_data = quote_res.json().get("data", {})
+                        
+                        if call_instrument_key and call_instrument_key in q_data:
+                            c_item = q_data[call_instrument_key]
+                            c_ohlc = c_item.get("ohlc", {})
+                            ce_high = round(float(c_ohlc.get("high") or c_item.get("last_price", 0.0)), 2)
+                            ce_low = round(float(c_ohlc.get("low") or c_item.get("last_price", 0.0)), 2)
+                            ce_close = round(float(c_item.get("last_price") or c_ohlc.get("close", 0.0)), 2)
+                        
+                        if put_instrument_key and put_instrument_key in q_data:
+                            p_item = q_data[put_instrument_key]
+                            p_ohlc = p_item.get("ohlc", {})
+                            pe_high = round(float(p_ohlc.get("high") or p_item.get("last_price", 0.0)), 2)
+                            pe_low = round(float(p_ohlc.get("low") or p_item.get("last_price", 0.0)), 2)
+                            pe_close = round(float(p_item.get("last_price") or p_ohlc.get("close", 0.0)), 2)
+                            
+                        print(f"Fetched Quotes -> CE [H:{ce_high}, C:{ce_close}, L:{ce_low}] | PE [H:{pe_high}, C:{pe_close}, L:{pe_low}]")
             else:
                 print(f"Upstox API error response: {response.text}")
         except Exception as err:
