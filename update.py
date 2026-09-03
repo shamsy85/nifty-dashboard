@@ -62,14 +62,15 @@ def fetch_and_build_dashboard():
                     item_strike = item.get("strike_price")
                     if item_strike is not None and float(item_strike) == float(atm_strike):
                         found = True
+                        
                         # Extract Call Options data
                         call_opts = item.get("call_options", {})
                         call_market = call_opts.get("market_data", {})
                         call_ohlc = call_market.get("ohlc", {})
                         ce_close_val = call_market.get("ltp") or call_market.get("close_price") or call_ohlc.get("close")
                         
-                        ce_high = round(float(call_market.get("high") or call_ohlc.get("high", 0.0)), 2)
-                        ce_low = round(float(call_market.get("low") or call_ohlc.get("low", 0.0)), 2)
+                        ce_high = round(float(call_market.get("high") or call_ohlc.get("high") or call_market.get("high_price") or ce_close_val or 0.0), 2)
+                        ce_low = round(float(call_market.get("low") or call_ohlc.get("low") or call_market.get("low_price") or ce_close_val or 0.0), 2)
                         ce_close = round(float(ce_close_val or 0.0), 2)
 
                         # Extract Put Options data
@@ -78,8 +79,8 @@ def fetch_and_build_dashboard():
                         put_ohlc = put_market.get("ohlc", {})
                         pe_close_val = put_market.get("ltp") or put_market.get("close_price") or put_ohlc.get("close")
                         
-                        pe_high = round(float(put_market.get("high") or put_ohlc.get("high", 0.0)), 2)
-                        pe_low = round(float(put_market.get("low") or put_ohlc.get("low", 0.0)), 2)
+                        pe_high = round(float(put_market.get("high") or put_ohlc.get("high") or put_market.get("high_price") or pe_close_val or 0.0), 2)
+                        pe_low = round(float(put_market.get("low") or put_ohlc.get("low") or put_market.get("low_price") or pe_close_val or 0.0), 2)
                         pe_close = round(float(pe_close_val or 0.0), 2)
                         
                         print(f"Matched ATM {atm_strike} -> CE Close: {ce_close}, PE Close: {pe_close}")
