@@ -5,10 +5,13 @@ import requests
 import yfinance as yf
 
 def get_upstox_headers():
-    access_token = os.environ.get("UPSTOX_ACCESS_TOKEN", "")
+    token = os.environ.get("UPSTOX_ACCESS_TOKEN", "")
+    if not token and os.path.exists("token.txt"):
+        with open("token.txt", "r") as f:
+            token = f.read().strip()
     return {
         "Accept": "application/json",
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {token}",
         "Api-Version": "2.0"
     }
 
@@ -39,27 +42,35 @@ def fetch_and_build_dashboard():
     pe_high, pe_low, pe_close = 0.0, 0.0, 0.0
     
     # 3. Query Upstox Option Chain API dynamically
-    token = os.environ.get("UPSTOX_ACCESS_TOKEN", "")
-    if token and atm_strike > 0:
+    headers = get_upstox_headers()
+    if headers.get("Authorization") != "Bearer " and atm_strike > 0:
         try:
             expiry_date = get_current_expiry()
-            print(f"Querying Upstox API for active expiry: {expiry_date}...")
+            print(f"Querying Upstox API for active expiry: {expiry_date} at strike {atm_strike}...")
             url = f"https://api.upstox.com/v2/option/chain?instrument_key=NSE_INDEX|Nifty%2050&expiry_date={expiry_date}"
-            response = requests.get(url, headers=get_upstox_headers(), timeout=8)
+            response = requests.get(url, headers=headers, timeout=8)
+            
+            print(f"Upstox API Response Status: {response.status_code}")
             
             if response.status_code == 200:
-                data = response.json().get("data", [])
+                res_json = response.json()
+                data = res_json.get("data", [])
+                print(f"Total strikes returned in chain: {len(data)}")
+                
+                found = False
                 for item in data:
-                    if item.get("strike_price") == atm_strike:
+                    item_strike = item.get("strike_price")
+                    if item_strike is not None and float(item_strike) == float(atm_strike):
+                        found = True
                         # Extract Call Options data
                         call_opts = item.get("call_options", {})
                         call_market = call_opts.get("market_data", {})
                         call_ohlc = call_market.get("ohlc", {})
                         ce_close_val = call_market.get("ltp") or call_market.get("close_price") or call_ohlc.get("close")
                         
-                        ce_high = round(call_market.get("high") or call_ohlc.get("high", 0.0), 2)
-                        ce_low = round(call_market.get("low") or call_ohlc.get("low", 0.0), 2)
-                        ce_close = round(ce_close_val or 0.0, 2)
+                        ce_high = round(float(call_market.get("high") or call_ohlc.get("high", 0.0)), 2)
+                        ce_low = round(float(call_market.get("low") or call_ohlc.get("low", 0.0)), 2)
+                        ce_close = round(float(ce_close_val or 0.0), 2)
 
                         # Extract Put Options data
                         put_opts = item.get("put_options", {})
@@ -67,16 +78,19 @@ def fetch_and_build_dashboard():
                         put_ohlc = put_market.get("ohlc", {})
                         pe_close_val = put_market.get("ltp") or put_market.get("close_price") or put_ohlc.get("close")
                         
-                        pe_high = round(put_market.get("high") or put_ohlc.get("high", 0.0), 2)
-                        pe_low = round(put_market.get("low") or put_ohlc.get("low", 0.0), 2)
-                        pe_close = round(pe_close_val or 0.0, 2)
+                        pe_high = round(float(put_market.get("high") or put_ohlc.get("high", 0.0)), 2)
+                        pe_low = round(float(put_market.get("low") or put_ohlc.get("low", 0.0)), 2)
+                        pe_close = round(float(pe_close_val or 0.0), 2)
                         
+                        print(f"Matched ATM {atm_strike} -> CE Close: {ce_close}, PE Close: {pe_close}")
                         break
-                print("Successfully fetched live exchange HCL data from Upstox!")
+                
+                if not found:
+                    print(f"Warning: ATM strike {atm_strike} was not found in the option chain response data.")
             else:
-                print(f"Upstox API returned status {response.status_code}: {response.text}")
+                print(f"Upstox API error response: {response.text}")
         except Exception as err:
-            print(f"Upstox request failed: {err}")
+            print(f"Upstox request failed with exception: {err}")
 
     # 4. Save JSON Payload
     payload = {
