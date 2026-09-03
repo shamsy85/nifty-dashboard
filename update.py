@@ -51,53 +51,29 @@ def fetch_and_build_dashboard():
             
             if response.status_code == 200:
                 data = response.json().get("data", [])
-                call_instrument_key = None
-                put_instrument_key = None
                 
+                def extract_option_metrics(opt_dict):
+                    if not opt_dict:
+                        return 0.0, 0.0, 0.0
+                    m_data = opt_dict.get("market_data", {})
+                    ohlc = opt_dict.get("ohlc", {})
+                    
+                    high = float(ohlc.get("high") or m_data.get("high") or 0.0)
+                    close = float(opt_dict.get("last_price") or m_data.get("ltp") or m_data.get("close") or 0.0)
+                    low = float(ohlc.get("low") or m_data.get("low") or 0.0)
+                    return high, close, low
+
                 for item in data:
                     item_strike = item.get("strike_price")
                     if item_strike is not None and float(item_strike) == float(atm_strike):
                         call_opts = item.get("call_options", {})
                         put_opts = item.get("put_options", {})
                         
-                        call_instrument_key = call_opts.get("instrument_key")
-                        put_instrument_key = put_opts.get("instrument_key")
+                        ce_high, ce_close, ce_low = extract_option_metrics(call_opts)
+                        pe_high, pe_close, pe_low = extract_option_metrics(put_opts)
                         break
                 
-                print(f"Target ATM Strike: {atm_strike} | Call Key: {call_instrument_key} | Put Key: {put_instrument_key}")
-                
-                # Fetch Full Market Quotes for High, Close, Low using exact instrument keys
-                keys_to_fetch = []
-                if call_instrument_key: keys_to_fetch.append(call_instrument_key)
-                if put_instrument_key: keys_to_fetch.append(put_instrument_key)
-                
-                if keys_to_fetch:
-                    quote_url = f"https://api.upstox.com/v2/market-quote/quotes?instrument_key={','.join(keys_to_fetch)}"
-                    quote_res = requests.get(quote_url, headers=headers, timeout=8)
-                    
-                    if quote_res.status_code == 200:
-                        q_data = quote_res.json().get("data", {})
-                        
-                        def extract_ohlc(ikey):
-                            if not ikey:
-                                return 0.0, 0.0, 0.0
-                            item = q_data.get(ikey) or q_data.get(ikey.replace("|", ":")) or {}
-                            ohlc = item.get("ohlc", {})
-                            market_data = item.get("market_data", {})
-                            
-                            high = float(ohlc.get("high") or market_data.get("high") or 0.0)
-                            close = float(item.get("last_price") or ohlc.get("close") or market_data.get("close") or 0.0)
-                            low = float(ohlc.get("low") or market_data.get("low") or 0.0)
-                            return high, close, low
-
-                        if call_instrument_key:
-                            ce_high, ce_close, ce_low = extract_ohlc(call_instrument_key)
-                        if put_instrument_key:
-                            pe_high, pe_close, pe_low = extract_ohlc(put_instrument_key)
-                            
-                        print(f"Fetched Quotes -> CE [H:{ce_high}, C:{ce_close}, L:{ce_low}] | PE [H:{pe_high}, C:{pe_close}, L:{pe_low}]")
-                    else:
-                        print(f"Quote API error response: {quote_res.text}")
+                print(f"Extracted ATM Strike: {atm_strike} | CE [H:{ce_high}, C:{ce_close}, L:{ce_low}] | PE [H:{pe_high}, C:{pe_close}, L:{pe_low}]")
             else:
                 print(f"Option Chain API error response: {response.text}")
         except Exception as err:
