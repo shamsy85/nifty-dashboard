@@ -1,37 +1,4 @@
 {
-    "currentDate": "04 SEP 2026",
-    "expiryDate": "10-SEP-2026",
-    "spotPrice": 24500.50,
-    "hlcAtmStrike": 24500,
-    "ce": {
-        "high": 160.00,
-        "close": 110.00,
-        "low": 70.00
-    },
-    "pe": {
-        "high": 140.00,
-        "close": 90.00,
-        "low": 50.00
-    },
-    "bannerTotal": 20.00,
-    "spotHigh": 24550.00,
-    "spotLow": 24420.00,
-    "sniper1": {
-        "strike": 24500,
-        "ce": 110.00,
-        "pe": 90.00,
-        "otmCeStrike": 24600,
-        "otmPeStrike": 24400,
-        "otmCe": 65.00,
-        "otmPe": 55.00
-    },
-    "sniper2": {
-        "strike": 24500,
-        "ce": 110.00,
-        "pe": 90.00,
-        "otmCeStrike": 24700,
-        "otmPeStrike": 24300,
-        "otmCe": 35.00,
-        "otmPe": 25.00
-    }
+    "dataStatus": "PENDING",
+    "currentDate": "04 SEP 2026"
 }
