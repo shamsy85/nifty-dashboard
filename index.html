@@ -386,7 +386,7 @@
             document.getElementById('expiryBadge').innerText = data.expiryDate || 'EXP ACTIVE';
             document.getElementById('hlcAtmStrike').innerText = data.hlcAtmStrike;
 
-            // Straddle Banner
+            // Straddle Banner (CE - PE)
             document.getElementById('bannerTotal').innerText = data.bannerTotal.toFixed(2);
             document.getElementById('ceCloseHeader').innerText = data.ce.close.toFixed(2);
             document.getElementById('peCloseHeader').innerText = data.pe.close.toFixed(2);
@@ -429,7 +429,7 @@
                 document.getElementById('snip1Val').innerText = ((data.sniper1.ce + data.sniper1.pe) * 0.155).toFixed(2);
             }
 
-            // Sniper 2 (if present in data)
+            // Sniper 2
             if (data.sniper2) {
                 document.getElementById('snip2Atm').innerText = data.sniper2.strike;
                 document.getElementById('snip2Ce').innerText = data.sniper2.ce.toFixed(2);
@@ -442,7 +442,7 @@
             }
 
             // Earth
-            document.getElementById('earthVal').innerText = ((data.bannerTotal) * 0.1215).toFixed(2);
+            document.getElementById('earthVal').innerText = (data.bannerTotal * 0.1215).toFixed(2);
 
         } catch (e) {
             console.error("Error loading dashboard data:", e);
