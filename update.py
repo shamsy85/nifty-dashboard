@@ -2,11 +2,22 @@ import datetime
 import json
 import os
 import requests
+import subprocess
 import time
 
+def push_to_github():
+    # Adds both your dashboard data and bhavcopy if you generate one
+    subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"])
+    subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
+    subprocess.run(["git", "add", "data.json"])
+    # If you save a bhavcopy file locally, add it here too:
+    # subprocess.run(["git", "add", "bhavcopy.csv"])
+    subprocess.run(["git", "commit", "-m", "Auto-update dashboard and market data [skip ci]"])
+    subprocess.run(["git", "push", "origin", "main"])
+
 def load_access_token():
-    if os.path.exists("access_token.txt"):
-        with open("access_token.txt", "r") as f:
+    if os.path.exists("token.txt"):
+        with open("token.txt", "r") as f:
             return f.read().strip()
     return os.getenv("UPSTOX_ACCESS_TOKEN", "")
 
@@ -71,6 +82,7 @@ def write_status_to_json(status_flag):
     }
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
+    push_to_github()
 
 def update_dashboard_with_retry(max_retries=3, delay=120):
     for attempt in range(1, max_retries + 1):
@@ -220,6 +232,7 @@ def process_and_save_data(res_json):
         json.dump(payload, f, indent=4)
         
     print("Dashboard data updated successfully from Upstox API.")
+    push_to_github()
 
 if __name__ == "__main__":
     update_dashboard_with_retry()
