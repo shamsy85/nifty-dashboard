@@ -12,12 +12,21 @@ TOTP_SECRET = os.environ.get("UPSTOX_TOTP_SECRET")
 PIN = os.environ.get("UPSTOX_PIN")
 
 def get_access_token():
-    auth_code = None
+    auth_code = []
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(ignore_https_errors=True)
         page = context.new_page()
+
+        # Intercept or listen to any navigation/request to catch the redirect code instantly
+        def handle_route(route):
+            url = route.request.url
+            if "code=" in url:
+                auth_code.append(url)
+            route.continue_()
+
+        context.route("**/*", handle_route)
 
         login_url = (
             f"https://api.upstox.com/v2/login/authorization/dialog?"
@@ -88,13 +97,25 @@ def get_access_token():
             
         page.keyboard.press("Enter")
 
-        # 4. Poll URL to capture authorization code despite connection refused on 127.0.0.1
+        # Click any potential secondary continue/authorize buttons if present
+        time.sleep(2)
+        for btn_text in ["Continue", "Authorize", "Confirm", "Proceed"]:
+            try:
+                btn = page.locator(f"button:has-text('{btn_text}')").first
+                if btn.is_visible():
+                    btn.click()
+                    break
+            except Exception:
+                pass
+
+        # 4. Wait for the route/redirect containing the auth code
         print("Waiting for redirect callback...")
-        for _ in range(30):
-            current_url = page.url
-            if "code=" in current_url:
-                auth_code = current_url.split("code=")[1].split("&")[0]
-                print("Authorization code captured successfully.")
+        for _ in range(35):
+            if auth_code:
+                break
+            # Also check page URL directly as fallback
+            if "code=" in page.url:
+                auth_code.append(page.url)
                 break
             time.sleep(1)
 
@@ -103,10 +124,13 @@ def get_access_token():
     if not auth_code:
         raise Exception("Failed to retrieve authentication code. The login flow did not redirect properly.")
 
+    full_url = auth_code[0]
+    extracted_code = full_url.split("code=")[1].split("&")[0]
+
     # 5. Exchange Authorization Code for Access Token
     token_url = "https://api.upstox.com/v2/login/authorization/token"
     payload = {
-        'code': auth_code,
+        'code': extracted_code,
         'client_id': API_KEY,
         'client_secret': API_SECRET,
         'redirect_uri': REDIRECT_URI,
