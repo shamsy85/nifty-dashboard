@@ -187,7 +187,7 @@ def update_dashboard():
 
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
-    print("Dashboard data updated successfully with bannerTotal as addition (CE + PE).")
+    print("Dashboard data updated successfully with bannerTotal as addition (CE - PE).")
 
 if __name__ == "__main__":
     update_dashboard()
