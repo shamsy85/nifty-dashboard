@@ -162,7 +162,7 @@ def update_dashboard():
             "close": round(pe_close, 2), 
             "low": round(pe_low, 2)
         },
-        "bannerTotal": round(ce_close + pe_close, 2),
+        "bannerTotal": round(ce_close - pe_close, 2),
         "spotHigh": float(res_json.get("spot_high", spot)),
         "spotLow": float(res_json.get("spot_low", spot)),
         "sniper1": {
@@ -187,7 +187,7 @@ def update_dashboard():
 
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
-    print("Dashboard data updated successfully with bannerTotal as addition (CE - PE).")
+    print("Dashboard data updated successfully with bannerTotal as subtraction (CE - PE).")
 
 if __name__ == "__main__":
     update_dashboard()
