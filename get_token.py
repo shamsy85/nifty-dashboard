@@ -31,7 +31,6 @@ def get_access_token():
         print("Submitting mobile number...")
         page.wait_for_selector("input", timeout=15000)
         
-        # Try multiple possible selectors for the mobile field
         mobile_filled = False
         for selector in ["input[name='mobile']", "input[type='mobile']", "input[type='text']", "input"]:
             try:
@@ -54,7 +53,6 @@ def get_access_token():
         totp = pyotp.TOTP(TOTP_SECRET)
         current_otp = totp.now()
         
-        # Wait for OTP input field with flexible fallback selectors
         otp_filled = False
         for selector in ["input[autocomplete='one-time-code']", "input[name='otp']", "input[type='password']", "input[type='text']"]:
             try:
@@ -67,7 +65,6 @@ def get_access_token():
                 continue
                 
         if not otp_filled:
-            # Fallback: type directly if focused or wait a bit longer
             page.keyboard.type(str(current_otp))
             
         page.keyboard.press("Enter")
@@ -91,19 +88,15 @@ def get_access_token():
             
         page.keyboard.press("Enter")
 
-        # 4. Wait for redirect and capture authorization code securely
+        # 4. Poll URL to capture authorization code despite connection refused on 127.0.0.1
         print("Waiting for redirect callback...")
-        try:
-            page.wait_for_url(f"{REDIRECT_URI}*", timeout=30000)
+        for _ in range(30):
             current_url = page.url
-            print("Redirect caught successfully.")
-            
             if "code=" in current_url:
                 auth_code = current_url.split("code=")[1].split("&")[0]
-        except Exception as e:
-            print(f"Warning/Timeout during redirect wait: {e}")
-            if "code=" in page.url:
-                auth_code = page.url.split("code=")[1].split("&")[0]
+                print("Authorization code captured successfully.")
+                break
+            time.sleep(1)
 
         browser.close()
 
