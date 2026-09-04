@@ -57,6 +57,7 @@ def fetch_and_build_dashboard():
     
     ce_high, ce_low, ce_close = 0.0, 0.0, 0.0
     pe_high, pe_low, pe_close = 0.0, 0.0, 0.0
+    min_diff = 0.0
     
     headers = get_upstox_headers()
     call_key, put_key = None, None
@@ -98,6 +99,7 @@ def fetch_and_build_dashboard():
 
                 if not best_strike_entry:
                     atm_strike = fallback_atm
+                    min_diff = 0.0
                     for item in data:
                         if item.get("strike_price") and float(item.get("strike_price")) == float(fallback_atm):
                             best_strike_entry = item
@@ -140,7 +142,11 @@ def fetch_and_build_dashboard():
         except Exception as err:
             print(f"Request exception: {err}")
 
-    # 4. Save JSON Payload
+    # Fallback calculation if min_diff wasn't set from the loop
+    if min_diff == float('inf') or min_diff == 0.0:
+        min_diff = abs(ce_close - pe_close)
+
+    # 4. Save JSON Payload (bannerTotal now stores the minimum difference value directly)
     payload = {
         "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper(),
         "expiryDate": datetime.datetime.strptime(get_current_expiry(), "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
@@ -148,7 +154,7 @@ def fetch_and_build_dashboard():
         "atmStrike": atm_strike,
         "ce": {"high": round(ce_high, 2), "close": round(ce_close, 2), "low": round(ce_low, 2)},
         "pe": {"high": round(pe_high, 2), "close": round(pe_close, 2), "low": round(pe_low, 2)},
-        "bannerTotal": round(ce_close + pe_close, 2),
+        "bannerTotal": round(min_diff, 2),
         "spotHigh": spot_high,
         "spotLow": spot_low,
         "sniper1": {
@@ -166,7 +172,7 @@ def fetch_and_build_dashboard():
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"Pipeline executed successfully. Spot: {spot} | ATM: {atm_strike}")
+    print(f"Pipeline executed successfully. Spot: {spot} | ATM: {atm_strike} | Min Diff: {min_diff}")
 
 if __name__ == "__main__":
     fetch_and_build_dashboard()
