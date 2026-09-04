@@ -4,26 +4,46 @@ import os
 import requests
 
 def get_current_expiry():
-    # Helper to return your target expiry date string format, e.g., "2026-09-10"
+    # Return your target expiry date string format, e.g., "2026-09-10"
     return "2026-09-10"
 
+def load_access_token():
+    # Automatically read token saved from get_token.py if available
+    if os.path.exists("access_token.txt"):
+        with open("access_token.txt", "r") as f:
+            return f.read().strip()
+    return os.getenv("UPSTOX_ACCESS_TOKEN", "")
+
 def update_dashboard():
-    # 1. Fetch Option Chain Data (Replace with your actual API endpoint / authentication headers)
-    url = "YOUR_UPSTOX_OPTION_CHAIN_API_URL"
-    headers = {"Authorization": "Bearer YOUR_ACCESS_TOKEN"}
+    access_token = load_access_token()
+    if not access_token:
+        print("Error: Access token not found. Please ensure get_token.py saves the token or set UPSTOX_ACCESS_TOKEN.")
+        return
+
+    # Upstox API endpoint for Option Chain
+    instrument_key = "NSE_INDEX|Nifty 50"
+    expiry_date = get_current_expiry()
+    url = f"https://api.upstox.com/v2/option/chain?instrument_key={instrument_key}&expiry_date={expiry_date}"
+    
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    
     response = requests.get(url, headers=headers)
     
     if response.status_code != 200:
-        print("Failed to fetch option chain data.")
+        print(f"Failed to fetch option chain data. Status: {response.status_code}, Response: {response.text}")
         return
 
     res_json = response.json()
     data = res_json.get("data", [])
+    
     spot = float(res_json.get("spot_price", 0.0))
-    spot_high = float(res_json.get("spot_high", spot))
-    spot_low = float(res_json.get("spot_low", spot))
+    if spot == 0.0 and data:
+        spot = float(data[0].get("spot_price", 0.0))
 
-    # 2. Initialize variables for HLC ATM (min absolute difference between CE and PE)
+    # 1. Initialize variables for HLC ATM (min absolute difference between CE and PE)
     min_diff = float('inf')
     hlc_atm_strike = 0
     ce_close, ce_high, ce_low = 0.0, 0.0, 0.0
@@ -56,7 +76,7 @@ def update_dashboard():
             pe_high = float(put_opts.get("high_price") or m_put.get("high_price") or pe_ltp)
             pe_low = float(put_opts.get("low_price") or m_put.get("low_price") or pe_ltp)
 
-    # 3. Calculate Sniper ATM based on market close / spot rounding to the nearest 100
+    # 2. Calculate Sniper ATM based on spot rounding to the nearest 100
     sniper_atm_strike = int(round(spot / 100.0) * 100) if spot > 0 else hlc_atm_strike
 
     target_s1_ce_strike = sniper_atm_strike + 100
@@ -97,7 +117,7 @@ def update_dashboard():
     sniper1_avg = round((s1_ce_close + s1_pe_close) / 2.0, 3) if (s1_ce_close > 0 and s1_pe_close > 0) else 0.0
     sniper2_avg = round((s2_ce_close + s2_pe_close) / 2.0, 3) if (s2_ce_close > 0 and s2_pe_close > 0) else 0.0
 
-    # 4. Save JSON Payload with HLC ATM and Sniper ATM
+    # 3. Save JSON Payload with HLC ATM and Sniper ATM
     payload = {
         "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper(),
         "expiryDate": datetime.datetime.strptime(get_current_expiry(), "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
@@ -106,8 +126,8 @@ def update_dashboard():
         "ce": {"high": round(ce_high, 2), "close": round(ce_close, 2), "low": round(ce_low, 2)},
         "pe": {"high": round(pe_high, 2), "close": round(pe_close, 2), "low": round(pe_low, 2)},
         "bannerTotal": round(min_diff, 2),
-        "spotHigh": spot_high,
-        "spotLow": spot_low,
+        "spotHigh": float(res_json.get("spot_high", spot)),
+        "spotLow": float(res_json.get("spot_low", spot)),
         "sniper1": {
             "strike": sniper_atm_strike, 
             "ce": round(s1_ce_close, 2), 
