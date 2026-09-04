@@ -3,7 +3,6 @@ import json
 import os
 import requests
 import subprocess
-import time
 import csv
 
 def push_to_github():
@@ -110,11 +109,11 @@ def fetch_option_chain_data(access_token, expiry_date):
 
 def parse_bhavcopy_for_strike(target_strike, option_type):
     """
-    Searches bhavcopy.csv for specific strike and option type (CE/PE)
-    and returns (high, low, close).
+    Parses bhavcopy.csv to extract true distinct High, Low, and Close values
+    for a given strike price and option type (CE/PE).
     """
     if not os.path.exists("bhavcopy.csv"):
-        return None, None, None
+        return 0.0, 0.0, 0.0
 
     try:
         with open("bhavcopy.csv", mode="r", encoding="utf-8", errors="ignore") as f:
@@ -122,7 +121,6 @@ def parse_bhavcopy_for_strike(target_strike, option_type):
             for row in reader:
                 row = {k.strip().upper(): v.strip() for k, v in row.items() if k}
                 
-                # Check standard bhavcopy column names
                 strike_val = row.get("STRIKE_PR") or row.get("STRIKE_PRICE") or row.get("STRIKE")
                 opt_typ = row.get("OPTION_TYP") or row.get("OPTION_TYPE") or row.get("INSTRUMENT")
                 
@@ -138,7 +136,7 @@ def parse_bhavcopy_for_strike(target_strike, option_type):
     except Exception as e:
         print(f"Error reading bhavcopy.csv: {e}")
         
-    return None, None, None
+    return 0.0, 0.0, 0.0
 
 def process_and_save_data(res_json, spot, expiry_date_str):
     data = res_json.get("data", [])
@@ -149,35 +147,51 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     # Download latest bhavcopy first
     download_nse_bhavcopy()
 
-    target_atm = int(round(spot / 50.0) * 50)
-    hlc_atm_strike = target_atm
+    # Find HLC ATM strike using minimum absolute CE-PE difference within 500 points of spot
+    min_diff = float('inf')
+    hlc_atm_strike = int(round(spot / 50.0) * 50)
+
+    for item in data:
+        item_strike = item.get("strike_price")
+        if item_strike is None:
+            continue
+        
+        s_val = float(item_strike)
+        if abs(s_val - spot) > 500:
+            continue
+            
+        call_opts = item.get("call_options", {})
+        put_opts = item.get("put_options", {})
+        
+        m_call = call_opts.get("market_data", {})
+        m_put = put_opts.get("market_data", {})
+        
+        ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
+        pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
+        
+        diff = abs(ce_ltp - pe_ltp)
+        if diff < min_diff:
+            min_diff = diff
+            hlc_atm_strike = int(s_val)
 
     sniper1_atm_strike = int(round(spot / 100.0) * 100)
-    sniper2_atm_strike = target_atm
+    sniper2_atm_strike = hlc_atm_strike
 
     target_s1_ce_strike = sniper1_atm_strike + 100
     target_s1_pe_strike = sniper1_atm_strike - 100
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    # Initialize values
-    ce_high, ce_low, ce_close = 0.0, 0.0, 0.0
-    pe_high, pe_low, pe_close = 0.0, 0.0, 0.0
+    # Fetch distinct H, L, C from Bhavcopy for the min-diff HLC ATM strike
+    ce_high, ce_low, ce_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE")
+    pe_high, pe_low, pe_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE")
+
     s1_atm_ce_val, s1_atm_pe_val = 0.0, 0.0
     s2_atm_ce_val, s2_atm_pe_val = 0.0, 0.0
     s1_ce_val, s1_pe_val = 0.0, 0.0
     s2_ce_val, s2_pe_val = 0.0, 0.0
 
-    # Try fetching HLC from Bhavcopy for HLC ATM strike
-    b_high, b_low, b_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE")
-    if b_close is not None and b_close > 0:
-        ce_high, ce_low, ce_close = b_high, b_low, b_close
-
-    b_high, b_low, b_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE")
-    if b_close is not None and b_close > 0:
-        pe_high, pe_low, pe_close = b_high, b_low, b_close
-
-    # Fallback or populate remaining strikes from API data
+    # Populate remaining strikes from API data (and fallback if bhavcopy had zeros)
     for item in data:
         item_strike = item.get("strike_price")
         if item_strike is None:
@@ -198,10 +212,12 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         pe_h = float(put_opts.get("high_price") or m_put.get("high_price") or pe_ltp)
         pe_l = float(put_opts.get("low_price") or m_put.get("low_price") or pe_ltp)
 
-        # If Bhavcopy didn't have HLC ATM, fallback to API
-        if s_val == hlc_atm_strike and ce_close == 0.0:
-            ce_close, ce_high, ce_low = ce_ltp, ce_h, ce_l
-            pe_close, pe_high, pe_low = pe_ltp, pe_h, pe_l
+        # Fallback if Bhavcopy didn't find values for the min-diff strike
+        if s_val == hlc_atm_strike:
+            if ce_close == 0.0:
+                ce_close, ce_high, ce_low = ce_ltp, ce_h, ce_l
+            if pe_close == 0.0:
+                pe_close, pe_high, pe_low = pe_ltp, pe_h, pe_l
 
         # Match Sniper 1
         if s_val == sniper1_atm_strike:
@@ -261,7 +277,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
         
-    print("Dashboard data updated successfully using Bhavcopy values.")
+    print("Dashboard data updated successfully using Bhavcopy and Min-Diff ATM logic.")
     push_to_github()
 
 if __name__ == "__main__":
