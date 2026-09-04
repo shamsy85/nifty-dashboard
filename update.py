@@ -39,7 +39,7 @@ def update_dashboard():
     if spot == 0.0 and data:
         spot = float(data[0].get("spot_price", 0.0))
 
-    # 1. Initialize variables for HLC ATM (min absolute difference between CE and PE)
+    # 1. HLC ATM (min absolute difference between CE and PE)
     min_diff = float('inf')
     hlc_atm_strike = 0
     ce_close, ce_high, ce_low = 0.0, 0.0, 0.0
@@ -74,7 +74,7 @@ def update_dashboard():
     if hlc_atm_strike == 0 and spot > 0:
         hlc_atm_strike = int(round(spot / 50.0) * 50)
 
-    # 2. Sniper ATM explicitly rounded to the nearest 100
+    # 2. Sniper ATM strictly rounded to the nearest 100 (e.g. 23948.55 -> 23900)
     sniper_atm_strike = int(round(spot / 100.0) * 100) if spot > 0 else int(round(hlc_atm_strike / 100.0) * 100)
 
     target_s1_ce_strike = sniper_atm_strike + 100
@@ -82,12 +82,10 @@ def update_dashboard():
     target_s2_ce_strike = sniper_atm_strike + 200
     target_s2_pe_strike = sniper_atm_strike - 200
 
-    # Values storage
     s_atm_ce_val, s_atm_pe_val = 0.0, 0.0
     s1_ce_val, s1_pe_val = 0.0, 0.0
     s2_ce_val, s2_pe_val = 0.0, 0.0
 
-    # Scan option chain to pick up exact prices for Sniper 100-rounded ATM and OTM legs
     for item in data:
         item_strike = item.get("strike_price")
         if item_strike is None:
@@ -115,7 +113,6 @@ def update_dashboard():
         elif s_val == target_s2_pe_strike:
             s2_pe_val = pe_ltp
 
-    # 3. Save JSON Payload
     payload = {
         "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper(),
         "expiryDate": datetime.datetime.strptime(get_current_expiry(), "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
