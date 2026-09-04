@@ -16,12 +16,10 @@ def get_access_token():
     auth_code = None
     
     with sync_playwright() as p:
-        # Launch browser in headless mode for GitHub Actions
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(ignore_https_errors=True)
         page = context.new_page()
 
-        # Construct Upstox login URL
         login_url = (
             f"https://api.upstox.com/v2/login/authorization/dialog?"
             f"response_type=code&client_id={API_KEY}&redirect_uri={REDIRECT_URI}"
@@ -30,12 +28,20 @@ def get_access_token():
         print("Navigating to Upstox login page...")
         page.goto(login_url)
 
-        # 1. Enter Mobile Number
+        # 1. Enter Mobile Number (using distinct safe selector lookup)
         print("Submitting mobile number...")
-        page.wait_for_selector("input[type='mobile'], input[name='mobile'], input#mobileNum", timeout=10000)
-        page.fill("input[type='mobile'], input[name='mobile'], input#mobileNum", MOBILE_NUMBER)
+        mobile_selector = "input[type='mobile'],input[name='mobile'],input#mobileNum"
+        page.wait_for_selector("input", timeout=10000)
         
-        # Click continue / get OTP button (adjust selector if needed based on Upstox UI updates)
+        # Target mobile input explicitly
+        try:
+            page.fill("input[name='mobile']", MOBILE_NUMBER)
+        except Exception:
+            try:
+                page.fill("input[type='mobile']", MOBILE_NUMBER)
+            except Exception:
+                page.fill("input#mobileNum", MOBILE_NUMBER)
+                
         page.keyboard.press("Enter")
         time.sleep(2)
 
@@ -44,30 +50,42 @@ def get_access_token():
         totp = pyotp.TOTP(TOTP_SECRET)
         current_otp = totp.now()
         
-        page.wait_for_selector("input[type='password'], input[name='otp'], input#otp", timeout=10000)
-        page.fill("input[type='password'], input[name='otp'], input#otp", current_otp)
+        page.wait_for_selector("input[type='password'],input[name='otp'],input#otp", timeout=10000)
+        try:
+            page.fill("input[name='otp']", current_otp)
+        except Exception:
+            try:
+                page.fill("input[type='password']", current_otp)
+            except Exception:
+                page.fill("input#otp", current_otp)
+                
         page.keyboard.press("Enter")
         time.sleep(2)
 
         # 3. Enter PIN
         print("Entering PIN...")
-        page.wait_for_selector("input[type='password'], input[name='pin'], input#pin", timeout=10000)
-        page.fill("input[type='password'], input[name='pin'], input#pin", PIN)
+        page.wait_for_selector("input[type='password'],input[name='pin'],input#pin", timeout=10000)
+        try:
+            page.fill("input[name='pin']", PIN)
+        except Exception:
+            try:
+                page.fill("input[type='password']", PIN)
+            except Exception:
+                page.fill("input#pin", PIN)
+                
         page.keyboard.press("Enter")
 
         # 4. Wait for redirect and capture authorization code securely
         print("Waiting for redirect callback...")
         try:
-            # Wait up to 30 seconds for the redirect URI containing the code parameter
             page.wait_for_url(f"{REDIRECT_URI}*", timeout=30000)
             current_url = page.url
-            print(f"Redirect caught successfully.")
+            print("Redirect caught successfully.")
             
             if "code=" in current_url:
                 auth_code = current_url.split("code=")[1].split("&")[0]
         except Exception as e:
             print(f"Warning/Timeout during redirect wait: {e}")
-            # Fallback check on final URL
             if "code=" in page.url:
                 auth_code = page.url.split("code=")[1].split("&")[0]
 
@@ -95,7 +113,6 @@ def get_access_token():
     
     if response.status_code == 200 and "access_token" in res_data:
         access_token = res_data["access_token"]
-        # Save token locally or to a file for subsequent steps
         with open("token.txt", "w") as f:
             f.write(access_token)
         print("Access token generated and saved successfully.")
