@@ -6,12 +6,9 @@ import subprocess
 import time
 
 def push_to_github():
-    # Adds both your dashboard data and bhavcopy if you generate one
     subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"])
     subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
     subprocess.run(["git", "add", "data.json"])
-    # If you save a bhavcopy file locally, add it here too:
-    # subprocess.run(["git", "add", "bhavcopy.csv"])
     subprocess.run(["git", "commit", "-m", "Auto-update dashboard and market data [skip ci]"])
     subprocess.run(["git", "push", "origin", "main"])
 
@@ -38,20 +35,29 @@ def get_current_expiry():
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         res_json = response.json()
-        expiry_list = res_json.get("data", [])
-        if expiry_list:
-            expiry_list.sort()
+        raw_list = res_json.get("data", [])
+        if raw_list:
+            expiry_list = []
+            for item in raw_list:
+                if isinstance(item, dict):
+                    exp = item.get("expiry") or item.get("expiry_date") or item.get("date")
+                    if exp:
+                        expiry_list.append(str(exp))
+                elif isinstance(item, str):
+                    expiry_list.append(item)
             
-            if today_str in expiry_list and not market_closed:
-                return today_str
+            expiry_list = sorted(list(set(expiry_list)))
+            if expiry_list:
+                if today_str in expiry_list and not market_closed:
+                    return today_str
+                    
+                for exp in expiry_list:
+                    if exp > today_str:
+                        return exp
+                    elif exp == today_str and not market_closed:
+                        return exp
                 
-            for exp in expiry_list:
-                if exp > today_str:
-                    return exp
-                elif exp == today_str and not market_closed:
-                    return exp
-            
-            return expiry_list[-1]
+                return expiry_list[-1]
             
     return today_str
 
