@@ -4,6 +4,8 @@ import os
 import requests
 import subprocess
 import csv
+import io
+import zipfile
 
 def push_to_github():
     subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"])
@@ -81,19 +83,23 @@ def download_nse_bhavcopy():
         target_date = datetime.datetime.now() - datetime.timedelta(days=i)
         if target_date.weekday() >= 5:
             continue
-        date_str = target_date.strftime("%d%b%Y").upper()
-        url = f"https://nsearchives.nseindia.com/content/fo/fo{date_str}.csv"
+        yyyy = target_date.strftime("%Y")
+        mm = target_date.strftime("%m")
+        dd = target_date.strftime("%d")
+        url = f"https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
         try:
             session = requests.Session()
             session.get("https://www.nseindia.com", headers=headers, timeout=10)
-            response = session.get(url, headers=headers, timeout=15)
+            response = session.get(url, headers=headers, timeout=30)
             if response.status_code == 200 and len(response.content) > 1000:
-                with open("bhavcopy.csv", "wb") as f:
-                    f.write(response.content)
-                print(f"Successfully downloaded F&O Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
+                with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+                    csv_filename = z.namelist()[0]
+                    with z.open(csv_filename) as csv_file, open("bhavcopy.csv", "wb") as f:
+                        f.write(csv_file.read())
+                print(f"Successfully downloaded and extracted UDiFF F&O Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
                 return True
         except Exception as e:
-            print(f"Attempt for F&O Bhavcopy on {date_str} failed: {e}")
+            print(f"Attempt for UDiFF F&O Bhavcopy on {target_date.strftime('%Y-%m-%d')} failed: {e}")
     return False
 
 def fetch_option_chain_data(access_token, expiry_date):
@@ -110,7 +116,7 @@ def fetch_option_chain_data(access_token, expiry_date):
 
 def parse_bhavcopy_for_strike(target_strike, option_type):
     """
-    Parses F&O bhavcopy.csv to extract true distinct High, Low, and Close values
+    Parses F&O bhavcopy.csv (UDiFF format) to extract true distinct High, Low, and Close values
     for a given strike price and option type (CE/PE).
     """
     if not os.path.exists("bhavcopy.csv"):
@@ -122,24 +128,19 @@ def parse_bhavcopy_for_strike(target_strike, option_type):
             for row in reader:
                 row = {k.strip().upper(): v.strip() for k, v in row.items() if k}
                 
-                # Check instrument name to ensure it's Nifty options
-                instrument = row.get("INSTRMNT") or row.get("INSTRUMENT") or ""
-                if "OPT" not in instrument.upper():
-                    continue
-                
-                symbol = row.get("SYMBOL", "")
+                symbol = row.get("TCKRSYMB", "")
                 if "NIFTY" not in symbol.upper():
                     continue
 
-                strike_val = row.get("STRIKE_PR") or row.get("STRIKE_PRICE") or row.get("STRIKE")
-                opt_typ = row.get("OPTION_TYP") or row.get("OPTION_TYPE")
+                strike_val = row.get("STRIKEPRIC") or row.get("STRIKE_PR") or row.get("STRIKE")
+                opt_typ = row.get("OPTNTP") or row.get("OPTION_TYP")
                 
                 if strike_val and opt_typ:
                     try:
                         if float(strike_val) == float(target_strike) and option_type.upper() in opt_typ.upper():
-                            high = float(row.get("HIGH") or row.get("HIGH_PRICE") or 0.0)
-                            low = float(row.get("LOW") or row.get("LOW_PRICE") or 0.0)
-                            close = float(row.get("CLOSE") or row.get("CLOSE_PRICE") or row.get("SETTLE_PR") or 0.0)
+                            high = float(row.get("HGHPRC") or row.get("HIGH") or row.get("HIGH_PRICE") or 0.0)
+                            low = float(row.get("LWPRC") or row.get("LOW") or row.get("LOW_PRICE") or 0.0)
+                            close = float(row.get("CLSPRC") or row.get("CLOSE") or row.get("CLOSE_PRICE") or row.get("SETTLE_PR") or 0.0)
                             return high, low, close
                     except ValueError:
                         continue
@@ -287,7 +288,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
         
-    print("Dashboard data updated successfully using F&O Bhavcopy distinct High, Low, and Close values.")
+    print("Dashboard data updated successfully using UDiFF Bhavcopy distinct High, Low, and Close values.")
     push_to_github()
 
 if __name__ == "__main__":
