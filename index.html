@@ -248,7 +248,6 @@
 <body>
 
 <div class="dashboard">
-    <!-- Main Spot Header -->
     <div class="header">
         <div>
             <span class="spot-title">NIFTY</span>
@@ -257,7 +256,6 @@
         <div class="badge-exp" id="expiryBadge">EXP ACTIVE</div>
     </div>
 
-    <!-- Date & Straddle Summary -->
     <div class="sub-header">
         <div>
             <div class="date-box" id="currentDate">-- --- ----</div>
@@ -269,9 +267,7 @@
         </div>
     </div>
 
-    <!-- CE & PE HCL Cards -->
     <div class="grid-2">
-        <!-- Call Card -->
         <div class="card">
             <div class="card-tag tag-neutral">NEUTRAL</div>
             <div class="strike-header">
@@ -289,7 +285,6 @@
             </div>
         </div>
 
-        <!-- Put Card -->
         <div class="card">
             <div class="card-tag tag-neutral">NEUTRAL</div>
             <div class="strike-header">
@@ -308,7 +303,6 @@
         </div>
     </div>
 
-    <!-- Targets -->
     <div class="grid-2">
         <div class="target-card">
             <div class="target-title" style="color: #ef4444;">Minimum Supply</div>
@@ -320,7 +314,6 @@
         </div>
     </div>
 
-    <!-- Weekly & Monthly Zones -->
     <div class="grid-2">
         <div class="card">
             <div class="zone-title">Weekly Zone</div>
@@ -338,7 +331,6 @@
         </div>
     </div>
 
-    <!-- Sniper 1 Card -->
     <div class="sniper-card">
         <div>
             <div class="sniper-tag">SNIPER ATM best</div>
@@ -352,7 +344,6 @@
         <div class="sniper-val" id="snip1Val">0.00</div>
     </div>
 
-    <!-- Sniper 2 Card -->
     <div class="sniper-card">
         <div>
             <div class="sniper-tag" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-color: #38bdf8;">SNIPER ATM</div>
@@ -366,7 +357,6 @@
         <div class="sniper-val" id="snip2Val">0.00</div>
     </div>
 
-    <!-- Earth Level -->
     <div class="earth-card">
         <div style="font-weight: 700; font-size: 0.85rem; color: #ffffff;">🌏 EARTH</div>
         <div class="sniper-val" style="color: #22c55e;" id="earthVal">0.00</div>
@@ -380,18 +370,15 @@
             if (!response.ok) return;
             const data = await response.json();
 
-            // Spot & Expiry
             document.getElementById('spotPrice').innerText = data.spotPrice.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('currentDate').innerText = data.currentDate;
             document.getElementById('expiryBadge').innerText = data.expiryDate || 'EXP ACTIVE';
             document.getElementById('hlcAtmStrike').innerText = data.hlcAtmStrike;
 
-            // Straddle Banner (CE - PE)
             document.getElementById('bannerTotal').innerText = data.bannerTotal.toFixed(2);
             document.getElementById('ceCloseHeader').innerText = data.ce.close.toFixed(2);
             document.getElementById('peCloseHeader').innerText = data.pe.close.toFixed(2);
 
-            // CE Card
             document.getElementById('ceStrike').innerText = data.hlcAtmStrike;
             document.getElementById('ceHigh').innerText = data.ce.high.toFixed(2);
             document.getElementById('ceClose').innerText = data.ce.close.toFixed(2);
@@ -399,7 +386,6 @@
             document.getElementById('ceHC').innerText = (data.ce.high - data.ce.close).toFixed(2);
             document.getElementById('ceCL').innerText = (data.ce.close - data.ce.low).toFixed(2);
 
-            // PE Card
             document.getElementById('peStrike').innerText = data.hlcAtmStrike;
             document.getElementById('peHigh').innerText = data.pe.high.toFixed(2);
             document.getElementById('peClose').innerText = data.pe.close.toFixed(2);
@@ -407,17 +393,14 @@
             document.getElementById('peHC').innerText = (data.pe.high - data.pe.close).toFixed(2);
             document.getElementById('peCL').innerText = (data.pe.close - data.pe.low).toFixed(2);
 
-            // Targets & Levels
             document.getElementById('minSupply').innerText = (data.spotPrice + (data.ce.close * 0.9)).toLocaleString('en-IN', {maximumFractionDigits: 2});
             document.getElementById('minDemand').innerText = (data.spotPrice - (data.pe.close * 0.9)).toLocaleString('en-IN', {maximumFractionDigits: 2});
             
-            // Zones
             document.getElementById('wHigh').innerText = (data.spotPrice * 1.011).toFixed(2);
             document.getElementById('wLow').innerText = (data.spotPrice * 0.989).toFixed(2);
             document.getElementById('mHigh').innerText = (data.spotPrice * 1.025).toFixed(2);
             document.getElementById('mLow').innerText = (data.spotPrice * 0.975).toFixed(2);
 
-            // Sniper 1
             if (data.sniper1) {
                 document.getElementById('snip1Atm').innerText = data.sniper1.strike;
                 document.getElementById('snip1Ce').innerText = data.sniper1.ce.toFixed(2);
@@ -429,7 +412,6 @@
                 document.getElementById('snip1Val').innerText = ((data.sniper1.ce + data.sniper1.pe) * 0.155).toFixed(2);
             }
 
-            // Sniper 2
             if (data.sniper2) {
                 document.getElementById('snip2Atm').innerText = data.sniper2.strike;
                 document.getElementById('snip2Ce').innerText = data.sniper2.ce.toFixed(2);
@@ -441,7 +423,6 @@
                 document.getElementById('snip2Val').innerText = ((data.sniper2.ce + data.sniper2.pe) * 0.103).toFixed(2);
             }
 
-            // Earth
             document.getElementById('earthVal').innerText = (data.bannerTotal * 0.1215).toFixed(2);
 
         } catch (e) {
