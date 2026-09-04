@@ -8,8 +8,8 @@ import time
 def push_to_github():
     subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"])
     subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
-    subprocess.run(["git", "add", "data.json"])
-    subprocess.run(["git", "commit", "-m", "Auto-update dashboard and market data [skip ci]"])
+    subprocess.run(["git", "add", "data.json", "bhavcopy.csv"])
+    subprocess.run(["git", "commit", "-m", "Auto-update dashboard and bhavcopy [skip ci]"])
     subprocess.run(["git", "push", "origin", "main"])
 
 def load_access_token():
@@ -60,6 +60,38 @@ def get_current_expiry():
                 return expiry_list[-1]
             
     return today_str
+
+def download_nse_bhavcopy():
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br"
+    }
+    
+    # Check today and up to 5 days back (to account for weekends/holidays)
+    for i in range(5):
+        target_date = datetime.datetime.now() - datetime.timedelta(days=i)
+        if target_date.weekday() >= 5:
+            continue
+            
+        date_str = target_date.strftime("%d%m%Y")
+        url = f"https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{date_str}.csv"
+        
+        try:
+            session = requests.Session()
+            session.get("https://www.nseindia.com", headers=headers, timeout=10)
+            response = session.get(url, headers=headers, timeout=15)
+            
+            if response.status_code == 200 and len(response.content) > 1000:
+                with open("bhavcopy.csv", "wb") as f:
+                    f.write(response.content)
+                print(f"Successfully downloaded Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
+                return True
+        except Exception as e:
+            print(f"Attempt for Bhavcopy on {date_str} failed: {e}")
+            
+    print("Could not download Bhavcopy for recent dates.")
+    return False
 
 def fetch_option_chain_data():
     access_token = load_access_token()
@@ -238,6 +270,11 @@ def process_and_save_data(res_json):
         json.dump(payload, f, indent=4)
         
     print("Dashboard data updated successfully from Upstox API.")
+    
+    # Download the official NSE bhavcopy and save as bhavcopy.csv
+    download_nse_bhavcopy()
+    
+    # Push both data.json and bhavcopy.csv to GitHub
     push_to_github()
 
 if __name__ == "__main__":
