@@ -52,7 +52,6 @@ def fetch_and_build_dashboard():
     else:
         spot, spot_high, spot_low = 0.0, 0.0, 0.0
 
-    # Initial fallback ATM based on spot rounding
     fallback_atm = int(round(spot / 50.0) * 50) if spot > 0 else 0
     atm_strike = fallback_atm
     
@@ -72,8 +71,8 @@ def fetch_and_build_dashboard():
             if response.status_code == 200:
                 data = response.json().get("data", [])
                 
-                # 2. Find the strike with the SMALLEST sum of (CE + PE) premiums
-                min_sum = float('inf')
+                # 2. Find the strike with the SMALLEST absolute difference between CE and PE
+                min_diff = float('inf')
                 best_strike_entry = None
                 
                 for item in data:
@@ -90,15 +89,13 @@ def fetch_and_build_dashboard():
                     ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
                     pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
                     
-                    # Only consider strikes where both options have active pricing
                     if ce_ltp > 0 and pe_ltp > 0:
-                        total_sum = ce_ltp + pe_ltp
-                        if total_sum < min_sum:
-                            min_sum = total_sum
+                        diff = abs(ce_ltp - pe_ltp)
+                        if diff < min_diff:
+                            min_diff = diff
                             best_strike_entry = item
                             atm_strike = int(item_strike)
 
-                # If no valid minimum found via premiums, fallback to spot rounding
                 if not best_strike_entry:
                     atm_strike = fallback_atm
                     for item in data:
@@ -118,7 +115,7 @@ def fetch_and_build_dashboard():
                     ce_close = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
                     pe_close = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
 
-                print(f"Calculated Min-Straddle ATM Strike: {atm_strike} (Combined CE+PE Sum: {min_sum})")
+                print(f"Calculated Min-Difference ATM Strike: {atm_strike} (CE-PE Difference: {min_diff})")
                 
                 # 3. Fetch precise candles for High, Low, and Close
                 if call_key:
