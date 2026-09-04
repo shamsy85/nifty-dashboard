@@ -24,7 +24,6 @@ def get_current_expiry():
 def fetch_option_candles(instrument_key, headers):
     """Fetches intraday candles to get accurate High, Low, and Close."""
     try:
-        # URL encode the instrument key safely
         encoded_key = requests.utils.quote(instrument_key, safe='')
         today_str = datetime.date.today().strftime("%Y-%m-%d")
         url = f"https://api.upstox.com/v2/historical-candle/{encoded_key}/day/{today_str}"
@@ -33,7 +32,6 @@ def fetch_option_candles(instrument_key, headers):
         if res.status_code == 200:
             candles = res.json().get("data", {}).get("candles", [])
             if candles:
-                # Upstox candle format: [timestamp, open, high, low, close, volume, oi]
                 latest_candle = candles[0]
                 return float(latest_candle[2]), float(latest_candle[4]), float(latest_candle[3])
     except Exception as e:
@@ -54,42 +52,75 @@ def fetch_and_build_dashboard():
     else:
         spot, spot_high, spot_low = 0.0, 0.0, 0.0
 
-    atm_strike = int(round(spot / 50.0) * 50) if spot > 0 else 0
+    # Initial fallback ATM based on spot rounding
+    fallback_atm = int(round(spot / 50.0) * 50) if spot > 0 else 0
+    atm_strike = fallback_atm
     
     ce_high, ce_low, ce_close = 0.0, 0.0, 0.0
     pe_high, pe_low, pe_close = 0.0, 0.0, 0.0
     
     headers = get_upstox_headers()
-    if headers.get("Authorization") != "Bearer " and atm_strike > 0:
+    call_key, put_key = None, None
+
+    if headers.get("Authorization") != "Bearer ":
         try:
             expiry_date = get_current_expiry()
-            print(f"Querying Upstox Option Chain for active expiry: {expiry_date} at strike {atm_strike}...")
+            print(f"Querying Upstox Option Chain for active expiry: {expiry_date}...")
             url = f"https://api.upstox.com/v2/option/chain?instrument_key=NSE_INDEX|Nifty%2050&expiry_date={expiry_date}"
             response = requests.get(url, headers=headers, timeout=8)
             
             if response.status_code == 200:
                 data = response.json().get("data", [])
-                call_key, put_key = None, None
+                
+                # 2. Find the strike with the SMALLEST sum of (CE + PE) premiums
+                min_sum = float('inf')
+                best_strike_entry = None
                 
                 for item in data:
                     item_strike = item.get("strike_price")
-                    if item_strike is not None and float(item_strike) == float(atm_strike):
-                        call_opts = item.get("call_options", {})
-                        put_opts = item.get("put_options", {})
+                    if item_strike is None:
+                        continue
                         
-                        call_key = call_opts.get("instrument_key")
-                        put_key = put_opts.get("instrument_key")
-                        
-                        # Grab basic close/LTP from option chain as immediate fallback
-                        m_call = call_opts.get("market_data", {})
-                        m_put = put_opts.get("market_data", {})
-                        ce_close = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
-                        pe_close = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
-                        break
+                    call_opts = item.get("call_options", {})
+                    put_opts = item.get("put_options", {})
+                    
+                    m_call = call_opts.get("market_data", {})
+                    m_put = put_opts.get("market_data", {})
+                    
+                    ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
+                    pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
+                    
+                    # Only consider strikes where both options have active pricing
+                    if ce_ltp > 0 and pe_ltp > 0:
+                        total_sum = ce_ltp + pe_ltp
+                        if total_sum < min_sum:
+                            min_sum = total_sum
+                            best_strike_entry = item
+                            atm_strike = int(item_strike)
+
+                # If no valid minimum found via premiums, fallback to spot rounding
+                if not best_strike_entry:
+                    atm_strike = fallback_atm
+                    for item in data:
+                        if item.get("strike_price") and float(item.get("strike_price")) == float(fallback_atm):
+                            best_strike_entry = item
+                            break
+
+                if best_strike_entry:
+                    call_opts = best_strike_entry.get("call_options", {})
+                    put_opts = best_strike_entry.get("put_options", {})
+                    
+                    call_key = call_opts.get("instrument_key")
+                    put_key = put_opts.get("instrument_key")
+                    
+                    m_call = call_opts.get("market_data", {})
+                    m_put = put_opts.get("market_data", {})
+                    ce_close = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
+                    pe_close = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
+
+                print(f"Calculated Min-Straddle ATM Strike: {atm_strike} (Combined CE+PE Sum: {min_sum})")
                 
-                print(f"Found Keys -> CE: {call_key} | PE: {put_key}")
-                
-                # Fetch precise candles for High, Low, and Close
+                # 3. Fetch precise candles for High, Low, and Close
                 if call_key:
                     h, c, l = fetch_option_candles(call_key, headers)
                     if h > 0: ce_high = h
