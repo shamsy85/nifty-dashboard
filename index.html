@@ -261,7 +261,7 @@
     <div class="sub-header">
         <div>
             <div class="date-box" id="currentDate">-- --- ----</div>
-            <div class="atm-box">ATM <span id="atmStrike">-----</span></div>
+            <div class="atm-box">HLC ATM <span id="hlcAtmStrike">-----</span></div>
         </div>
         <div style="text-align: right;">
             <div class="straddle-total" id="bannerTotal">0.00</div>
@@ -376,7 +376,6 @@
 <script>
     async function updateDashboard() {
         try {
-            // Anti-cache URL parameter forces live data fetch
             const response = await fetch(`data.json?t=${new Date().getTime()}`);
             if (!response.ok) return;
             const data = await response.json();
@@ -385,7 +384,7 @@
             document.getElementById('spotPrice').innerText = data.spotPrice.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('currentDate').innerText = data.currentDate;
             document.getElementById('expiryBadge').innerText = data.expiryDate || 'EXP ACTIVE';
-            document.getElementById('atmStrike').innerText = data.atmStrike;
+            document.getElementById('hlcAtmStrike').innerText = data.hlcAtmStrike;
 
             // Straddle Banner
             document.getElementById('bannerTotal').innerText = data.bannerTotal.toFixed(2);
@@ -393,7 +392,7 @@
             document.getElementById('peCloseHeader').innerText = data.pe.close.toFixed(2);
 
             // CE Card
-            document.getElementById('ceStrike').innerText = data.atmStrike;
+            document.getElementById('ceStrike').innerText = data.hlcAtmStrike;
             document.getElementById('ceHigh').innerText = data.ce.high.toFixed(2);
             document.getElementById('ceClose').innerText = data.ce.close.toFixed(2);
             document.getElementById('ceLow').innerText = data.ce.low.toFixed(2);
@@ -401,7 +400,7 @@
             document.getElementById('ceCL').innerText = (data.ce.close - data.ce.low).toFixed(2);
 
             // PE Card
-            document.getElementById('peStrike').innerText = data.atmStrike;
+            document.getElementById('peStrike').innerText = data.hlcAtmStrike;
             document.getElementById('peHigh').innerText = data.pe.high.toFixed(2);
             document.getElementById('peClose').innerText = data.pe.close.toFixed(2);
             document.getElementById('peLow').innerText = data.pe.low.toFixed(2);
@@ -419,24 +418,28 @@
             document.getElementById('mLow').innerText = (data.spotPrice * 0.975).toFixed(2);
 
             // Sniper 1
-            document.getElementById('snip1Atm').innerText = data.sniper1.strike;
-            document.getElementById('snip1Ce').innerText = data.sniper1.ce.toFixed(2);
-            document.getElementById('snip1Pe').innerText = data.sniper1.pe.toFixed(2);
-            document.getElementById('snip1OtmCeStr').innerText = data.sniper1.otmCeStrike;
-            document.getElementById('snip1OtmPeStr').innerText = data.sniper1.otmPeStrike;
-            document.getElementById('snip1OtmCe').innerText = data.sniper1.otmCe.toFixed(2);
-            document.getElementById('snip1OtmPe').innerText = data.sniper1.otmPe.toFixed(2);
-            document.getElementById('snip1Val').innerText = ((data.sniper1.ce + data.sniper1.pe) * 0.155).toFixed(2);
+            if (data.sniper1) {
+                document.getElementById('snip1Atm').innerText = data.sniper1.strike;
+                document.getElementById('snip1Ce').innerText = data.sniper1.ce.toFixed(2);
+                document.getElementById('snip1Pe').innerText = data.sniper1.pe.toFixed(2);
+                document.getElementById('snip1OtmCeStr').innerText = data.sniper1.otmCeStrike;
+                document.getElementById('snip1OtmPeStr').innerText = data.sniper1.otmPeStrike;
+                document.getElementById('snip1OtmCe').innerText = data.sniper1.otmCe.toFixed(2);
+                document.getElementById('snip1OtmPe').innerText = data.sniper1.otmPe.toFixed(2);
+                document.getElementById('snip1Val').innerText = ((data.sniper1.ce + data.sniper1.pe) * 0.155).toFixed(2);
+            }
 
-            // Sniper 2
-            document.getElementById('snip2Atm').innerText = data.sniper2.strike;
-            document.getElementById('snip2Ce').innerText = data.sniper2.ce.toFixed(2);
-            document.getElementById('snip2Pe').innerText = data.sniper2.pe.toFixed(2);
-            document.getElementById('snip2OtmCeStr').innerText = data.sniper2.otmCeStrike;
-            document.getElementById('snip2OtmPeStr').innerText = data.sniper2.otmPeStrike;
-            document.getElementById('snip2OtmCe').innerText = data.sniper2.otmCe.toFixed(2);
-            document.getElementById('snip2OtmPe').innerText = data.sniper2.otmPe.toFixed(2);
-            document.getElementById('snip2Val').innerText = ((data.sniper2.ce + data.sniper2.pe) * 0.103).toFixed(2);
+            // Sniper 2 (if present in data)
+            if (data.sniper2) {
+                document.getElementById('snip2Atm').innerText = data.sniper2.strike;
+                document.getElementById('snip2Ce').innerText = data.sniper2.ce.toFixed(2);
+                document.getElementById('snip2Pe').innerText = data.sniper2.pe.toFixed(2);
+                document.getElementById('snip2OtmCeStr').innerText = data.sniper2.otmCeStrike;
+                document.getElementById('snip2OtmPeStr').innerText = data.sniper2.otmPeStrike;
+                document.getElementById('snip2OtmCe').innerText = data.sniper2.otmCe.toFixed(2);
+                document.getElementById('snip2OtmPe').innerText = data.sniper2.otmPe.toFixed(2);
+                document.getElementById('snip2Val').innerText = ((data.sniper2.ce + data.sniper2.pe) * 0.103).toFixed(2);
+            }
 
             // Earth
             document.getElementById('earthVal').innerText = ((data.bannerTotal) * 0.1215).toFixed(2);
@@ -446,7 +449,6 @@
         }
     }
 
-    // Run on load and poll every 30 seconds
     updateDashboard();
     setInterval(updateDashboard, 30000);
 </script>
