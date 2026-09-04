@@ -3,14 +3,42 @@ import json
 import os
 import requests
 
-def get_current_expiry():
-    return "2026-09-10"
-
 def load_access_token():
     if os.path.exists("access_token.txt"):
         with open("access_token.txt", "r") as f:
             return f.read().strip()
     return os.getenv("UPSTOX_ACCESS_TOKEN", "")
+
+def get_current_expiry():
+    access_token = load_access_token()
+    instrument_key = "NSE_INDEX|Nifty 50"
+    url = f"https://api.upstox.com/v2/option/contract?instrument_key={instrument_key}"
+    
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        res_json = response.json()
+        expiry_list = res_json.get("data", [])
+        if expiry_list:
+            expiry_list.sort()
+            now = datetime.datetime.now()
+            today_str = now.strftime("%Y-%m-%d")
+            market_closed = now.hour > 15 or (now.hour == 15 and now.minute >= 30)
+            
+            for exp in expiry_list:
+                if exp > today_str:
+                    return exp
+                elif exp == today_str:
+                    if not market_closed:
+                        return exp
+            
+            return expiry_list[-1]
+            
+    return "2026-09-10"
 
 def update_dashboard():
     access_token = load_access_token()
@@ -74,15 +102,12 @@ def update_dashboard():
     if hlc_atm_strike == 0 and spot > 0:
         hlc_atm_strike = int(round(spot / 50.0) * 50)
 
-    # 2. Sniper ATM Strikes (Sniper 1: 100-point round, Sniper 2: 50-point round)
+    # 2. Sniper 1 (100-point round) & Sniper 2 (50-point round)
     sniper1_atm_strike = int(round(spot / 100.0) * 100) if spot > 0 else int(round(hlc_atm_strike / 100.0) * 100)
     sniper2_atm_strike = int(round(spot / 50.0) * 50) if spot > 0 else hlc_atm_strike
 
-    # Sniper 1 offsets (100-point round base)
     target_s1_ce_strike = sniper1_atm_strike + 100
     target_s1_pe_strike = sniper1_atm_strike - 100
-
-    # Sniper 2 offsets (50-point round base)
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
@@ -124,7 +149,7 @@ def update_dashboard():
 
     payload = {
         "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper(),
-        "expiryDate": datetime.datetime.strptime(get_current_expiry(), "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
+        "expiryDate": datetime.datetime.strptime(expiry_date, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
         "spotPrice": spot,
         "hlcAtmStrike": hlc_atm_strike,
         "ce": {
@@ -162,7 +187,7 @@ def update_dashboard():
 
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
-    print("Dashboard data updated successfully with Sniper 1 (100-round) and Sniper 2 (50-round).")
+    print("Dashboard data updated successfully with dynamic expiry and custom Sniper ATM rounding.")
 
 if __name__ == "__main__":
     update_dashboard()
