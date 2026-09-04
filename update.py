@@ -18,8 +18,23 @@ def load_access_token():
             return f.read().strip()
     return os.getenv("UPSTOX_ACCESS_TOKEN", "")
 
-def get_current_expiry():
-    access_token = load_access_token()
+def fetch_live_spot_price(access_token):
+    url = "https://api.upstox.com/v2/market-quote/ltp?instrument_key=NSE_INDEX%7CNifty%2050"
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            spot = data.get("data", {}).get("NSE_INDEX:Nifty 50", {}).get("last_price", 0.0)
+            return float(spot)
+    except Exception as e:
+        print(f"Failed to fetch live spot price: {e}")
+    return 0.0
+
+def get_current_expiry(access_token):
     instrument_key = "NSE_INDEX|Nifty 50"
     url = f"https://api.upstox.com/v2/option/contract?instrument_key={instrument_key}"
     
@@ -92,14 +107,8 @@ def download_nse_bhavcopy():
     print("Could not download Bhavcopy for recent dates.")
     return False
 
-def fetch_option_chain_data():
-    access_token = load_access_token()
-    if not access_token:
-        print("Error: Access token not found.")
-        return None
-
+def fetch_option_chain_data(access_token, expiry_date):
     instrument_key = "NSE_INDEX|Nifty 50"
-    expiry_date = get_current_expiry()
     url = f"https://api.upstox.com/v2/option/chain?instrument_key={instrument_key}&expiry_date={expiry_date}"
     
     headers = {
@@ -122,14 +131,22 @@ def write_status_to_json(status_flag):
     push_to_github()
 
 def update_dashboard_with_retry(max_retries=3, delay=120):
+    access_token = load_access_token()
+    if not access_token:
+        print("Error: Access token not found.")
+        return False
+
     for attempt in range(1, max_retries + 1):
         print(f"Attempt {attempt} of {max_retries} to fetch market data...")
         
-        res_json = fetch_option_chain_data()
-        if res_json:
+        expiry_date = get_current_expiry(access_token)
+        res_json = fetch_option_chain_data(access_token, expiry_date)
+        spot = fetch_live_spot_price(access_token)
+        
+        if res_json and spot > 0:
             data = res_json.get("data", [])
             if data:
-                process_and_save_data(res_json)
+                process_and_save_data(res_json, spot, expiry_date)
                 return True
                 
         if attempt < max_retries:
@@ -140,22 +157,8 @@ def update_dashboard_with_retry(max_retries=3, delay=120):
     print("All attempts failed. Marked data status as PENDING.")
     return False
 
-def process_and_save_data(res_json):
+def process_and_save_data(res_json, spot, expiry_date_str):
     data = res_json.get("data", [])
-    
-    # Robust Spot Price Extraction
-    spot = float(res_json.get("spot_price", 0.0) or res_json.get("underlying_spot_price", 0.0))
-    if spot == 0.0 and data:
-        for item in data:
-            s_val = (
-                item.get("spot_price") or 
-                item.get("underlying_spot_price") or 
-                item.get("call_options", {}).get("market_data", {}).get("underlying_spot_price") or
-                0.0
-            )
-            if float(s_val) > 0.0:
-                spot = float(s_val)
-                break
 
     # 1. HLC ATM (min absolute difference between CE and PE)
     min_diff = float('inf')
@@ -191,8 +194,6 @@ def process_and_save_data(res_json):
 
     if hlc_atm_strike == 0 and spot > 0:
         hlc_atm_strike = int(round(spot / 50.0) * 50)
-    elif spot == 0.0 and hlc_atm_strike > 0:
-        spot = float(hlc_atm_strike)
 
     # 2. Sniper 1 (100-point round) & Sniper 2 (50-point round)
     sniper1_atm_strike = int(round(spot / 100.0) * 100) if spot > 0 else int(round(hlc_atm_strike / 100.0) * 100)
@@ -242,7 +243,7 @@ def process_and_save_data(res_json):
     payload = {
         "dataStatus": "SUCCESS",
         "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper(),
-        "expiryDate": datetime.datetime.strptime(get_current_expiry(), "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
+        "expiryDate": datetime.datetime.strptime(expiry_date_str, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
         "spotPrice": spot,
         "hlcAtmStrike": hlc_atm_strike,
         "ce": {
@@ -256,8 +257,8 @@ def process_and_save_data(res_json):
             "low": round(pe_low, 2)
         },
         "bannerTotal": round(ce_close - pe_close, 2),
-        "spotHigh": float(res_json.get("spot_high", spot)),
-        "spotLow": float(res_json.get("spot_low", spot)),
+        "spotHigh": spot,
+        "spotLow": spot,
         "sniper1": {
             "strike": sniper1_atm_strike, 
             "ce": round(s1_atm_ce_val, 2), 
@@ -281,7 +282,7 @@ def process_and_save_data(res_json):
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
         
-    print("Dashboard data updated successfully from Upstox API.")
+    print("Dashboard data updated successfully with live spot price.")
     
     download_nse_bhavcopy()
     push_to_github()
