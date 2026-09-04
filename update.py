@@ -69,20 +69,25 @@ def update_dashboard():
             ce_high = float(call_opts.get("high_price") or m_call.get("high_price") or ce_ltp)
             ce_low = float(call_opts.get("low_price") or m_call.get("low_price") or ce_ltp)
             pe_high = float(put_opts.get("high_price") or m_call.get("high_price") or pe_ltp)
-            pe_low = float(put_opts.get("low_price") or m_call.get("low_price") or pe_ltp)
+            pe_low = float(put_opts.get("low_price") or m_put.get("low_price") or pe_ltp)
 
     if hlc_atm_strike == 0 and spot > 0:
         hlc_atm_strike = int(round(spot / 50.0) * 50)
 
-    # 2. Sniper ATM strictly rounded to the nearest 100 (e.g. 23948.55 -> 23900)
-    sniper_atm_strike = int(round(spot / 100.0) * 100) if spot > 0 else int(round(hlc_atm_strike / 100.0) * 100)
+    # 2. Sniper ATM Strikes (Sniper 1: 100-point round, Sniper 2: 50-point round)
+    sniper1_atm_strike = int(round(spot / 100.0) * 100) if spot > 0 else int(round(hlc_atm_strike / 100.0) * 100)
+    sniper2_atm_strike = int(round(spot / 50.0) * 50) if spot > 0 else hlc_atm_strike
 
-    target_s1_ce_strike = sniper_atm_strike + 100
-    target_s1_pe_strike = sniper_atm_strike - 100
-    target_s2_ce_strike = sniper_atm_strike + 200
-    target_s2_pe_strike = sniper_atm_strike - 200
+    # Sniper 1 offsets (100-point round base)
+    target_s1_ce_strike = sniper1_atm_strike + 100
+    target_s1_pe_strike = sniper1_atm_strike - 100
 
-    s_atm_ce_val, s_atm_pe_val = 0.0, 0.0
+    # Sniper 2 offsets (50-point round base)
+    target_s2_ce_strike = sniper2_atm_strike + 100
+    target_s2_pe_strike = sniper2_atm_strike - 100
+
+    s1_atm_ce_val, s1_atm_pe_val = 0.0, 0.0
+    s2_atm_ce_val, s2_atm_pe_val = 0.0, 0.0
     s1_ce_val, s1_pe_val = 0.0, 0.0
     s2_ce_val, s2_pe_val = 0.0, 0.0
 
@@ -101,10 +106,14 @@ def update_dashboard():
         ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
         pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
         
-        if s_val == sniper_atm_strike:
-            s_atm_ce_val = ce_ltp
-            s_atm_pe_val = pe_ltp
-        elif s_val == target_s1_ce_strike:
+        if s_val == sniper1_atm_strike:
+            s1_atm_ce_val = ce_ltp
+            s1_atm_pe_val = pe_ltp
+        if s_val == sniper2_atm_strike:
+            s2_atm_ce_val = ce_ltp
+            s2_atm_pe_val = pe_ltp
+            
+        if s_val == target_s1_ce_strike:
             s1_ce_val = ce_ltp
         elif s_val == target_s1_pe_strike:
             s1_pe_val = pe_ltp
@@ -132,18 +141,18 @@ def update_dashboard():
         "spotHigh": float(res_json.get("spot_high", spot)),
         "spotLow": float(res_json.get("spot_low", spot)),
         "sniper1": {
-            "strike": sniper_atm_strike, 
-            "ce": round(s_atm_ce_val, 2), 
-            "pe": round(s_atm_pe_val, 2),
+            "strike": sniper1_atm_strike, 
+            "ce": round(s1_atm_ce_val, 2), 
+            "pe": round(s1_atm_pe_val, 2),
             "otmCeStrike": target_s1_ce_strike, 
             "otmPeStrike": target_s1_pe_strike,
             "otmCe": round(s1_ce_val, 2), 
             "otmPe": round(s1_pe_val, 2)
         },
         "sniper2": {
-            "strike": sniper_atm_strike, 
-            "ce": round(s_atm_ce_val, 2), 
-            "pe": round(s_atm_pe_val, 2),
+            "strike": sniper2_atm_strike, 
+            "ce": round(s2_atm_ce_val, 2), 
+            "pe": round(s2_atm_pe_val, 2),
             "otmCeStrike": target_s2_ce_strike, 
             "otmPeStrike": target_s2_pe_strike,
             "otmCe": round(s2_ce_val, 2), 
@@ -153,7 +162,7 @@ def update_dashboard():
 
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
-    print("Dashboard data updated successfully with 100-rounded Sniper ATM.")
+    print("Dashboard data updated successfully with Sniper 1 (100-round) and Sniper 2 (50-round).")
 
 if __name__ == "__main__":
     update_dashboard()
