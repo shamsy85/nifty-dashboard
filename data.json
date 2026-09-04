@@ -1,7 +1,7 @@
 {
   "currentDate": "04 SEP 2026",
   "expiryDate": "08-SEP-2026",
-  "spotPrice": 23957.35,
+  "spotPrice": 23948.55,
   "atmStrike": 24000,
   "ce": {
     "high": 148.0,
@@ -13,8 +13,8 @@
     "close": 146.9,
     "low": 78.0
   },
-  "bannerTotal": 221.65,
-  "spotHigh": 23960.9,
+  "bannerTotal": 11.5,
+  "spotHigh": 23962.55,
   "spotLow": 23895.85,
   "sniper1": {
     "strike": 24000,
