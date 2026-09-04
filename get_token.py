@@ -4,11 +4,10 @@ from playwright.sync_api import sync_playwright
 import pyotp
 import requests
 
-# Load credentials from environment variables or secrets
 API_KEY = os.environ.get("UPSTOX_API_KEY")
 API_SECRET = os.environ.get("UPSTOX_API_SECRET")
 REDIRECT_URI = os.environ.get("UPSTOX_REDIRECT_URI", "https://127.0.0.1/")
-MOBILE_NUMBER = os.environ.get("UPSTOX_MOBILE")
+MOBILE_NUMBER = os.environ.get("UPSTOX_MOBILE_NO") or os.environ.get("UPSTOX_MOBILE")
 TOTP_SECRET = os.environ.get("UPSTOX_TOTP_SECRET")
 PIN = os.environ.get("UPSTOX_PIN")
 
@@ -30,47 +29,66 @@ def get_access_token():
 
         # 1. Enter Mobile Number
         print("Submitting mobile number...")
-        page.wait_for_selector("input", timeout=10000)
+        page.wait_for_selector("input", timeout=15000)
         
-        try:
-            page.locator("input[name='mobile']").fill(str(MOBILE_NUMBER))
-        except Exception:
+        # Try multiple possible selectors for the mobile field
+        mobile_filled = False
+        for selector in ["input[name='mobile']", "input[type='mobile']", "input[type='text']", "input"]:
             try:
-                page.locator("input[type='mobile']").fill(str(MOBILE_NUMBER))
+                elem = page.locator(selector).first
+                if elem.is_visible():
+                    elem.fill(str(MOBILE_NUMBER))
+                    mobile_filled = True
+                    break
             except Exception:
-                page.locator("input#mobileNum").fill(str(MOBILE_NUMBER))
+                continue
                 
+        if not mobile_filled:
+            raise Exception("Could not find visible mobile number input field.")
+            
         page.keyboard.press("Enter")
-        time.sleep(2)
+        time.sleep(3)
 
         # 2. Generate and Enter TOTP
         print("Generating and entering TOTP...")
         totp = pyotp.TOTP(TOTP_SECRET)
         current_otp = totp.now()
         
-        page.wait_for_selector("input", timeout=10000)
-        try:
-            page.locator("input[name='otp']").fill(str(current_otp))
-        except Exception:
+        # Wait for OTP input field with flexible fallback selectors
+        otp_filled = False
+        for selector in ["input[autocomplete='one-time-code']", "input[name='otp']", "input[type='password']", "input[type='text']"]:
             try:
-                page.locator("input[type='password']").fill(str(current_otp))
+                elem = page.locator(selector).first
+                if elem.is_visible():
+                    elem.fill(str(current_otp))
+                    otp_filled = True
+                    break
             except Exception:
-                page.locator("input#otp").fill(str(current_otp))
+                continue
                 
+        if not otp_filled:
+            # Fallback: type directly if focused or wait a bit longer
+            page.keyboard.type(str(current_otp))
+            
         page.keyboard.press("Enter")
-        time.sleep(2)
+        time.sleep(3)
 
         # 3. Enter PIN
         print("Entering PIN...")
-        page.wait_for_selector("input", timeout=10000)
-        try:
-            page.locator("input[name='pin']").fill(str(PIN))
-        except Exception:
+        pin_filled = False
+        for selector in ["input[name='pin']", "input[type='password']", "input[maxlength='6']", "input"]:
             try:
-                page.locator("input[type='password']").fill(str(PIN))
+                elem = page.locator(selector).first
+                if elem.is_visible():
+                    elem.fill(str(PIN))
+                    pin_filled = True
+                    break
             except Exception:
-                page.locator("input#pin").fill(str(PIN))
+                continue
                 
+        if not pin_filled:
+            page.keyboard.type(str(PIN))
+            
         page.keyboard.press("Enter")
 
         # 4. Wait for redirect and capture authorization code securely
