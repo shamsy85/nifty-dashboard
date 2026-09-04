@@ -13,7 +13,7 @@
     "close": 146.90,
     "low": 78.00
   },
-  "bannerTotal": 221.65,
+  "bannerTotal": round(ce_close + pe_close, 2),
   "spotHigh": 23962.55,
   "spotLow": 23895.85,
   "sniper1": {
