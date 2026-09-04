@@ -2,7 +2,7 @@
     "dataStatus": "SUCCESS",
     "currentDate": "04 SEP 2026",
     "expiryDate": "08-SEP-2026",
-    "spotPrice": 0.0,
+    "spotPrice": 23897.7,
     "hlcAtmStrike": 26350,
     "ce": {
         "high": 0.35,
@@ -15,23 +15,23 @@
         "low": 0.0
     },
     "bannerTotal": 0.35,
-    "spotHigh": 0.0,
-    "spotLow": 0.0,
+    "spotHigh": 23897.7,
+    "spotLow": 23897.7,
     "sniper1": {
-        "strike": 26400,
-        "ce": 0.35,
-        "pe": 2420.0,
-        "otmCeStrike": 26500,
-        "otmPeStrike": 26300,
-        "otmCe": 0.0,
-        "otmPe": 2337.0
+        "strike": 23900,
+        "ce": 119.6,
+        "pe": 56.55,
+        "otmCeStrike": 24000,
+        "otmPeStrike": 23800,
+        "otmCe": 66.9,
+        "otmPe": 29.6
     },
     "sniper2": {
-        "strike": 26350,
-        "ce": 0.35,
-        "pe": 0.0,
-        "otmCeStrike": 26450,
-        "otmPeStrike": 26250,
+        "strike": 23900,
+        "ce": 119.6,
+        "pe": 56.55,
+        "otmCeStrike": 24000,
+        "otmPeStrike": 23800,
         "otmCe": 0.0,
         "otmPe": 0.0
     }
