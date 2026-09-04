@@ -96,7 +96,7 @@ def update_dashboard():
             pe_close = pe_ltp
             ce_high = float(call_opts.get("high_price") or m_call.get("high_price") or ce_ltp)
             ce_low = float(call_opts.get("low_price") or m_call.get("low_price") or ce_ltp)
-            pe_high = float(put_opts.get("high_price") or m_high_val or pe_ltp) if 'm_high_val' in locals() else float(put_opts.get("high_price") or m_put.get("high_price") or pe_ltp)
+            pe_high = float(put_opts.get("high_price") or m_put.get("high_price") or pe_ltp)
             pe_low = float(put_opts.get("low_price") or m_put.get("low_price") or pe_ltp)
 
     if hlc_atm_strike == 0 and spot > 0:
@@ -162,7 +162,7 @@ def update_dashboard():
             "close": round(pe_close, 2), 
             "low": round(pe_low, 2)
         },
-        "bannerTotal": round(abs(ce_close - pe_close), 2),
+        "bannerTotal": round(ce_close + pe_close, 2),
         "spotHigh": float(res_json.get("spot_high", spot)),
         "spotLow": float(res_json.get("spot_low", spot)),
         "sniper1": {
@@ -187,7 +187,7 @@ def update_dashboard():
 
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
-    print("Dashboard data updated successfully with dynamic expiry, custom Sniper ATM rules, and absolute difference banner total.")
+    print("Dashboard data updated successfully with bannerTotal as addition (CE + PE).")
 
 if __name__ == "__main__":
     update_dashboard()
