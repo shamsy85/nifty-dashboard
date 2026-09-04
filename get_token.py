@@ -28,19 +28,17 @@ def get_access_token():
         print("Navigating to Upstox login page...")
         page.goto(login_url)
 
-        # 1. Enter Mobile Number (using distinct safe selector lookup)
+        # 1. Enter Mobile Number
         print("Submitting mobile number...")
-        mobile_selector = "input[type='mobile'],input[name='mobile'],input#mobileNum"
         page.wait_for_selector("input", timeout=10000)
         
-        # Target mobile input explicitly
         try:
-            page.fill("input[name='mobile']", MOBILE_NUMBER)
+            page.locator("input[name='mobile']").fill(str(MOBILE_NUMBER))
         except Exception:
             try:
-                page.fill("input[type='mobile']", MOBILE_NUMBER)
+                page.locator("input[type='mobile']").fill(str(MOBILE_NUMBER))
             except Exception:
-                page.fill("input#mobileNum", MOBILE_NUMBER)
+                page.locator("input#mobileNum").fill(str(MOBILE_NUMBER))
                 
         page.keyboard.press("Enter")
         time.sleep(2)
@@ -50,28 +48,28 @@ def get_access_token():
         totp = pyotp.TOTP(TOTP_SECRET)
         current_otp = totp.now()
         
-        page.wait_for_selector("input[type='password'],input[name='otp'],input#otp", timeout=10000)
+        page.wait_for_selector("input", timeout=10000)
         try:
-            page.fill("input[name='otp']", current_otp)
+            page.locator("input[name='otp']").fill(str(current_otp))
         except Exception:
             try:
-                page.fill("input[type='password']", current_otp)
+                page.locator("input[type='password']").fill(str(current_otp))
             except Exception:
-                page.fill("input#otp", current_otp)
+                page.locator("input#otp").fill(str(current_otp))
                 
         page.keyboard.press("Enter")
         time.sleep(2)
 
         # 3. Enter PIN
         print("Entering PIN...")
-        page.wait_for_selector("input[type='password'],input[name='pin'],input#pin", timeout=10000)
+        page.wait_for_selector("input", timeout=10000)
         try:
-            page.fill("input[name='pin']", PIN)
+            page.locator("input[name='pin']").fill(str(PIN))
         except Exception:
             try:
-                page.fill("input[type='password']", PIN)
+                page.locator("input[type='password']").fill(str(PIN))
             except Exception:
-                page.fill("input#pin", PIN)
+                page.locator("input#pin").fill(str(PIN))
                 
         page.keyboard.press("Enter")
 
