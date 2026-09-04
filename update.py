@@ -75,13 +75,14 @@ def download_nse_bhavcopy():
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.nseindia.com/"
     }
     for i in range(5):
         target_date = datetime.datetime.now() - datetime.timedelta(days=i)
         if target_date.weekday() >= 5:
             continue
-        date_str = target_date.strftime("%d%m%Y")
-        url = f"https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{date_str}.csv"
+        date_str = target_date.strftime("%d%b%Y").upper()
+        url = f"https://nsearchives.nseindia.com/content/fo/fo{date_str}.csv"
         try:
             session = requests.Session()
             session.get("https://www.nseindia.com", headers=headers, timeout=10)
@@ -89,10 +90,10 @@ def download_nse_bhavcopy():
             if response.status_code == 200 and len(response.content) > 1000:
                 with open("bhavcopy.csv", "wb") as f:
                     f.write(response.content)
-                print(f"Successfully downloaded Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
+                print(f"Successfully downloaded F&O Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
                 return True
         except Exception as e:
-            print(f"Attempt for Bhavcopy on {date_str} failed: {e}")
+            print(f"Attempt for F&O Bhavcopy on {date_str} failed: {e}")
     return False
 
 def fetch_option_chain_data(access_token, expiry_date):
@@ -109,7 +110,7 @@ def fetch_option_chain_data(access_token, expiry_date):
 
 def parse_bhavcopy_for_strike(target_strike, option_type):
     """
-    Parses bhavcopy.csv to extract true distinct High, Low, and Close values
+    Parses F&O bhavcopy.csv to extract true distinct High, Low, and Close values
     for a given strike price and option type (CE/PE).
     """
     if not os.path.exists("bhavcopy.csv"):
@@ -121,15 +122,24 @@ def parse_bhavcopy_for_strike(target_strike, option_type):
             for row in reader:
                 row = {k.strip().upper(): v.strip() for k, v in row.items() if k}
                 
+                # Check instrument name to ensure it's Nifty options
+                instrument = row.get("INSTRMNT") or row.get("INSTRUMENT") or ""
+                if "OPT" not in instrument.upper():
+                    continue
+                
+                symbol = row.get("SYMBOL", "")
+                if "NIFTY" not in symbol.upper():
+                    continue
+
                 strike_val = row.get("STRIKE_PR") or row.get("STRIKE_PRICE") or row.get("STRIKE")
-                opt_typ = row.get("OPTION_TYP") or row.get("OPTION_TYPE") or row.get("INSTRUMENT")
+                opt_typ = row.get("OPTION_TYP") or row.get("OPTION_TYPE")
                 
                 if strike_val and opt_typ:
                     try:
                         if float(strike_val) == float(target_strike) and option_type.upper() in opt_typ.upper():
-                            high = float(row.get("HIGH_PRICE") or row.get("HIGH") or 0.0)
-                            low = float(row.get("LOW_PRICE") or row.get("LOW") or 0.0)
-                            close = float(row.get("CLOSE_PRICE") or row.get("CLOSE") or row.get("LTP") or 0.0)
+                            high = float(row.get("HIGH") or row.get("HIGH_PRICE") or 0.0)
+                            low = float(row.get("LOW") or row.get("LOW_PRICE") or 0.0)
+                            close = float(row.get("CLOSE") or row.get("CLOSE_PRICE") or row.get("SETTLE_PR") or 0.0)
                             return high, low, close
                     except ValueError:
                         continue
@@ -144,7 +154,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         print("Invalid data or spot price received.")
         return
 
-    # Download latest bhavcopy first
+    # Download latest F&O bhavcopy first
     download_nse_bhavcopy()
 
     # Find HLC ATM strike using minimum absolute CE-PE difference within 500 points of spot
@@ -182,7 +192,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    # Fetch distinct H, L, C from Bhavcopy for the min-diff HLC ATM strike
+    # Fetch distinct F&O H, L, C from Bhavcopy for the min-diff HLC ATM strike
     ce_high, ce_low, ce_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE")
     pe_high, pe_low, pe_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE")
 
@@ -277,7 +287,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
         
-    print("Dashboard data updated successfully using Bhavcopy and Min-Diff ATM logic.")
+    print("Dashboard data updated successfully using F&O Bhavcopy distinct High, Low, and Close values.")
     push_to_github()
 
 if __name__ == "__main__":
