@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import requests
+import time
 
 def load_access_token():
     if os.path.exists("access_token.txt"):
@@ -43,11 +44,11 @@ def get_current_expiry():
             
     return today_str
 
-def update_dashboard():
+def fetch_option_chain_data():
     access_token = load_access_token()
     if not access_token:
-        print("Error: Access token not found. Please ensure get_token.py saves the token or set UPSTOX_ACCESS_TOKEN.")
-        return
+        print("Error: Access token not found.")
+        return None
 
     instrument_key = "NSE_INDEX|Nifty 50"
     expiry_date = get_current_expiry()
@@ -59,13 +60,39 @@ def update_dashboard():
     }
     
     response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        print(f"Failed to fetch option chain data. Status: {response.status_code}, Response: {response.text}")
-        return
+    if response.status_code == 200:
+        return response.json()
+    return None
 
-    res_json = response.json()
+def write_status_to_json(status_flag):
+    payload = {
+        "dataStatus": status_flag,
+        "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper()
+    }
+    with open("data.json", "w") as f:
+        json.dump(payload, f, indent=4)
+
+def update_dashboard_with_retry(max_retries=3, delay=120):
+    for attempt in range(1, max_retries + 1):
+        print(f"Attempt {attempt} of {max_retries} to fetch market data...")
+        
+        res_json = fetch_option_chain_data()
+        if res_json:
+            data = res_json.get("data", [])
+            if data:
+                process_and_save_data(res_json)
+                return True
+                
+        if attempt < max_retries:
+            print(f"Data not fully active yet. Waiting {delay} seconds before retrying...")
+            time.sleep(delay)
+            
+    write_status_to_json("PENDING")
+    print("All attempts failed. Marked data status as PENDING.")
+    return False
+
+def process_and_save_data(res_json):
     data = res_json.get("data", [])
-    
     spot = float(res_json.get("spot_price", 0.0))
     if spot == 0.0 and data:
         spot = float(data[0].get("spot_price", 0.0))
@@ -151,8 +178,9 @@ def update_dashboard():
             s2_pe_val = pe_ltp
 
     payload = {
+        "dataStatus": "SUCCESS",
         "currentDate": datetime.datetime.now().strftime("%d %b %Y").upper(),
-        "expiryDate": datetime.datetime.strptime(expiry_date, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
+        "expiryDate": datetime.datetime.strptime(get_current_expiry(), "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
         "spotPrice": spot,
         "hlcAtmStrike": hlc_atm_strike,
         "ce": {
@@ -194,4 +222,4 @@ def update_dashboard():
     print("Dashboard data updated successfully from Upstox API.")
 
 if __name__ == "__main__":
-    update_dashboard()
+    update_dashboard_with_retry()
