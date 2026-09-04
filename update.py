@@ -114,13 +114,21 @@ def fetch_option_chain_data(access_token, expiry_date):
         return response.json()
     return None
 
-def parse_bhavcopy_for_strike(target_strike, option_type):
+def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
     """
-    Parses F&O bhavcopy.csv (UDiFF format) to extract true distinct High, Low, and Close values
-    for a given strike price and option type (CE/PE).
+    Parses F&O bhavcopy.csv (UDiFF format) matching strike, option type, and expiry date.
     """
     if not os.path.exists("bhavcopy.csv"):
         return 0.0, 0.0, 0.0
+
+    # Generate possible expiry formats to match UDiFF CSV contents securely
+    try:
+        dt_obj = datetime.datetime.strptime(target_expiry_str, "%Y-%m-%d")
+        fmt1 = dt_obj.strftime("%Y-%m-%d")          # e.g., 2026-09-08
+        fmt2 = dt_obj.strftime("%d-%b-%Y").upper()     # e.g., 08-SEP-2026
+    except Exception:
+        fmt1 = target_expiry_str
+        fmt2 = target_expiry_str
 
     try:
         with open("bhavcopy.csv", mode="r", encoding="utf-8", errors="ignore") as f:
@@ -134,14 +142,20 @@ def parse_bhavcopy_for_strike(target_strike, option_type):
 
                 strike_val = row.get("STRIKEPRIC") or row.get("STRIKE_PR") or row.get("STRIKE")
                 opt_typ = row.get("OPTNTP") or row.get("OPTION_TYP")
+                expiry_val = row.get("XPRYDT") or row.get("EXPIRY_DT") or row.get("EXPIRY")
                 
                 if strike_val and opt_typ:
                     try:
-                        if float(strike_val) == float(target_strike) and option_type.upper() in opt_typ.upper():
+                        matches_strike = float(strike_val) == float(target_strike)
+                        matches_opt = option_type.upper() in opt_typ.upper()
+                        matches_expiry = (not expiry_val) or (fmt1 in expiry_val or fmt2 in expiry_val)
+                        
+                        if matches_strike and matches_opt and matches_expiry:
                             high = float(row.get("HGHPRC") or row.get("HIGH") or row.get("HIGH_PRICE") or 0.0)
                             low = float(row.get("LWPRC") or row.get("LOW") or row.get("LOW_PRICE") or 0.0)
                             close = float(row.get("CLSPRC") or row.get("CLOSE") or row.get("CLOSE_PRICE") or row.get("SETTLE_PR") or 0.0)
-                            return high, low, close
+                            if high > 0 or low > 0 or close > 0:
+                                return high, low, close
                     except ValueError:
                         continue
     except Exception as e:
@@ -193,9 +207,9 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    # Fetch distinct F&O H, L, C from Bhavcopy for the min-diff HLC ATM strike
-    ce_high, ce_low, ce_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE")
-    pe_high, pe_low, pe_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE")
+    # Fetch distinct F&O H, L, C from Bhavcopy matching the exact strike, option type, and expiry date
+    ce_high, ce_low, ce_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE", expiry_date_str)
+    pe_high, pe_low, pe_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE", expiry_date_str)
 
     s1_atm_ce_val, s1_atm_pe_val = 0.0, 0.0
     s2_atm_ce_val, s2_atm_pe_val = 0.0, 0.0
