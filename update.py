@@ -189,7 +189,6 @@ def update_dashboard():
     }
 
     with open("data.json", "w") as f:
-        json.dumps(payload, f) # standard json dump formatting
         json.dump(payload, f, indent=4)
         
     print("Dashboard data updated successfully from Upstox API.")
