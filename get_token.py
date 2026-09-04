@@ -19,7 +19,6 @@ def get_access_token():
         context = browser.new_context(ignore_https_errors=True)
         page = context.new_page()
 
-        # Intercept or listen to any navigation/request to catch the redirect code instantly
         def handle_route(route):
             url = route.request.url
             if "code=" in url:
@@ -34,7 +33,8 @@ def get_access_token():
         )
         
         print("Navigating to Upstox login page...")
-        page.goto(login_url)
+        # Fixed with domcontentloaded and 60s timeout to prevent hanging
+        page.goto(login_url, timeout=60000, wait_until="domcontentloaded")
 
         # 1. Enter Mobile Number
         print("Submitting mobile number...")
@@ -97,7 +97,6 @@ def get_access_token():
             
         page.keyboard.press("Enter")
 
-        # Click any potential secondary continue/authorize buttons if present
         time.sleep(2)
         for btn_text in ["Continue", "Authorize", "Confirm", "Proceed"]:
             try:
@@ -113,7 +112,6 @@ def get_access_token():
         for _ in range(35):
             if auth_code:
                 break
-            # Also check page URL directly as fallback
             if "code=" in page.url:
                 auth_code.append(page.url)
                 break
