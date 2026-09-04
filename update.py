@@ -115,17 +115,13 @@ def fetch_option_chain_data(access_token, expiry_date):
     return None
 
 def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
-    """
-    Parses F&O bhavcopy.csv (UDiFF format) matching strike, option type, and expiry date.
-    """
     if not os.path.exists("bhavcopy.csv"):
         return 0.0, 0.0, 0.0
 
-    # Generate possible expiry formats to match UDiFF CSV contents securely
     try:
         dt_obj = datetime.datetime.strptime(target_expiry_str, "%Y-%m-%d")
-        fmt1 = dt_obj.strftime("%Y-%m-%d")          # e.g., 2026-09-08
-        fmt2 = dt_obj.strftime("%d-%b-%Y").upper()     # e.g., 08-SEP-2026
+        fmt1 = dt_obj.strftime("%Y-%m-%d")
+        fmt2 = dt_obj.strftime("%d-%b-%Y").upper()
     except Exception:
         fmt1 = target_expiry_str
         fmt2 = target_expiry_str
@@ -169,10 +165,8 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         print("Invalid data or spot price received.")
         return
 
-    # Download latest F&O bhavcopy first
     download_nse_bhavcopy()
 
-    # Find HLC ATM strike using minimum absolute CE-PE difference within 500 points of spot
     min_diff = float('inf')
     hlc_atm_strike = int(round(spot / 50.0) * 50)
 
@@ -207,7 +201,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    # Fetch distinct F&O H, L, C from Bhavcopy matching the exact strike, option type, and expiry date
     ce_high, ce_low, ce_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE", expiry_date_str)
     pe_high, pe_low, pe_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE", expiry_date_str)
 
@@ -216,7 +209,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     s1_ce_val, s1_pe_val = 0.0, 0.0
     s2_ce_val, s2_pe_val = 0.0, 0.0
 
-    # Populate remaining strikes from API data (and fallback if bhavcopy had zeros)
     for item in data:
         item_strike = item.get("strike_price")
         if item_strike is None:
@@ -237,14 +229,17 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         pe_h = float(put_opts.get("high_price") or m_put.get("high_price") or pe_ltp)
         pe_l = float(put_opts.get("low_price") or m_put.get("low_price") or pe_ltp)
 
-        # Fallback if Bhavcopy didn't find values for the min-diff strike
+        # Fallback using API high/low when Bhavcopy data is missing intraday
         if s_val == hlc_atm_strike:
             if ce_close == 0.0:
-                ce_close, ce_high, ce_low = ce_ltp, ce_h, ce_l
+                ce_close = ce_ltp
+                ce_high = ce_h
+                ce_low = ce_l
             if pe_close == 0.0:
-                pe_close, pe_high, pe_low = pe_ltp, pe_h, pe_l
+                pe_close = pe_ltp
+                pe_high = pe_h
+                pe_low = pe_l
 
-        # Match Sniper 1
         if s_val == sniper1_atm_strike:
             s1_atm_ce_val, s1_atm_pe_val = ce_ltp, pe_ltp
         elif s_val == target_s1_ce_strike:
@@ -252,7 +247,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         elif s_val == target_s1_pe_strike:
             s1_pe_val = pe_ltp
 
-        # Match Sniper 2
         if s_val == sniper2_atm_strike:
             s2_atm_ce_val, s2_atm_pe_val = ce_ltp, pe_ltp
         elif s_val == target_s2_ce_strike:
@@ -302,7 +296,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
         
-    print("Dashboard data updated successfully using UDiFF Bhavcopy distinct High, Low, and Close values.")
+    print("Dashboard data updated successfully.")
     push_to_github()
 
 if __name__ == "__main__":
