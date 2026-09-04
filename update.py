@@ -68,7 +68,6 @@ def download_nse_bhavcopy():
         "Accept-Encoding": "gzip, deflate, br"
     }
     
-    # Check today and up to 5 days back (to account for weekends/holidays)
     for i in range(5):
         target_date = datetime.datetime.now() - datetime.timedelta(days=i)
         if target_date.weekday() >= 5:
@@ -143,9 +142,20 @@ def update_dashboard_with_retry(max_retries=3, delay=120):
 
 def process_and_save_data(res_json):
     data = res_json.get("data", [])
-    spot = float(res_json.get("spot_price", 0.0))
+    
+    # Robust Spot Price Extraction
+    spot = float(res_json.get("spot_price", 0.0) or res_json.get("underlying_spot_price", 0.0))
     if spot == 0.0 and data:
-        spot = float(data[0].get("spot_price", 0.0))
+        for item in data:
+            s_val = (
+                item.get("spot_price") or 
+                item.get("underlying_spot_price") or 
+                item.get("call_options", {}).get("market_data", {}).get("underlying_spot_price") or
+                0.0
+            )
+            if float(s_val) > 0.0:
+                spot = float(s_val)
+                break
 
     # 1. HLC ATM (min absolute difference between CE and PE)
     min_diff = float('inf')
@@ -181,6 +191,8 @@ def process_and_save_data(res_json):
 
     if hlc_atm_strike == 0 and spot > 0:
         hlc_atm_strike = int(round(spot / 50.0) * 50)
+    elif spot == 0.0 and hlc_atm_strike > 0:
+        spot = float(hlc_atm_strike)
 
     # 2. Sniper 1 (100-point round) & Sniper 2 (50-point round)
     sniper1_atm_strike = int(round(spot / 100.0) * 100) if spot > 0 else int(round(hlc_atm_strike / 100.0) * 100)
@@ -271,10 +283,7 @@ def process_and_save_data(res_json):
         
     print("Dashboard data updated successfully from Upstox API.")
     
-    # Download the official NSE bhavcopy and save as bhavcopy.csv
     download_nse_bhavcopy()
-    
-    # Push both data.json and bhavcopy.csv to GitHub
     push_to_github()
 
 if __name__ == "__main__":
