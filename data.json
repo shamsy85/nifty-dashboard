@@ -2,7 +2,7 @@
   "currentDate": "04 SEP 2026",
   "expiryDate": "08-SEP-2026",
   "spotPrice": 23948.55,
-  "atmStrike": 24000,
+  "hlcAtmStrike": 24000,
   "ce": {
     "high": 148.0,
     "close": 74.75,
