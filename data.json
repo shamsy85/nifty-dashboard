@@ -1,4 +1,38 @@
 {
-    "dataStatus": "PENDING",
-    "currentDate": "04 SEP 2026"
+    "dataStatus": "SUCCESS",
+    "currentDate": "04 SEP 2026",
+    "expiryDate": "08-SEP-2026",
+    "spotPrice": 0.0,
+    "hlcAtmStrike": 26350,
+    "ce": {
+        "high": 0.35,
+        "close": 0.35,
+        "low": 0.35
+    },
+    "pe": {
+        "high": 0.0,
+        "close": 0.0,
+        "low": 0.0
+    },
+    "bannerTotal": 0.35,
+    "spotHigh": 0.0,
+    "spotLow": 0.0,
+    "sniper1": {
+        "strike": 26400,
+        "ce": 0.35,
+        "pe": 2420.0,
+        "otmCeStrike": 26500,
+        "otmPeStrike": 26300,
+        "otmCe": 0.0,
+        "otmPe": 2337.0
+    },
+    "sniper2": {
+        "strike": 26350,
+        "ce": 0.35,
+        "pe": 0.0,
+        "otmCeStrike": 26450,
+        "otmPeStrike": 26250,
+        "otmCe": 0.0,
+        "otmPe": 0.0
+    }
 }
