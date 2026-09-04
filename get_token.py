@@ -33,7 +33,6 @@ def get_access_token():
         )
         
         print("Navigating to Upstox login page...")
-        # Fixed with domcontentloaded and 60s timeout to prevent hanging
         page.goto(login_url, timeout=60000, wait_until="domcontentloaded")
 
         # 1. Enter Mobile Number
@@ -96,20 +95,23 @@ def get_access_token():
             page.keyboard.type(str(PIN))
             
         page.keyboard.press("Enter")
+        time.sleep(3)
 
-        time.sleep(2)
-        for btn_text in ["Continue", "Authorize", "Confirm", "Proceed"]:
+        # 4. Explicitly click Authorize / Continue / Confirm button if present
+        print("Checking for post-login authorization button...")
+        for btn_text in ["Authorize", "Continue", "Confirm", "Proceed", "Allow"]:
             try:
-                btn = page.locator(f"button:has-text('{btn_text}')").first
+                btn = page.locator(f"button:has-text('{btn_text}'), input[type='submit']").first
                 if btn.is_visible():
+                    print(f" Clicking '{btn_text}' button...")
                     btn.click()
                     break
             except Exception:
                 pass
 
-        # 4. Wait for the route/redirect containing the auth code
+        # 5. Wait for the route/redirect containing the auth code
         print("Waiting for redirect callback...")
-        for _ in range(35):
+        for _ in range(45):
             if auth_code:
                 break
             if "code=" in page.url:
@@ -125,7 +127,7 @@ def get_access_token():
     full_url = auth_code[0]
     extracted_code = full_url.split("code=")[1].split("&")[0]
 
-    # 5. Exchange Authorization Code for Access Token
+    # 6. Exchange Authorization Code for Access Token
     token_url = "https://api.upstox.com/v2/login/authorization/token"
     payload = {
         'code': extracted_code,
