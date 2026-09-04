@@ -30,7 +30,6 @@ def get_current_expiry():
         if expiry_list:
             expiry_list.sort()
             
-            # If today is in the list and market is not closed yet, force today's expiry
             if today_str in expiry_list and not market_closed:
                 return today_str
                 
@@ -42,7 +41,6 @@ def get_current_expiry():
             
             return expiry_list[-1]
             
-    # Fallback to today if API fails during market hours
     return today_str
 
 def update_dashboard():
@@ -100,7 +98,7 @@ def update_dashboard():
             ce_close = ce_ltp
             pe_close = pe_ltp
             ce_high = float(call_opts.get("high_price") or m_call.get("high_price") or ce_ltp)
-            ce_low = float(call_opts.get("low_price") or m_low_val or ce_ltp) if 'm_low_val' in locals() else float(call_opts.get("low_price") or m_call.get("low_price") or ce_ltp)
+            ce_low = float(call_opts.get("low_price") or m_call.get("low_price") or ce_ltp)
             pe_high = float(put_opts.get("high_price") or m_put.get("high_price") or pe_ltp)
             pe_low = float(put_opts.get("low_price") or m_put.get("low_price") or pe_ltp)
 
@@ -191,8 +189,10 @@ def update_dashboard():
     }
 
     with open("data.json", "w") as f:
+        json.dumps(payload, f) # standard json dump formatting
         json.dump(payload, f, indent=4)
-    print("Dashboard data updated successfully with forced same-day expiry check and CE - PE bannerTotal.")
+        
+    print("Dashboard data updated successfully from Upstox API.")
 
 if __name__ == "__main__":
     update_dashboard()
