@@ -135,13 +135,18 @@ def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
     if not os.path.exists("bhavcopy.csv"):
         return 0.0, 0.0, 0.0
 
+    # Build potential date representations for robust matching
+    possible_expiries = []
     try:
         dt_obj = datetime.datetime.strptime(target_expiry_str, "%Y-%m-%d")
-        fmt1 = dt_obj.strftime("%Y-%m-%d")
-        fmt2 = dt_obj.strftime("%d-%b-%Y").upper()
+        possible_expiries = [
+            dt_obj.strftime("%Y-%m-%d"),
+            dt_obj.strftime("%d-%b-%Y").upper(),
+            dt_obj.strftime("%d-%B-%Y").upper(),
+            dt_obj.strftime("%d%b%Y").upper()
+        ]
     except Exception:
-        fmt1 = target_expiry_str
-        fmt2 = target_expiry_str
+        possible_expiries = [str(target_expiry_str).upper()]
 
     try:
         with open("bhavcopy.csv", mode="r", encoding="utf-8", errors="ignore") as f:
@@ -155,13 +160,15 @@ def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
 
                 strike_val = row.get("STRIKEPRIC") or row.get("STRIKE_PR") or row.get("STRIKE")
                 opt_typ = row.get("OPTNTP") or row.get("OPTION_TYP") or row.get("OPTIONTYPE")
-                expiry_val = row.get("XPRYDT") or row.get("EXPIRY_DT") or row.get("EXPIRY")
+                expiry_val = (row.get("XPRYDT") or row.get("EXPIRY_DT") or row.get("EXPIRY") or "").upper()
                 
                 if strike_val and opt_typ:
                     try:
                         matches_strike = float(strike_val) == float(target_strike)
                         matches_opt = option_type.upper() in opt_typ.upper()
-                        matches_expiry = (not expiry_val) or (fmt1 in expiry_val or fmt2 in expiry_val)
+                        
+                        # Match expiry date against possible formats or allow if Bhavcopy omits expiry
+                        matches_expiry = not expiry_val or any(exp in expiry_val for exp in possible_expiries)
                         
                         if matches_strike and matches_opt and matches_expiry:
                             high = float(row.get("HGHPRC") or row.get("HIGH") or row.get("HIGH_PRICE") or 0.0)
@@ -169,10 +176,9 @@ def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
                             close = float(row.get("CLSPRC") or row.get("CLOSE") or row.get("CLOSE_PRICE") or row.get("SETTLE_PR") or 0.0)
                             
                             if high > 0 or low > 0 or close > 0:
-                                # Ensure mathematical guarantee high >= close >= low
-                                validated_high = max(high, close)
-                                validated_low = min(low, close) if low > 0 else close
-                                return validated_high, validated_low, close
+                                val_high = max(high, close)
+                                val_low = min(low, close) if low > 0 else close
+                                return val_high, val_low, close
                     except ValueError:
                         continue
     except Exception as e:
