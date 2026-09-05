@@ -33,10 +33,8 @@ jobs:
           UPSTOX_REDIRECT_URI: ${{ secrets.UPSTOX_REDIRECT_URI }}
           UPSTOX_MOBILE_NO: ${{ secrets.UPSTOX_MOBILE_NO }}
           UPSTOX_PIN: ${{ secrets.UPSTOX_PIN }}
-          UPSTOX_TOTP_KEY: ${{ secrets.UPSTOX_TOTP_KEY }}
+          UPSTOX_TOTP_KEY: ${{ secrets.UPSTOX_TOTP_SECRET }}
         run: python get_token.py
 
       - name: Fetch Market Data and Update JSON
-        env:
-          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: python update.py
