@@ -1,3 +1,5 @@
-yfinance
-requests
-upstox-python-sdk
+yfinance>=0.2.36
+requests>=2.31.0
+upstox-python-sdk>=2.0.0
+pyotp>=2.9.0
+playwright>=1.41.0
