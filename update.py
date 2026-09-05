@@ -16,16 +16,18 @@ def push_to_github():
         subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
         subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
         
-        # Force add data.json to ensure Git tracks and stages it regardless of status
+        # Force add data.json to ensure Git tracks and stages it
         subprocess.run(["git", "add", "-f", "data.json"], check=False)
         
-        status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
-        if status.stdout.strip():
+        # Check if staged data.json has actual diffs against HEAD
+        diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
+        
+        if diff_check.returncode != 0:
             subprocess.run(["git", "commit", "-m", "Auto-update dashboard [skip ci]"], check=True)
             subprocess.run(["git", "push", "origin", "main"], check=True)
             print("Changes pushed to GitHub successfully.")
         else:
-            print("No changes detected in data files. Skipping commit.")
+            print("No changes detected in data.json. Skipping commit.")
     except Exception as e:
         print(f"Git push failed: {e}")
 
@@ -135,7 +137,6 @@ def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
     if not os.path.exists("bhavcopy.csv"):
         return 0.0, 0.0, 0.0
 
-    # Build potential date representations for robust matching
     possible_expiries = []
     try:
         dt_obj = datetime.datetime.strptime(target_expiry_str, "%Y-%m-%d")
@@ -166,8 +167,6 @@ def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
                     try:
                         matches_strike = float(strike_val) == float(target_strike)
                         matches_opt = option_type.upper() in opt_typ.upper()
-                        
-                        # Match expiry date against possible formats or allow if Bhavcopy omits expiry
                         matches_expiry = not expiry_val or any(exp in expiry_val for exp in possible_expiries)
                         
                         if matches_strike and matches_opt and matches_expiry:
@@ -245,7 +244,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    # Parse Bhavcopy for High/Low/Close
     ce_high, ce_low, ce_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE", expiry_date_str)
     pe_high, pe_low, pe_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE", expiry_date_str)
 
@@ -278,7 +276,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             pe_l = float(m_put.get("low_price") or put_opts.get("low_price") or 0.0)
             pe_c = float(m_put.get("close_price") or put_opts.get("close_price") or pe_ltp)
 
-            # API Fallback if Bhavcopy did not return entries
             if ce_close == 0.0:
                 ce_close = ce_c
             if ce_high == 0.0:
