@@ -28,6 +28,8 @@ def get_access_token():
 
     login_url = f"https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id={api_key}&redirect_uri={redirect_uri}"
 
+    auth_code = None
+
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -44,33 +46,31 @@ def get_access_token():
         )
         page = context.new_page()
 
+        # Intercept network requests to grab 'code=' even if the local server refuses connection
+        def handle_request(request):
+            nonlocal auth_code
+            url = request.url
+            if redirect_uri in url and "code=" in url:
+                try:
+                    auth_code = url.split("code=")[1].split("&")[0]
+                    print(f"Captured Auth Code via request interception!")
+                except Exception as e:
+                    print(f"Error parsing auth_code: {e}")
+
+        page.on("request", handle_request)
+
         try:
             print("Navigating to Upstox login...")
             page.goto(login_url, wait_until="domcontentloaded", timeout=60000)
-            page.wait_for_timeout(3000)
-
-            # Check if there is an initial landing button (e.g. "Get Started" or "Login with Mobile")
-            landing_btn = page.query_selector('button:has-text("Login"), button:has-text("Get Started"), button:has-text("Continue")')
-            if landing_btn and landing_btn.is_visible():
-                print("Clicking initial landing button...")
-                landing_btn.click()
-                page.wait_for_timeout(2000)
+            page.wait_for_timeout(2000)
 
             # Step 1: Mobile Number Input
             print("Entering Mobile Number...")
-            mobile_selector = '#mobileNum, input[type="tel"], input[name="mobileNumber"], input[placeholder*="mobile" i], input[placeholder*="phone" i]'
-            
-            try:
-                page.wait_for_selector(mobile_selector, state="visible", timeout=30000)
-            except Exception:
-                # Save screenshot on failure to diagnose UI changes
-                page.screenshot(path="error_login.png")
-                print("Could not find mobile input field. Screenshot saved as error_login.png")
-                raise
-
+            mobile_selector = '#mobileNum, input[type="tel"], input[name="mobileNumber"], input[placeholder*="mobile" i]'
+            page.wait_for_selector(mobile_selector, state="visible", timeout=30000)
             page.fill(mobile_selector, mobile_no)
             
-            submit_btn = 'button[type="submit"], #getOtp, button:has-text("Get OTP"), button:has-text("Continue"), button:has-text("Get Otp")'
+            submit_btn = 'button[type="submit"], #getOtp, button:has-text("Get OTP"), button:has-text("Continue")'
             page.click(submit_btn)
 
             # Step 2: TOTP Entry
@@ -88,16 +88,11 @@ def get_access_token():
             pin_selector = '#pinCode, input[type="password"], input[name="pin"]'
             page.wait_for_selector(pin_selector, state="visible", timeout=30000)
             page.fill(pin_selector, pin)
-            page.click(submit_btn)
-
-            # Step 4: Extract Authorization Code
+            
+            # Click submit on PIN step and wait for redirect interception
             print("Waiting for OAuth redirect...")
-            page.wait_for_url(f"{redirect_uri}*", timeout=30000)
-            current_url = page.url
-
-            auth_code = None
-            if "code=" in current_url:
-                auth_code = current_url.split("code=")[1].split("&")[0]
+            page.click(submit_btn)
+            page.wait_for_timeout(5000)
 
             browser.close()
 
@@ -105,7 +100,7 @@ def get_access_token():
                 print("Failed to retrieve auth_code from redirect URL.")
                 return None
 
-            # Step 5: Exchange Token
+            # Step 4: Exchange Code for Access Token
             print("Exchanging authorization code for access token...")
             token_url = "https://api.upstox.com/v2/login/authorization/token"
             headers = {
@@ -130,8 +125,35 @@ def get_access_token():
                 print(f"Token exchange failed: {res.status_code} - {res.text}")
 
         except Exception as e:
-            print(f"Authentication automation failed: {e}")
+            # If request listener caught the code before the navigation error, ignore the error
+            if auth_code:
+                print("Captured Auth Code despite navigation error.")
+            else:
+                print(f"Authentication automation failed: {e}")
             browser.close()
+
+        # Fallback check if auth_code was captured during exception
+        if auth_code:
+            print("Exchanging authorization code for access token...")
+            token_url = "https://api.upstox.com/v2/login/authorization/token"
+            headers = {
+                "accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+            payload = {
+                "code": auth_code,
+                "client_id": api_key,
+                "client_secret": api_secret,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code"
+            }
+
+            res = requests.post(token_url, headers=headers, data=payload, timeout=15)
+            if res.status_code == 200:
+                token_data = res.json()
+                access_token = token_data.get("access_token")
+                print("Successfully generated new Upstox Access Token!")
+                return access_token
 
     return None
 
