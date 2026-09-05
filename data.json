@@ -5,14 +5,14 @@
     "spotPrice": 23897.7,
     "hlcAtmStrike": 23950,
     "ce": {
-        "high": 89.9,
+        "high": 97.1,
         "close": 97.1,
-        "low": 89.9
+        "low": 97.1
     },
     "pe": {
-        "high": 77.45,
+        "high": 116.75,
         "close": 116.75,
-        "low": 77.45
+        "low": 116.75
     },
     "bannerTotal": 213.85,
     "spotHigh": 23897.7,
