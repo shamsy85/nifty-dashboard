@@ -112,6 +112,8 @@ def download_nse_bhavcopy():
         yyyy = target_date.strftime("%Y")
         mm = target_date.strftime("%m")
         dd = target_date.strftime("%d")
+        
+        # Standard NSE UDiFF F&O Common Bhavcopy zip URL
         url = f"https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
         try:
             session = requests.Session()
@@ -163,12 +165,12 @@ def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
             for row in reader:
                 row = {k.strip().upper(): (v.strip() if v else "") for k, v in row.items() if k}
                 
-                symbol = row.get("TCKRSYMB", "")
+                symbol = row.get("TCKRSYMB", "") or row.get("SYMBOL", "")
                 if "NIFTY" not in symbol.upper():
                     continue
 
                 strike_val = row.get("STRIKEPRIC") or row.get("STRIKE_PR") or row.get("STRIKE")
-                opt_typ = row.get("OPTNTP") or row.get("OPTION_TYP")
+                opt_typ = row.get("OPTNTP") or row.get("OPTION_TYP") or row.get("OPTIONTYPE")
                 expiry_val = row.get("XPRYDT") or row.get("EXPIRY_DT") or row.get("EXPIRY")
                 
                 if strike_val and opt_typ:
@@ -266,7 +268,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         pe_c = float(m_put.get("close_price") or put_opts.get("close_price") or pe_ltp)
 
         if s_val == hlc_atm_strike:
-            # Fallback to API market data if Bhavcopy is not available for current expiry date
+            # Fallback to Upstox API market data if Bhavcopy isn't available for current execution cycle
             if ce_close == 0.0:
                 ce_close, ce_high, ce_low = ce_c, ce_h, ce_l
             if pe_close == 0.0:
@@ -332,7 +334,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         
     print("Dashboard data updated successfully.")
     
-    # Remove temporary bhavcopy.csv before pushing to GitHub
+    # Clean temporary bhavcopy file before committing
     if os.path.exists("bhavcopy.csv"):
         os.remove("bhavcopy.csv")
 
