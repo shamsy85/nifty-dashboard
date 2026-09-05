@@ -1,157 +1,102 @@
 import os
 import time
-from playwright.sync_api import sync_playwright
-import pyotp
 import requests
-
-API_KEY = os.environ.get("UPSTOX_API_KEY")
-API_SECRET = os.environ.get("UPSTOX_API_SECRET")
-REDIRECT_URI = os.environ.get("UPSTOX_REDIRECT_URI", "https://127.0.0.1/")
-MOBILE_NUMBER = os.environ.get("UPSTOX_MOBILE_NO") or os.environ.get("UPSTOX_MOBILE")
-TOTP_SECRET = os.environ.get("UPSTOX_TOTP_SECRET")
-PIN = os.environ.get("UPSTOX_PIN")
+import pyotp
+from playwright.sync_api import sync_playwright
 
 def get_access_token():
-    auth_code = []
-    
+    api_key = os.getenv("UPSTOX_API_KEY")
+    api_secret = os.getenv("UPSTOX_API_SECRET")
+    redirect_uri = os.getenv("UPSTOX_REDIRECT_URI")
+    mobile_no = os.getenv("UPSTOX_MOBILE_NO")
+    pin = os.getenv("UPSTOX_PIN")
+    totp_key = os.getenv("UPSTOX_TOTP_KEY")
+
+    if not all([api_key, api_secret, redirect_uri, mobile_no, pin, totp_key]):
+        print("Missing required environment secrets for authentication.")
+        return None
+
+    login_url = f"https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id={api_key}&redirect_uri={redirect_uri}"
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(ignore_https_errors=True)
+        context = browser.new_context()
         page = context.new_page()
 
-        def handle_route(route):
-            url = route.request.url
-            if "code=" in url:
-                auth_code.append(url)
-            route.continue_()
+        try:
+            print("Navigating to Upstox login...")
+            page.goto(login_url)
 
-        context.route("**/*", handle_route)
+            # Step 1: Mobile Number Input
+            page.wait_for_selector('input[type="tel"]', timeout=15000)
+            page.fill('input[type="tel"]', mobile_no)
+            page.click('button[type="submit"]')
 
-        login_url = (
-            f"https://api.upstox.com/v2/login/authorization/dialog?"
-            f"response_type=code&client_id={API_KEY}&redirect_uri={REDIRECT_URI}"
-        )
-        
-        print("Navigating to Upstox login page...")
-        page.goto(login_url, timeout=60000, wait_until="domcontentloaded")
+            # Step 2: TOTP Generation & Entry
+            totp = pyotp.TOTP(totp_key.replace(" ", ""))
+            totp_code = totp.now()
+            print("Entering OTP...")
 
-        # 1. Enter Mobile Number
-        print("Submitting mobile number...")
-        page.wait_for_selector("input", timeout=15000)
-        
-        mobile_filled = False
-        for selector in ["input[name='mobile']", "input[type='mobile']", "input[type='text']", "input"]:
-            try:
-                elem = page.locator(selector).first
-                if elem.is_visible():
-                    elem.fill(str(MOBILE_NUMBER))
-                    mobile_filled = True
-                    break
-            except Exception:
-                continue
-                
-        if not mobile_filled:
-            raise Exception("Could not find visible mobile number input field.")
-            
-        page.keyboard.press("Enter")
-        time.sleep(3)
+            page.wait_for_selector('input[type="text"]', timeout=15000)
+            page.fill('input[type="text"]', totp_code)
+            page.click('button[type="submit"]')
 
-        # 2. Generate and Enter TOTP
-        print("Generating and entering TOTP...")
-        totp = pyotp.TOTP(TOTP_SECRET)
-        current_otp = totp.now()
-        
-        otp_filled = False
-        for selector in ["input[autocomplete='one-time-code']", "input[name='otp']", "input[type='password']", "input[type='text']"]:
-            try:
-                elem = page.locator(selector).first
-                if elem.is_visible():
-                    elem.fill(str(current_otp))
-                    otp_filled = True
-                    break
-            except Exception:
-                continue
-                
-        if not otp_filled:
-            page.keyboard.type(str(current_otp))
-            
-        page.keyboard.press("Enter")
-        time.sleep(3)
+            # Step 3: PIN Input
+            print("Entering PIN...")
+            page.wait_for_selector('input[type="password"]', timeout=15000)
+            page.fill('input[type="password"]', pin)
+            page.click('button[type="submit"]')
 
-        # 3. Enter PIN
-        print("Entering PIN...")
-        pin_filled = False
-        for selector in ["input[name='pin']", "input[type='password']", "input[maxlength='6']", "input"]:
-            try:
-                elem = page.locator(selector).first
-                if elem.is_visible():
-                    elem.fill(str(PIN))
-                    pin_filled = True
-                    break
-            except Exception:
-                continue
-                
-        if not pin_filled:
-            page.keyboard.type(str(PIN))
-            
-        page.keyboard.press("Enter")
-        time.sleep(3)
+            # Step 4: Extract Auth Code from Redirect URL
+            print("Waiting for OAuth redirect...")
+            page.wait_for_url(f"{redirect_uri}*", timeout=20000)
+            current_url = page.url
 
-        # 4. Explicitly click Authorize / Continue / Confirm button if present
-        print("Checking for post-login authorization button...")
-        for btn_text in ["Authorize", "Continue", "Confirm", "Proceed", "Allow"]:
-            try:
-                btn = page.locator(f"button:has-text('{btn_text}'), input[type='submit']").first
-                if btn.is_visible():
-                    print(f" Clicking '{btn_text}' button...")
-                    btn.click()
-                    break
-            except Exception:
-                pass
+            auth_code = None
+            if "code=" in current_url:
+                auth_code = current_url.split("code=")[1].split("&")[0]
 
-        # 5. Wait for the route/redirect containing the auth code
-        print("Waiting for redirect callback...")
-        for _ in range(45):
-            if auth_code:
-                break
-            if "code=" in page.url:
-                auth_code.append(page.url)
-                break
-            time.sleep(1)
+            browser.close()
 
-        browser.close()
+            if not auth_code:
+                print("Failed to retrieve auth_code from redirect URL.")
+                return None
 
-    if not auth_code:
-        raise Exception("Failed to retrieve authentication code. The login flow did not redirect properly.")
+            # Step 5: Exchange Auth Code for Access Token
+            print("Exchanging authorization code for token...")
+            token_url = "https://api.upstox.com/v2/login/authorization/token"
+            headers = {
+                "accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+            payload = {
+                "code": auth_code,
+                "client_id": api_key,
+                "client_secret": api_secret,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code"
+            }
 
-    full_url = auth_code[0]
-    extracted_code = full_url.split("code=")[1].split("&")[0]
+            res = requests.post(token_url, headers=headers, data=payload, timeout=15)
+            if res.status_code == 200:
+                token_data = res.json()
+                access_token = token_data.get("access_token")
+                print("Successfully generated Upstox Access Token!")
+                return access_token
+            else:
+                print(f"Token exchange failed: {res.status_code} - {res.text}")
 
-    # 6. Exchange Authorization Code for Access Token
-    token_url = "https://api.upstox.com/v2/login/authorization/token"
-    payload = {
-        'code': extracted_code,
-        'client_id': API_KEY,
-        'client_secret': API_SECRET,
-        'redirect_uri': REDIRECT_URI,
-        'grant_type': 'authorization_code'
-    }
-    headers = {
-        'accept': 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
+        except Exception as e:
+            print(f"Authentication automation failed: {e}")
+            browser.close()
 
-    response = requests.post(token_url, data=payload, headers=headers)
-    res_data = response.json()
-    
-    if response.status_code == 200 and "access_token" in res_data:
-        access_token = res_data["access_token"]
-        with open("token.txt", "w") as f:
-            f.write(access_token)
-        print("Access token generated and saved successfully.")
-        return access_token
-    else:
-        raise Exception(f"Failed to fetch access token from Upstox API: {res_data}")
+    return None
 
 if __name__ == "__main__":
-    get_access_token()
+    token = get_access_token()
+    if token:
+        with open("token.txt", "w") as f:
+            f.write(token)
+        print("Token written to token.txt successfully.")
+    else:
+        print("Could not generate new token. Attempting fallback to existing token.txt...")
