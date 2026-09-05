@@ -15,12 +15,12 @@ def push_to_github():
     try:
         subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
         subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
-        subprocess.run(["git", "add", "data.json", "bhavcopy.csv"], check=False)
+        subprocess.run(["git", "add", "data.json"], check=False)
         
-        # Check status before committing to avoid pipeline errors on empty diff
+        # Check status before committing to avoid unnecessary pipeline failures
         status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         if status.stdout.strip():
-            subprocess.run(["git", "commit", "-m", "Auto-update dashboard and bhavcopy [skip ci]"], check=True)
+            subprocess.run(["git", "commit", "-m", "Auto-update dashboard [skip ci]"], check=True)
             subprocess.run(["git", "push", "origin", "main"], check=True)
             print("Changes pushed to GitHub successfully.")
         else:
@@ -122,7 +122,7 @@ def download_nse_bhavcopy():
                     csv_filename = z.namelist()[0]
                     with z.open(csv_filename) as csv_file, open("bhavcopy.csv", "wb") as f:
                         f.write(csv_file.read())
-                print(f"Successfully downloaded and extracted UDiFF F&O Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
+                print(f"Successfully downloaded UDiFF F&O Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
                 return True
         except Exception as e:
             print(f"Attempt for UDiFF F&O Bhavcopy on {target_date.strftime('%Y-%m-%d')} failed: {e}")
@@ -233,6 +233,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
+    # Parse Bhavcopy for High/Low/Close
     ce_high, ce_low, ce_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE", expiry_date_str)
     pe_high, pe_low, pe_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE", expiry_date_str)
 
@@ -256,20 +257,20 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
         pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
         
-        ce_h = float(call_opts.get("high_price") or m_call.get("high_price") or ce_ltp)
-        ce_l = float(call_opts.get("low_price") or m_call.get("low_price") or ce_ltp)
-        pe_h = float(put_opts.get("high_price") or m_put.get("high_price") or pe_ltp)
-        pe_l = float(put_opts.get("low_price") or m_put.get("low_price") or pe_ltp)
+        ce_h = float(m_call.get("high_price") or call_opts.get("high_price") or ce_ltp)
+        ce_l = float(m_call.get("low_price") or call_opts.get("low_price") or ce_ltp)
+        ce_c = float(m_call.get("close_price") or call_opts.get("close_price") or ce_ltp)
+
+        pe_h = float(m_put.get("high_price") or put_opts.get("high_price") or pe_ltp)
+        pe_l = float(m_put.get("low_price") or put_opts.get("low_price") or pe_ltp)
+        pe_c = float(m_put.get("close_price") or put_opts.get("close_price") or pe_ltp)
 
         if s_val == hlc_atm_strike:
+            # Fallback to API market data if Bhavcopy is not available for current expiry date
             if ce_close == 0.0:
-                ce_close = ce_ltp
-                ce_high = ce_h
-                ce_low = ce_l
+                ce_close, ce_high, ce_low = ce_c, ce_h, ce_l
             if pe_close == 0.0:
-                pe_close = pe_ltp
-                pe_high = pe_h
-                pe_low = pe_l
+                pe_close, pe_high, pe_low = pe_c, pe_h, pe_l
 
         if s_val == sniper1_atm_strike:
             s1_atm_ce_val, s1_atm_pe_val = ce_ltp, pe_ltp
@@ -330,6 +331,11 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         json.dump(payload, f, indent=4)
         
     print("Dashboard data updated successfully.")
+    
+    # Remove temporary bhavcopy.csv before pushing to GitHub
+    if os.path.exists("bhavcopy.csv"):
+        os.remove("bhavcopy.csv")
+
     push_to_github()
 
 
