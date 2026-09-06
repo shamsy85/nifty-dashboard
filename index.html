@@ -334,14 +334,25 @@
         </div>
     </div>
 
+    <!-- Supply & Demand Boundary Cards (2x2 Grid) -->
     <div class="grid-2">
         <div class="target-card">
-            <div class="target-title" style="color: #ef4444;">Minimum Supply</div>
+            <div class="target-title" style="color: #ef4444;">Min Supply</div>
             <div class="target-val-red" id="minSupply">0.00</div>
         </div>
         <div class="target-card">
-            <div class="target-title" style="color: #22c55e;">Minimum Demand</div>
+            <div class="target-title" style="color: #22c55e;">Min Demand</div>
             <div class="target-val-green" id="minDemand">0.00</div>
+        </div>
+    </div>
+    <div class="grid-2">
+        <div class="target-card">
+            <div class="target-title" style="color: #ef4444;">Max Supply</div>
+            <div class="target-val-red" id="maxSupply">0.00</div>
+        </div>
+        <div class="target-card">
+            <div class="target-title" style="color: #22c55e;">Max Demand</div>
+            <div class="target-val-green" id="maxDemand">0.00</div>
         </div>
     </div>
 
@@ -462,8 +473,11 @@
             document.getElementById('peHC').innerText = (peHigh - peClose).toFixed(2);
             document.getElementById('peCL').innerText = (peClose - peLow).toFixed(2);
 
-            document.getElementById('minSupply').innerText = (spotPrice + (ceClose * 0.9)).toLocaleString('en-IN', {maximumFractionDigits: 2});
-            document.getElementById('minDemand').innerText = (spotPrice - (peClose * 0.9)).toLocaleString('en-IN', {maximumFractionDigits: 2});
+            // Populate Supply & Demand values directly from the JSON payload
+            document.getElementById('minSupply').innerText = (Number(data.minSupply) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('minDemand').innerText = (Number(data.minDemand) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('maxSupply').innerText = (Number(data.maxSupply) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('maxDemand').innerText = (Number(data.maxDemand) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
             document.getElementById('wHigh').innerText = (spotPrice * 1.011).toFixed(2);
             document.getElementById('wLow').innerText = (spotPrice * 0.989).toFixed(2);
