@@ -12,6 +12,14 @@ import requests
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
 
+def get_next_trading_day(d):
+    """Calculates the next trading day, skipping weekends (Saturday and Sunday)."""
+    next_day = d + datetime.timedelta(days=1)
+    while next_day.weekday() >= 5:  # 5 is Saturday, 6 is Sunday
+        next_day += datetime.timedelta(days=1)
+    return next_day
+
+
 def push_to_github():
     try:
         subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
@@ -173,7 +181,7 @@ def load_bhavcopy_dict(target_expiry_str):
                     continue
 
                 strike_raw = (cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or 
-                              cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
+                             cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
                 try:
                     row_strike = int(round(float(strike_raw)))
                 except ValueError:
@@ -187,7 +195,7 @@ def load_bhavcopy_dict(target_expiry_str):
                     continue
 
                 expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or 
-                              cleaned_row.get("EXPIRY") or "").strip().upper()
+                             cleaned_row.get("EXPIRY") or "").strip().upper()
                 
                 if any(expiry_raw == exp for exp in possible_expiries):
                     open_p = float(cleaned_row.get("OPENPRIC") or cleaned_row.get("OPEN") or 0.0)
@@ -280,7 +288,11 @@ def process_and_save_data(res_json, spot, w_exp, m_exp, access_token):
         return
 
     now_ist = datetime.datetime.now(IST)
-    today_str = now_ist.strftime("%d %b %Y").upper()
+    actual_today_str = now_ist.strftime("%d %b %Y").upper()
+    
+    # Calculate next trading day for the dashboard display date
+    next_trading_date = get_next_trading_day(now_ist)
+    display_date_str = next_trading_date.strftime("%d %b %Y").upper()
 
     bhavcopy_is_ready = download_today_bhavcopy()
     w_bhav = load_bhavcopy_dict(w_exp)
@@ -379,7 +391,8 @@ def process_and_save_data(res_json, spot, w_exp, m_exp, access_token):
     payload = {
         "dataStatus": "SUCCESS",
         "bhavcopyReady": bhavcopy_is_ready,
-        "currentDate": today_str,
+        "currentDate": display_date_str,       # Shows next trading day on the dashboard UI
+        "lastExecutionDate": actual_today_str,  # Tracks actual execution day to handle skips correctly
         "expiryDate": datetime.datetime.strptime(w_exp, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
         "spotPrice": spot,
         "hlcAtmStrike": hlc_atm_strike,
@@ -421,9 +434,10 @@ if __name__ == "__main__":
             with open("data.json", "r") as f:
                 existing_data = json.load(f)
                 now_ist = datetime.datetime.now(IST)
-                today_str = now_ist.strftime("%d %b %Y").upper()
+                actual_today_str = now_ist.strftime("%d %b %Y").upper()
                 
-                if existing_data.get("currentDate") == today_str and existing_data.get("bhavcopyReady") is True:
+                # Verify using lastExecutionDate to avoid stopping prematurely or mismatching target dates
+                if existing_data.get("lastExecutionDate") == actual_today_str and existing_data.get("bhavcopyReady") is True:
                     print("✅ Bhavcopy already successfully fetched and saved for today. Skipping execution.")
                     exit(0)
         except Exception:
