@@ -174,7 +174,7 @@ def load_bhavcopy_dict(target_expiry_str):
                     continue
 
                 strike_raw = (cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or 
-                              cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
+                             cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
                 try:
                     row_strike = int(round(float(strike_raw)))
                 except ValueError:
@@ -268,8 +268,8 @@ def calculate_zone_row_one(wl, wh, bhav_map, chain_data):
     ce2, pe2 = get_p(wh, "CE"), get_p(wh, "PE")
 
     return {
-        "line1": round(wl + (ce1 + pe1), 2),  # Red Zone value
-        "line2": round(wh - (ce2 + pe2), 2)   # Green Zone value
+        "line1": round(wh + ce2, 2),  # Upper Zone value (Red)
+        "line2": round(wl - pe1, 2)   # Lower Zone value (Green)
     }
 
 
