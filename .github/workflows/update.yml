@@ -45,9 +45,3 @@ jobs:
 
       - name: Fetch Market Data and Update JSON
         run: python update.py
-
-      - name: Commit and push changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto-update dashboard data.json [skip ci]"
-          file_pattern: "data.json"
