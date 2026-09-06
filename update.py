@@ -23,7 +23,7 @@ def push_to_github():
         diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
         
         if diff_check.returncode != 0:
-            subprocess.run(["git", "commit", "-m", "Auto-update dashboard, bhavcopy, and sniper calculations [skip ci]"], check=True)
+            subprocess.run(["git", "commit", "-m", "Auto-update dashboard and bhavcopy status [skip ci]"], check=True)
             subprocess.run(["git", "push", "origin", "main"], check=True)
             print("Changes pushed to GitHub successfully.")
         else:
@@ -98,7 +98,8 @@ def get_current_expiry(access_token):
     return today_str
 
 
-def download_nse_bhavcopy():
+def download_today_bhavcopy():
+    """Attempts to download ONLY TODAY's Bhavcopy from NSE."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
@@ -106,46 +107,44 @@ def download_nse_bhavcopy():
     }
     now_ist = datetime.datetime.now(IST)
     
-    for i in range(5):
-        target_date = now_ist - datetime.timedelta(days=i)
-        if target_date.weekday() >= 5:
-            continue
-        yyyy = target_date.strftime("%Y")
-        mm = target_date.strftime("%m")
-        dd = target_date.strftime("%d")
+    yyyy = now_ist.strftime("%Y")
+    mm = now_ist.strftime("%m")
+    dd = now_ist.strftime("%d")
+    
+    url = f"https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
+    try:
+        session = requests.Session()
+        session.get("https://www.nseindia.com", headers=headers, timeout=10)
+        response = session.get(url, headers=headers, timeout=30)
         
-        url = f"https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
-        try:
-            session = requests.Session()
-            session.get("https://www.nseindia.com", headers=headers, timeout=10)
-            response = session.get(url, headers=headers, timeout=30)
-            if response.status_code == 200 and len(response.content) > 1000:
-                if os.path.exists("bhavcopy.csv"):
-                    try:
-                        os.remove("bhavcopy.csv")
-                    except Exception as e:
-                        print(f"Notice: Could not remove old bhavcopy: {e}")
+        if response.status_code == 200 and len(response.content) > 1000:
+            if os.path.exists("bhavcopy.csv"):
+                try:
+                    os.remove("bhavcopy.csv")
+                except Exception:
+                    pass
 
-                with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-                    csv_filename = z.namelist()[0]
-                    with z.open(csv_filename) as csv_file:
-                        content = csv_file.read().decode('utf-8', errors='ignore')
-                        lines = content.splitlines()
-                        
-                        nifty_lines = []
-                        if lines:
-                            nifty_lines.append(lines[0])
-                            for line in lines[1:]:
-                                if "NIFTY" in line.upper():
-                                    nifty_lines.append(line)
-                        
-                        with open("bhavcopy.csv", "w", encoding="utf-8") as f:
-                            f.write("\n".join(nifty_lines))
+            with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+                csv_filename = z.namelist()[0]
+                with z.open(csv_filename) as csv_file:
+                    content = csv_file.read().decode('utf-8', errors='ignore')
+                    lines = content.splitlines()
+                    
+                    nifty_lines = []
+                    if lines:
+                        nifty_lines.append(lines[0])
+                        for line in lines[1:]:
+                            if "NIFTY" in line.upper():
+                                nifty_lines.append(line)
+                    
+                    with open("bhavcopy.csv", "w", encoding="utf-8") as f:
+                        f.write("\n".join(nifty_lines))
 
-                print(f"Successfully downloaded and filtered NIFTY Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
-                return True
-        except Exception as e:
-            print(f"Attempt for UDiFF F&O Bhavcopy on {target_date.strftime('%Y-%m-%d')} failed: {e}")
+            print(f"Successfully downloaded TODAY'S Bhavcopy for {now_ist.strftime('%Y-%m-%d')}")
+            return True
+    except Exception as e:
+        print(f"Today's Bhavcopy is not available yet: {e}")
+        
     return False
 
 
@@ -232,13 +231,12 @@ def fetch_option_chain_data(access_token, expiry_date):
 
 
 def get_strike_close_price(bhav_map, item, strike, opt_type):
-    """Helper to fetch Close Price from Bhavcopy first, with API fallback."""
-    if (strike, opt_type) in bhav_map:
+    if (strike, opt_type) in bhav_map and bhav_map[(strike, opt_type)][2] > 0:
         return bhav_map[(strike, opt_type)][2]
     
     opts = item.get("call_options", {}) if opt_type == "CE" else item.get("put_options", {})
     m_data = opts.get("market_data", {})
-    return float(opts.get("last_price") or m_data.get("close_price") or m_data.get("ltp") or 0.0)
+    return float(m_data.get("close_price") or opts.get("last_price") or m_data.get("ltp") or 0.0)
 
 
 def process_and_save_data(res_json, spot, expiry_date_str):
@@ -250,7 +248,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     now_ist = datetime.datetime.now(IST)
     today_str = now_ist.strftime("%d %b %Y").upper()
 
-    download_nse_bhavcopy()
+    bhavcopy_is_ready = download_today_bhavcopy()
     bhav_map = load_bhavcopy_dict(expiry_date_str)
 
     min_diff = float('inf')
@@ -273,8 +271,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             if diff < min_diff:
                 min_diff = diff
                 hlc_atm_strike = s_val
-
-    print(f"Calculated HLC ATM Strike: {hlc_atm_strike} (Min Diff: {round(min_diff, 2)})")
 
     sniper1_atm_strike = int(round(spot / 100.0) * 100)
     sniper2_atm_strike = hlc_atm_strike
@@ -318,29 +314,28 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             if pe_low == 0.0:
                 pe_low = float(m_put.get("low_price") or pe_close)
 
-        # Fetch Bhavcopy values for Snipers
         if s_val == sniper1_atm_strike:
             s1_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
             s1_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
-        elif s_val == target_s1_ce_strike:
+        if s_val == target_s1_ce_strike:
             s1_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
-        elif s_val == target_s1_pe_strike:
+        if s_val == target_s1_pe_strike:
             s1_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
 
         if s_val == sniper2_atm_strike:
             s2_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
             s2_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
-        elif s_val == target_s2_ce_strike:
+        if s_val == target_s2_ce_strike:
             s2_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
-        elif s_val == target_s2_pe_strike:
+        if s_val == target_s2_pe_strike:
             s2_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
 
-    # Sniper calculation: (OTM CE + OTM PE) / 2
     sniper1_val = round((s1_ce_val + s1_pe_val) / 2.0, 2)
     sniper2_val = round((s2_ce_val + s2_pe_val) / 2.0, 2)
 
     payload = {
         "dataStatus": "SUCCESS",
+        "bhavcopyReady": bhavcopy_is_ready,
         "currentDate": today_str,
         "expiryDate": datetime.datetime.strptime(expiry_date_str, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
         "spotPrice": spot,
@@ -383,7 +378,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
         
-    print(f"Dashboard data updated successfully. Sniper1: {sniper1_val}, Sniper2: {sniper2_val}")
+    print(f"Data saved. Bhavcopy status: {bhavcopy_is_ready}")
     push_to_github()
 
 
