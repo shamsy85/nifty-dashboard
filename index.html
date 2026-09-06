@@ -37,22 +37,15 @@
 
         .warning-banner {
             display: none;
-            background-color: #dc2626;
             color: #ffffff;
             text-align: center;
             font-weight: 800;
             font-size: 0.85rem;
             padding: 10px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
             letter-spacing: 0.5px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.75; }
-            100% { opacity: 1; }
+            transition: background-color 0.3s ease;
         }
 
         .header {
@@ -270,9 +263,7 @@
 <body>
 
 <div class="dashboard">
-    <div id="bhavcopyAlert" class="warning-banner">
-        ⚠️ BHAVCOPY NOT READY, PLS WAIT
-    </div>
+    <div id="bhavcopyAlert" class="warning-banner"></div>
 
     <div class="header">
         <div>
@@ -400,12 +391,17 @@
             if (!response.ok) return;
             const data = await response.json();
 
-            // Toggle warning banner based on Bhavcopy readiness
+            // Toggle alert banner text and background color
             const alertBanner = document.getElementById('bhavcopyAlert');
+
             if (data.bhavcopyReady === false) {
+                alertBanner.innerText = '⚠️ BHAVCOPY NOT READY, PLS WAIT';
+                alertBanner.style.backgroundColor = '#dc2626'; // Red
                 alertBanner.style.display = 'block';
             } else {
-                alertBanner.style.display = 'none';
+                alertBanner.innerText = '✅ BHAVCOPY LOADED SUCCESSFULLY';
+                alertBanner.style.backgroundColor = '#16a34a'; // Green
+                alertBanner.style.display = 'block';
             }
 
             const spotPrice = Number(data.spotPrice) || 0;
