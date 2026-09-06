@@ -474,11 +474,11 @@
             document.getElementById('maxSupply').innerText = (Number(data.maxSupply) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('maxDemand').innerText = (Number(data.maxDemand) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
-            // Render Weekly and Monthly zones from JSON payload
-            document.getElementById('wHigh').innerText = (Number(data.weeklyHigh) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('wLow').innerText = (Number(data.weeklyLow) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('mHigh').innerText = (Number(data.monthlyHigh) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('mLow').innerText = (Number(data.monthlyLow) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            // Render Weekly and Monthly Row 1 zones from JSON payload
+            document.getElementById('wHigh').innerText = (Number(data.weeklyZones?.line1) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('wLow').innerText = (Number(data.weeklyZones?.line2) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('mHigh').innerText = (Number(data.monthlyZones?.line1) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('mLow').innerText = (Number(data.monthlyZones?.line2) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             if (data.sniper1) {
                 const s1Ce = Number(data.sniper1.ce) || 0;
