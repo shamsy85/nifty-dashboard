@@ -134,12 +134,11 @@ def download_nse_bhavcopy():
 
 
 def load_bhavcopy_dict(target_expiry_str):
-    """Loads Bhavcopy into a dictionary: { (strike, option_type): (high, low, close) }"""
+    """Loads Bhavcopy into a dictionary: { (int_strike, option_type): (high, low, close) }"""
     bhav_map = {}
     if not os.path.exists("bhavcopy.csv"):
         return bhav_map
 
-    # Support multiple representations of the target expiry date
     possible_expiries = set()
     possible_expiries.add(target_expiry_str.upper())
     
@@ -166,7 +165,8 @@ def load_bhavcopy_dict(target_expiry_str):
                 strike_raw = (cleaned_row.get("STRIKEPRIC") or cleaned_row.get("STRIKE_PR") or 
                               cleaned_row.get("STRIKE") or cleaned_row.get("STRK_PRC") or "0")
                 try:
-                    row_strike = float(strike_raw)
+                    # Cast strike explicitly to int to avoid floating-point lookup mismatches
+                    row_strike = int(round(float(strike_raw)))
                 except ValueError:
                     continue
 
@@ -225,20 +225,20 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         print("Invalid data or spot price received.")
         return
 
-    # Download Bhavcopy & load indexed strike data into memory
+    # Download Bhavcopy and parse into memory
     download_nse_bhavcopy()
     bhav_map = load_bhavcopy_dict(expiry_date_str)
 
     min_diff = float('inf')
     hlc_atm_strike = int(round(spot / 50.0) * 50)
 
-    # Compute minimum price difference strictly using Bhavcopy Close (with live LTP fallback)
+    # Compute minimum price difference using Bhavcopy Close (with live LTP fallback)
     for item in data:
         item_strike = item.get("strike_price")
         if item_strike is None:
             continue
         
-        s_val = float(item_strike)
+        s_val = int(round(float(item_strike)))
         if abs(s_val - spot) > 500:
             continue
 
@@ -248,7 +248,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         ce_close = bhav_map.get((s_val, "CE"), (0.0, 0.0, 0.0))[2]
         pe_close = bhav_map.get((s_val, "PE"), (0.0, 0.0, 0.0))[2]
 
-        # Safety Fallback: Use live LTP if Bhavcopy returned zero
+        # Fallback to API LTP if Bhavcopy value is zero
         if ce_close == 0.0:
             ce_close = float(call_opts.get("last_price") or call_opts.get("market_data", {}).get("ltp") or 0.0)
         if pe_close == 0.0:
@@ -258,7 +258,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             diff = abs(ce_close - pe_close)
             if diff < min_diff:
                 min_diff = diff
-                hlc_atm_strike = int(s_val)
+                hlc_atm_strike = s_val
 
     print(f"Calculated HLC ATM Strike: {hlc_atm_strike} (Min Diff: {round(min_diff, 2)})")
 
@@ -270,8 +270,9 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    ce_high, ce_low, ce_close = bhav_map.get((float(hlc_atm_strike), "CE"), (0.0, 0.0, 0.0))
-    pe_high, pe_low, pe_close = bhav_map.get((float(hlc_atm_strike), "PE"), (0.0, 0.0, 0.0))
+    # Retrieve High, Low, Close using integer strike keys directly from Bhavcopy
+    ce_high, ce_low, ce_close = bhav_map.get((int(hlc_atm_strike), "CE"), (0.0, 0.0, 0.0))
+    pe_high, pe_low, pe_close = bhav_map.get((int(hlc_atm_strike), "PE"), (0.0, 0.0, 0.0))
 
     s1_atm_ce_val, s1_atm_pe_val = 0.0, 0.0
     s2_atm_ce_val, s2_atm_pe_val = 0.0, 0.0
@@ -282,7 +283,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         item_strike = item.get("strike_price")
         if item_strike is None:
             continue
-        s_val = float(item_strike)
+        s_val = int(round(float(item_strike)))
         
         call_opts = item.get("call_options", {})
         put_opts = item.get("put_options", {})
