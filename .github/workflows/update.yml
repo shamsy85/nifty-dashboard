@@ -13,6 +13,10 @@ jobs:
   update-data:
     runs-on: ubuntu-latest
 
+    # Optional: grant permissions so the action can push to your repository
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -41,3 +45,9 @@ jobs:
 
       - name: Fetch Market Data and Update JSON
         run: python update.py
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update dashboard data.json [skip ci]"
+          file_pattern: "data.json"
