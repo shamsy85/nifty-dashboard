@@ -2,8 +2,11 @@ name: Update Dashboard Data
 
 on:
   schedule:
-    # Runs every 30 minutes during Indian Market Hours (Mon-Fri)
-    - cron: '*/30 3-10 * * 1-5'
+    # Runs every 30 minutes from 5:00 PM IST to 8:30 PM IST (11:30 UTC to 15:00 UTC) Mon-Fri
+    - cron: '30 11 * * 1-5'
+    - cron: '0,30 12-14 * * 1-5'
+    - cron: '0 15 * * 1-5'
+
   workflow_dispatch:
 
 jobs:
