@@ -180,7 +180,7 @@ def load_bhavcopy_dict(target_expiry_str):
                     continue
 
                 strike_raw = (cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or 
-                              cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
+                             cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
                 try:
                     row_strike = int(round(float(strike_raw)))
                 except ValueError:
@@ -194,7 +194,7 @@ def load_bhavcopy_dict(target_expiry_str):
                     continue
 
                 expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or 
-                              cleaned_row.get("EXPIRY") or "").strip().upper()
+                             cleaned_row.get("EXPIRY") or "").strip().upper()
                 
                 if any(exp in expiry_raw for exp in possible_expiries):
                     open_p = float(cleaned_row.get("OPENPRIC") or cleaned_row.get("OPEN") or 0.0)
@@ -215,6 +215,70 @@ def load_bhavcopy_dict(target_expiry_str):
         print(f"Error reading bhavcopy into dict: {e}")
 
     return bhav_map
+
+
+def load_all_bhavcopy_expiries():
+    """Loads all Nifty F&O options across all expiries from bhavcopy.csv"""
+    bhav_all = {}
+    if not os.path.exists("bhavcopy.csv"):
+        return bhav_all
+    try:
+        with open("bhavcopy.csv", mode="r", encoding="utf-8", errors="ignore") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                cleaned_row = {k.strip().upper(): (v.strip() if v else "") for k, v in row.items() if k}
+                symbol = cleaned_row.get("TCKRSYMB") or cleaned_row.get("SYMBOL") or cleaned_row.get("FININSTRNM") or ""
+                if "NIFTY" not in symbol.upper():
+                    continue
+
+                strike_raw = cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0"
+                try:
+                    row_strike = int(round(float(strike_raw)))
+                except ValueError:
+                    continue
+
+                opt_type_raw = cleaned_row.get("OPTNTP") or cleaned_row.get("OPTION_TYP") or cleaned_row.get("OPTIONTYPE") or ""
+                opt_type = "CE" if "CE" in opt_type_raw.upper() else "PE" if "PE" in opt_type_raw.upper() else ""
+                if not opt_type:
+                    continue
+
+                expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or cleaned_row.get("EXPIRY") or "").strip().upper()
+                if not expiry_raw:
+                    continue
+
+                close = float(cleaned_row.get("CLSPRIC") or cleaned_row.get("CLOSE") or cleaned_row.get("SETTLE_PR") or 0.0)
+                if close > 0:
+                    bhav_all[(row_strike, opt_type, expiry_raw)] = close
+    except Exception as e:
+        print(f"Error reading all bhavcopy expiries: {e}")
+    return bhav_all
+
+
+def find_monthly_expiry(expiry_strings, target_date_str):
+    parsed_expiries = []
+    for exp_str in expiry_strings:
+        for fmt in ("%Y-%m-%d", "%d-%b-%Y", "%d-%B-%Y", "%d%b%Y", "%d%b%y"):
+            try:
+                dt = datetime.datetime.strptime(exp_str, fmt).date()
+                parsed_expiries.append((dt, exp_str))
+                break
+            except ValueError:
+                continue
+    
+    parsed_expiries = sorted(list(set(parsed_expiries)), key=lambda x: x[0])
+    if not parsed_expiries:
+        return target_date_str
+
+    try:
+        target_dt = datetime.datetime.strptime(target_date_str.strip(), "%Y-%m-%d").date()
+    except Exception:
+        target_dt = datetime.date.today()
+
+    month_expiries = [exp for dt, exp in parsed_expiries if dt.year == target_dt.year and dt.month == target_dt.month]
+    if month_expiries:
+        return month_expiries[-1]
+    
+    return target_date_str
 
 
 def fetch_option_chain_data(access_token, expiry_date):
@@ -241,45 +305,6 @@ def get_strike_close_price(bhav_map, item, strike, opt_type):
     opts = item.get("call_options", {}) if opt_type == "CE" else item.get("put_options", {})
     m_data = opts.get("market_data", {})
     return float(m_data.get("close_price") or opts.get("last_price") or m_data.get("ltp") or 0.0)
-
-
-def calculate_support_resistance_levels(spot_price, bhav_map):
-    """
-    Computes S&R levels based on the mathematical formula:
-    - WL = Floor(ATM / 100) * 100
-    - WH = Ceil(ATM / 100) * 100
-    - Line 1 (Resistance 1) = WL + (CE1 + PE1)
-    - Line 2 (Support 1 / Pivot) = WH - (CE2 + PE2)
-    - Line 3 (Support 2) = WL - (CE1 + PE1)
-    - Line 4 (Resistance 2) = WH + (CE2 + PE2)
-    """
-    wl = math.floor(spot_price / 100.0) * 100
-    wh = math.ceil(spot_price / 100.0) * 100
-    
-    ce1 = bhav_map.get((wl, "CE"), {}).get("close", 0.0)
-    pe1 = bhav_map.get((wl, "PE"), {}).get("close", 0.0)
-    
-    ce2 = bhav_map.get((wh, "CE"), {}).get("close", 0.0)
-    pe2 = bhav_map.get((wh, "PE"), {}).get("close", 0.0)
-    
-    sum1 = ce1 + pe1
-    sum2 = ce2 + pe2
-    
-    line1 = wl + sum1
-    line2 = wh - sum2
-    line3 = wl - sum1
-    line4 = wh + sum2
-    
-    return {
-        "wl": wl,
-        "wh": wh,
-        "line1": round(line1, 2),
-        "line2": round(line2, 2),
-        "line3": round(line3, 2),
-        "line4": round(line4, 2),
-        "sum1": round(sum1, 2),
-        "sum2": round(sum2, 2)
-    }
 
 
 def get_market_sentiment_tag(data_dict):
@@ -418,9 +443,35 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     max_supply_val = round(hlc_atm_strike + (ce_close + pe_close), 2)
     max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
 
-    # Calculate Weekly and Monthly S&R levels using the exact formulas
-    weekly_levels = calculate_support_resistance_levels(spot, bhav_map)
-    monthly_levels = calculate_support_resistance_levels(spot, bhav_map) # Can use monthly bhav_map dictionary if processed separately
+    # -------------------------------------------------------------
+    # CALCULATE WEEKLY & MONTHLY ZONES USING USER'S FORMULA METHOD
+    # -------------------------------------------------------------
+    wl = math.floor(hlc_atm_strike / 100) * 100
+
+    # Weekly Zone Calculation
+    ce1_weekly = bhav_map.get((wl, "CE"), {}).get("close", 0.0)
+    pe1_weekly = bhav_map.get((wl, "PE"), {}).get("close", 0.0)
+    sum1_weekly = ce1_weekly + pe1_weekly
+    weekly_high = round(wl + sum1_weekly, 2)
+    weekly_low = round(wl - sum1_weekly, 2)
+
+    # Monthly Zone Calculation
+    bhav_all = load_all_bhavcopy_expiries()
+    all_expiries = list(set([k[2] for k in bhav_all.keys()]))
+    monthly_expiry_str = find_monthly_expiry(all_expiries, expiry_date_str)
+
+    ce1_monthly = 0.0
+    pe1_monthly = 0.0
+    for (s, o, exp), val in bhav_all.items():
+        if s == wl and monthly_expiry_str in exp:
+            if o == "CE":
+                ce1_monthly = val
+            elif o == "PE":
+                pe1_monthly = val
+
+    sum1_monthly = ce1_monthly + pe1_monthly
+    monthly_high = round(wl + sum1_monthly, 2)
+    monthly_low = round(wl - sum1_monthly, 2)
 
     payload = {
         "dataStatus": "SUCCESS",
@@ -448,10 +499,12 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         "minDemand": min_demand_val,
         "maxSupply": max_supply_val,
         "maxDemand": max_demand_val,
+        "weeklyHigh": weekly_high,
+        "weeklyLow": weekly_low,
+        "monthlyHigh": monthly_high,
+        "monthlyLow": monthly_low,
         "spotHigh": spot,
         "spotLow": spot,
-        "weeklyLevels": weekly_levels,
-        "monthlyLevels": monthly_levels,
         "sniper1": {
             "strike": sniper1_atm_strike, 
             "ce": round(s1_atm_ce_val, 2), 
