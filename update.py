@@ -190,7 +190,8 @@ def load_bhavcopy_dict(target_expiry_str):
                 expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or 
                               cleaned_row.get("EXPIRY") or "").strip().upper()
                 
-                if any(exp in expiry_raw for exp in possible_expiries):
+                # FIXED: Changed from substring matching (in) to exact matching (==) to prevent cross-contamination
+                if any(expiry_raw == exp for exp in possible_expiries):
                     open_p = float(cleaned_row.get("OPENPRIC") or cleaned_row.get("OPEN") or 0.0)
                     high = float(cleaned_row.get("HGHPRIC") or cleaned_row.get("HIGH") or 0.0)
                     low = float(cleaned_row.get("LWPRIC") or cleaned_row.get("LOW") or 0.0)
