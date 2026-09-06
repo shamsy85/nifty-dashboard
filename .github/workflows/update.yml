@@ -13,7 +13,6 @@ jobs:
   update-data:
     runs-on: ubuntu-latest
 
-    # Optional: grant permissions so the action can push to your repository
     permissions:
       contents: write
 
