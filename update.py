@@ -383,6 +383,20 @@ def process_and_save_data(res_json, spot, expiry_date_str):
 
 
 if __name__ == "__main__":
+    # Check if data.json already has today's date and bhavcopyReady == True
+    if os.path.exists("data.json"):
+        try:
+            with open("data.json", "r") as f:
+                existing_data = json.load(f)
+                now_ist = datetime.datetime.now(IST)
+                today_str = now_ist.strftime("%d %b %Y").upper()
+                
+                if existing_data.get("currentDate") == today_str and existing_data.get("bhavcopyReady") is True:
+                    print("✅ Bhavcopy already successfully fetched and saved for today. Skipping execution.")
+                    exit(0)
+        except Exception:
+            pass
+
     access_token = load_access_token()
     if access_token:
         expiry = get_current_expiry(access_token)
