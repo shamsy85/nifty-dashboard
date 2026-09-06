@@ -334,7 +334,7 @@
         </div>
     </div>
 
-    <!-- Supply & Demand Boundary Cards (2x2 Grid) -->
+    <!-- Supply & Demand Boundary Cards -->
     <div class="grid-2">
         <div class="target-card">
             <div class="target-title" style="color: #ef4444;">Min Supply</div>
@@ -416,16 +416,15 @@
             if (!response.ok) return;
             const data = await response.json();
 
-            // Toggle alert banner text and background color
             const alertBanner = document.getElementById('bhavcopyAlert');
 
             if (data.bhavcopyReady === false) {
                 alertBanner.innerText = '⚠️ BHAVCOPY NOT READY, PLS WAIT';
-                alertBanner.style.backgroundColor = '#dc2626'; // Red
+                alertBanner.style.backgroundColor = '#dc2626';
                 alertBanner.style.display = 'block';
             } else {
                 alertBanner.innerText = '';
-                alertBanner.style.display = 'none'; // Completely hidden once ready
+                alertBanner.style.display = 'none';
             }
 
             const spotPrice = Number(data.spotPrice) || 0;
@@ -448,7 +447,6 @@
             document.getElementById('ceCloseHeader').innerText = ceClose.toFixed(2);
             document.getElementById('peCloseHeader').innerText = peClose.toFixed(2);
 
-            // Update CE Tag and Class dynamically
             const ceTagEl = document.getElementById('ceTag');
             ceTagEl.innerText = data.ceTag || 'NEUTRAL';
             ceTagEl.className = `card-tag ${data.ceClass || 'tag-neutral'}`;
@@ -460,7 +458,6 @@
             document.getElementById('ceHC').innerText = (ceHigh - ceClose).toFixed(2);
             document.getElementById('ceCL').innerText = (ceClose - ceLow).toFixed(2);
 
-            // Update PE Tag and Class dynamically
             const peTagEl = document.getElementById('peTag');
             peTagEl.innerText = data.peTag || 'NEUTRAL';
             peTagEl.className = `card-tag ${data.peClass || 'tag-neutral'}`;
@@ -472,16 +469,16 @@
             document.getElementById('peHC').innerText = (peHigh - peClose).toFixed(2);
             document.getElementById('peCL').innerText = (peClose - peLow).toFixed(2);
 
-            // Populate Supply & Demand values directly from the JSON payload
             document.getElementById('minSupply').innerText = (Number(data.minSupply) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('minDemand').innerText = (Number(data.minDemand) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('maxSupply').innerText = (Number(data.maxSupply) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('maxDemand').innerText = (Number(data.maxDemand) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
-            document.getElementById('wHigh').innerText = (spotPrice * 1.011).toFixed(2);
-            document.getElementById('wLow').innerText = (spotPrice * 0.989).toFixed(2);
-            document.getElementById('mHigh').innerText = (spotPrice * 1.025).toFixed(2);
-            document.getElementById('mLow').innerText = (spotPrice * 0.975).toFixed(2);
+            // Render Weekly and Monthly zones from JSON payload
+            document.getElementById('wHigh').innerText = (Number(data.weeklyHigh) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('wLow').innerText = (Number(data.weeklyLow) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('mHigh').innerText = (Number(data.monthlyHigh) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('mLow').innerText = (Number(data.monthlyLow) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             if (data.sniper1) {
                 const s1Ce = Number(data.sniper1.ce) || 0;
