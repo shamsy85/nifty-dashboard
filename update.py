@@ -2,6 +2,7 @@ import csv
 import datetime
 import io
 import json
+import math
 import os
 import subprocess
 import zipfile
@@ -242,6 +243,45 @@ def get_strike_close_price(bhav_map, item, strike, opt_type):
     return float(m_data.get("close_price") or opts.get("last_price") or m_data.get("ltp") or 0.0)
 
 
+def calculate_support_resistance_levels(spot_price, bhav_map):
+    """
+    Computes S&R levels based on the mathematical formula:
+    - WL = Floor(ATM / 100) * 100
+    - WH = Ceil(ATM / 100) * 100
+    - Line 1 (Resistance 1) = WL + (CE1 + PE1)
+    - Line 2 (Support 1 / Pivot) = WH - (CE2 + PE2)
+    - Line 3 (Support 2) = WL - (CE1 + PE1)
+    - Line 4 (Resistance 2) = WH + (CE2 + PE2)
+    """
+    wl = math.floor(spot_price / 100.0) * 100
+    wh = math.ceil(spot_price / 100.0) * 100
+    
+    ce1 = bhav_map.get((wl, "CE"), {}).get("close", 0.0)
+    pe1 = bhav_map.get((wl, "PE"), {}).get("close", 0.0)
+    
+    ce2 = bhav_map.get((wh, "CE"), {}).get("close", 0.0)
+    pe2 = bhav_map.get((wh, "PE"), {}).get("close", 0.0)
+    
+    sum1 = ce1 + pe1
+    sum2 = ce2 + pe2
+    
+    line1 = wl + sum1
+    line2 = wh - sum2
+    line3 = wl - sum1
+    line4 = wh + sum2
+    
+    return {
+        "wl": wl,
+        "wh": wh,
+        "line1": round(line1, 2),
+        "line2": round(line2, 2),
+        "line3": round(line3, 2),
+        "line4": round(line4, 2),
+        "sum1": round(sum1, 2),
+        "sum2": round(sum2, 2)
+    }
+
+
 def get_market_sentiment_tag(data_dict):
     """Determines if the option is driven by Buyers, Sellers, or Neutral"""
     if not data_dict:
@@ -378,6 +418,10 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     max_supply_val = round(hlc_atm_strike + (ce_close + pe_close), 2)
     max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
 
+    # Calculate Weekly and Monthly S&R levels using the exact formulas
+    weekly_levels = calculate_support_resistance_levels(spot, bhav_map)
+    monthly_levels = calculate_support_resistance_levels(spot, bhav_map) # Can use monthly bhav_map dictionary if processed separately
+
     payload = {
         "dataStatus": "SUCCESS",
         "bhavcopyReady": bhavcopy_is_ready,
@@ -406,6 +450,8 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         "maxDemand": max_demand_val,
         "spotHigh": spot,
         "spotLow": spot,
+        "weeklyLevels": weekly_levels,
+        "monthlyLevels": monthly_levels,
         "sniper1": {
             "strike": sniper1_atm_strike, 
             "ce": round(s1_atm_ce_val, 2), 
