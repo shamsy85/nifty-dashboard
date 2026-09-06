@@ -370,6 +370,14 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     sniper1_val = round((s1_ce_val + s1_pe_val) / 2.0, 2)
     sniper2_val = round((s2_ce_val + s2_pe_val) / 2.0, 2)
 
+    # -------------------------------------------------------------
+    # CALCULATE MINIMUM & MAXIMUM SUPPLY / DEMAND VALUES
+    # -------------------------------------------------------------
+    min_supply_val = round(hlc_atm_strike + ce_close, 2)
+    min_demand_val = round(hlc_atm_strike - pe_close, 2)
+    max_supply_val = round(hlc_atm_strike + (ce_close + pe_close), 2)
+    max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
+
     payload = {
         "dataStatus": "SUCCESS",
         "bhavcopyReady": bhavcopy_is_ready,
@@ -392,6 +400,10 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         "peTag": pe_tag,
         "peClass": pe_class,
         "bannerTotal": round(ce_close + pe_close, 2),
+        "minSupply": min_supply_val,
+        "minDemand": min_demand_val,
+        "maxSupply": max_supply_val,
+        "maxDemand": max_demand_val,
         "spotHigh": spot,
         "spotLow": spot,
         "sniper1": {
