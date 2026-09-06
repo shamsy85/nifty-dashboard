@@ -100,7 +100,7 @@ def get_current_expiry(access_token):
 
 
 def download_today_bhavcopy():
-    """Attempts to download ONLY TODAY's Bhavcopy from NSE."""
+    """Attempts to download TODAY's Bhavcopy from NSE, falls back to existing if weekend/holiday."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
@@ -108,6 +108,11 @@ def download_today_bhavcopy():
     }
     now_ist = datetime.datetime.now(IST)
     
+    if now_ist.weekday() >= 5:
+        if os.path.exists("bhavcopy.csv"):
+            print("Weekend detected. Using existing latest Bhavcopy file.")
+            return True
+
     yyyy = now_ist.strftime("%Y")
     mm = now_ist.strftime("%m")
     dd = now_ist.strftime("%d")
@@ -145,6 +150,10 @@ def download_today_bhavcopy():
             return True
     except Exception as e:
         print(f"Today's Bhavcopy is not available yet: {e}")
+    
+    if os.path.exists("bhavcopy.csv"):
+        print("Falling back to previously saved Bhavcopy file.")
+        return True
         
     return False
 
@@ -180,7 +189,7 @@ def load_bhavcopy_dict(target_expiry_str):
                     continue
 
                 strike_raw = (cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or 
-                             cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
+                              cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
                 try:
                     row_strike = int(round(float(strike_raw)))
                 except ValueError:
@@ -194,7 +203,7 @@ def load_bhavcopy_dict(target_expiry_str):
                     continue
 
                 expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or 
-                             cleaned_row.get("EXPIRY") or "").strip().upper()
+                              cleaned_row.get("EXPIRY") or "").strip().upper()
                 
                 if any(exp in expiry_raw for exp in possible_expiries):
                     open_p = float(cleaned_row.get("OPENPRIC") or cleaned_row.get("OPEN") or 0.0)
@@ -444,18 +453,18 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
 
     # -------------------------------------------------------------
-    # CALCULATE WEEKLY & MONTHLY ZONES USING USER'S FORMULA METHOD
+    # CALCULATE WEEKLY & MONTHLY ZONES (ROW 1 ONLY)
     # -------------------------------------------------------------
     wl = math.floor(hlc_atm_strike / 100) * 100
 
-    # Weekly Zone Calculation
+    # Weekly Zone Calculation (Row 1: WL + Sum1 and WL - Sum1)
     ce1_weekly = bhav_map.get((wl, "CE"), {}).get("close", 0.0)
     pe1_weekly = bhav_map.get((wl, "PE"), {}).get("close", 0.0)
     sum1_weekly = ce1_weekly + pe1_weekly
     weekly_high = round(wl + sum1_weekly, 2)
     weekly_low = round(wl - sum1_weekly, 2)
 
-    # Monthly Zone Calculation
+    # Monthly Zone Calculation (Row 1: WL + MonthlySum1 and WL - MonthlySum1)
     bhav_all = load_all_bhavcopy_expiries()
     all_expiries = list(set([k[2] for k in bhav_all.keys()]))
     monthly_expiry_str = find_monthly_expiry(all_expiries, expiry_date_str)
