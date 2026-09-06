@@ -265,7 +265,7 @@
         </div>
         <div style="text-align: right;">
             <div class="straddle-total" id="bannerTotal">0.00</div>
-            <div class="straddle-sub">CE <span id="ceCloseHeader">0.00</span> • PE <span id="peCloseHeader">0.00</span></div>
+            <div class="straddle-sub">CE <span id="ceCloseHeader">0.00</span> - PE <span id="peCloseHeader">0.00</span></div>
         </div>
     </div>
 
@@ -383,6 +383,9 @@
             const peClose = Number(data.pe?.close) || 0;
             const peHigh = Number(data.pe?.high) || 0;
             const peLow = Number(data.pe?.low) || 0;
+
+            // Difference: CE Close - PE Close
+            const cePeDiff = Math.abs(ceClose - peClose);
             const bannerTotal = Number(data.bannerTotal) || (ceClose + peClose);
 
             document.getElementById('spotPrice').innerText = spotPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -390,7 +393,8 @@
             document.getElementById('expiryBadge').innerText = data.expiryDate || 'EXP ACTIVE';
             document.getElementById('hlcAtmStrike').innerText = data.hlcAtmStrike || '-----';
 
-            document.getElementById('bannerTotal').innerText = bannerTotal.toFixed(2);
+            // Updates banner header value to display difference (CE - PE)
+            document.getElementById('bannerTotal').innerText = cePeDiff.toFixed(2);
             document.getElementById('ceCloseHeader').innerText = ceClose.toFixed(2);
             document.getElementById('peCloseHeader').innerText = peClose.toFixed(2);
 
