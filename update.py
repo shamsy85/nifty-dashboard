@@ -7,7 +7,7 @@ import subprocess
 import zipfile
 import requests
 
-# Define Indian Standard Time (IST) offset
+# Indian Standard Time (IST) offset
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
 
@@ -16,12 +16,10 @@ def push_to_github():
         subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
         subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
         
-        # Force stage both data.json and bhavcopy.csv so it stays visible in GitHub
         subprocess.run(["git", "add", "-f", "data.json"], check=False)
         if os.path.exists("bhavcopy.csv"):
             subprocess.run(["git", "add", "-f", "bhavcopy.csv"], check=False)
         
-        # Check if staged files have actual diffs against HEAD
         diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
         
         if diff_check.returncode != 0:
@@ -136,10 +134,9 @@ def download_nse_bhavcopy():
                         content = csv_file.read().decode('utf-8', errors='ignore')
                         lines = content.splitlines()
                         
-                        # Filter to keep header and NIFTY specific rows only (shrinks file size drastically)
                         nifty_lines = []
                         if lines:
-                            nifty_lines.append(lines[0])  # Header row
+                            nifty_lines.append(lines[0])
                             for line in lines[1:]:
                                 if "NIFTY" in line.upper():
                                     nifty_lines.append(line)
@@ -161,10 +158,11 @@ def load_bhavcopy_dict(target_expiry_str):
         return bhav_map
 
     possible_expiries = set()
-    possible_expiries.add(target_expiry_str.upper())
+    clean_target = target_expiry_str.strip().upper()
+    possible_expiries.add(clean_target)
     
     try:
-        dt_obj = datetime.datetime.strptime(target_expiry_str, "%Y-%m-%d")
+        dt_obj = datetime.datetime.strptime(clean_target, "%Y-%m-%d")
         possible_expiries.add(dt_obj.strftime("%Y-%m-%d"))
         possible_expiries.add(dt_obj.strftime("%d-%b-%Y").upper())
         possible_expiries.add(dt_obj.strftime("%d-%B-%Y").upper())
@@ -179,44 +177,40 @@ def load_bhavcopy_dict(target_expiry_str):
             for row in reader:
                 cleaned_row = {k.strip().upper(): (v.strip() if v else "") for k, v in row.items() if k}
                 
-                symbol = cleaned_row.get("TCKRSYMB") or cleaned_row.get("SYMBOL") or cleaned_row.get("FININSTNM") or ""
+                symbol = cleaned_row.get("TCKRSYMB") or cleaned_row.get("SYMBOL") or cleaned_row.get("FININSTRNM") or ""
                 if "NIFTY" not in symbol.upper():
                     continue
 
-                strike_raw = (cleaned_row.get("STRIKEPRIC") or cleaned_row.get("STRIKE_PR") or 
-                              cleaned_row.get("STRIKE") or cleaned_row.get("STRK_PRC") or "0")
+                strike_raw = (cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or 
+                              cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
                 try:
                     row_strike = int(round(float(strike_raw)))
                 except ValueError:
                     continue
 
                 opt_type_raw = (cleaned_row.get("OPTNTP") or cleaned_row.get("OPTION_TYP") or 
-                                cleaned_row.get("OPTIONTYPE") or cleaned_row.get("OPT_TP") or "")
+                                cleaned_row.get("OPTIONTYPE") or "")
                 opt_type = ""
-                if "CE" in opt_type_raw.upper() or symbol.upper().endswith("CE"):
+                if "CE" in opt_type_raw.upper():
                     opt_type = "CE"
-                elif "PE" in opt_type_raw.upper() or symbol.upper().endswith("PE"):
+                elif "PE" in opt_type_raw.upper():
                     opt_type = "PE"
 
                 if not opt_type:
                     continue
 
                 expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or 
-                              cleaned_row.get("EXPIRY") or cleaned_row.get("XPRY_DT") or "").upper()
+                              cleaned_row.get("EXPIRY") or "").strip().upper()
                 
-                matches_expiry = True
-                if expiry_raw:
-                    matches_expiry = any(exp in expiry_raw for exp in possible_expiries)
+                matches_expiry = any(exp in expiry_raw for exp in possible_expiries)
 
                 if matches_expiry:
-                    high = float(cleaned_row.get("HGHPRC") or cleaned_row.get("HIGH") or cleaned_row.get("HIGH_PRICE") or cleaned_row.get("HGST_PRC") or 0.0)
-                    low = float(cleaned_row.get("LWPRC") or cleaned_row.get("LOW") or cleaned_row.get("LOW_PRICE") or cleaned_row.get("LWST_PRC") or 0.0)
-                    close = float(cleaned_row.get("CLSPRC") or cleaned_row.get("CLOSE") or cleaned_row.get("CLOSE_PRICE") or cleaned_row.get("SETTLE_PR") or cleaned_row.get("CLSG_PRC") or 0.0)
+                    high = float(cleaned_row.get("HGHPRIC") or cleaned_row.get("HIGH") or 0.0)
+                    low = float(cleaned_row.get("LWPRIC") or cleaned_row.get("LOW") or 0.0)
+                    close = float(cleaned_row.get("CLSPRIC") or cleaned_row.get("CLOSE") or cleaned_row.get("SETTLE_PR") or 0.0)
 
                     if high > 0 or low > 0 or close > 0:
-                        val_high = max(high, close)
-                        val_low = min(low, close) if low > 0 else close
-                        bhav_map[(row_strike, opt_type)] = (val_high, val_low, close)
+                        bhav_map[(row_strike, opt_type)] = (high, low, close)
     except Exception as e:
         print(f"Error reading bhavcopy into dict: {e}")
 
@@ -245,14 +239,12 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         print("Invalid data or spot price received.")
         return
 
-    # Download latest Bhavcopy (deletes old bhavcopy.csv automatically)
     download_nse_bhavcopy()
     bhav_map = load_bhavcopy_dict(expiry_date_str)
 
     min_diff = float('inf')
     hlc_atm_strike = int(round(spot / 50.0) * 50)
 
-    # Compute minimum price difference using Bhavcopy Close (with live LTP fallback)
     for item in data:
         item_strike = item.get("strike_price")
         if item_strike is None:
@@ -289,7 +281,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    # Extract High, Low, Close directly from Bhavcopy
     ce_high, ce_low, ce_close = bhav_map.get((int(hlc_atm_strike), "CE"), (0.0, 0.0, 0.0))
     pe_high, pe_low, pe_close = bhav_map.get((int(hlc_atm_strike), "PE"), (0.0, 0.0, 0.0))
 
@@ -313,7 +304,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
         pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
 
-        # STRICT FALLBACK ONLY: If Bhavcopy values were missing (0.0), fill from API
         if s_val == hlc_atm_strike:
             ce_h = float(m_call.get("high_price") or call_opts.get("high_price") or 0.0)
             ce_l = float(m_call.get("low_price") or call_opts.get("low_price") or 0.0)
@@ -396,7 +386,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         json.dump(payload, f, indent=4)
         
     print("Dashboard data updated successfully.")
-
     push_to_github()
 
 
