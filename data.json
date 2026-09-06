@@ -24,28 +24,12 @@
     "minDemand": 23870.1,
     "maxSupply": 24124.05,
     "maxDemand": 23775.95,
+    "weeklyHigh": 24083.65,
+    "weeklyLow": 23716.35,
+    "monthlyHigh": 27276.65,
+    "monthlyLow": 20523.35,
     "spotHigh": 23897.7,
     "spotLow": 23897.7,
-    "weeklyLevels": {
-        "wl": 23800,
-        "wh": 23900,
-        "line1": 24027.4,
-        "line2": 23716.35,
-        "line3": 23572.6,
-        "line4": 24083.65,
-        "sum1": 227.4,
-        "sum2": 183.65
-    },
-    "monthlyLevels": {
-        "wl": 23800,
-        "wh": 23900,
-        "line1": 24027.4,
-        "line2": 23716.35,
-        "line3": 23572.6,
-        "line4": 24083.65,
-        "sum1": 227.4,
-        "sum2": 183.65
-    },
     "sniper1": {
         "strike": 23900,
         "ce": 123.8,
