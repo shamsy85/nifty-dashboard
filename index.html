@@ -384,7 +384,6 @@
             const peHigh = Number(data.pe?.high) || 0;
             const peLow = Number(data.pe?.low) || 0;
 
-            // Difference: CE Close - PE Close
             const cePeDiff = Math.abs(ceClose - peClose);
             const bannerTotal = Number(data.bannerTotal) || (ceClose + peClose);
 
@@ -393,7 +392,6 @@
             document.getElementById('expiryBadge').innerText = data.expiryDate || 'EXP ACTIVE';
             document.getElementById('hlcAtmStrike').innerText = data.hlcAtmStrike || '-----';
 
-            // Updates banner header value to display difference (CE - PE)
             document.getElementById('bannerTotal').innerText = cePeDiff.toFixed(2);
             document.getElementById('ceCloseHeader').innerText = ceClose.toFixed(2);
             document.getElementById('peCloseHeader').innerText = peClose.toFixed(2);
@@ -430,7 +428,9 @@
                 document.getElementById('snip1OtmPeStr').innerText = data.sniper1.otmPeStrike || 0;
                 document.getElementById('snip1OtmCe').innerText = (Number(data.sniper1.otmCe) || 0).toFixed(2);
                 document.getElementById('snip1OtmPe').innerText = (Number(data.sniper1.otmPe) || 0).toFixed(2);
-                document.getElementById('snip1Val').innerText = ((s1Ce + s1Pe) * 0.155).toFixed(2);
+                
+                // Directly load calculated value from JSON
+                document.getElementById('snip1Val').innerText = (Number(data.sniper1.value) || 0).toFixed(2);
             }
 
             if (data.sniper2) {
@@ -443,7 +443,9 @@
                 document.getElementById('snip2OtmPeStr').innerText = data.sniper2.otmPeStrike || 0;
                 document.getElementById('snip2OtmCe').innerText = (Number(data.sniper2.otmCe) || 0).toFixed(2);
                 document.getElementById('snip2OtmPe').innerText = (Number(data.sniper2.otmPe) || 0).toFixed(2);
-                document.getElementById('snip2Val').innerText = ((s2Ce + s2Pe) * 0.103).toFixed(2);
+                
+                // Directly load calculated value from JSON
+                document.getElementById('snip2Val').innerText = (Number(data.sniper2.value) || 0).toFixed(2);
             }
 
             document.getElementById('earthVal').innerText = (bannerTotal * 0.1215).toFixed(2);
