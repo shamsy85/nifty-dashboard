@@ -424,9 +424,8 @@
                 alertBanner.style.backgroundColor = '#dc2626'; // Red
                 alertBanner.style.display = 'block';
             } else {
-                alertBanner.innerText = '✅ BHAVCOPY LOADED SUCCESSFULLY';
-                alertBanner.style.backgroundColor = '#16a34a'; // Green
-                alertBanner.style.display = 'block';
+                alertBanner.innerText = '';
+                alertBanner.style.display = 'none'; // Completely hidden once ready
             }
 
             const spotPrice = Number(data.spotPrice) || 0;
