@@ -16,7 +16,7 @@ def push_to_github():
         subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
         subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
         
-        # Force add data.json to ensure Git tracks and stages it
+        # Force stage data.json
         subprocess.run(["git", "add", "-f", "data.json"], check=False)
         
         # Check if staged data.json has actual diffs against HEAD
@@ -133,9 +133,11 @@ def download_nse_bhavcopy():
     return False
 
 
-def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
+def load_bhavcopy_dict(target_expiry_str):
+    """Loads Bhavcopy into a dictionary: { (strike, option_type): (high, low, close) }"""
+    bhav_map = {}
     if not os.path.exists("bhavcopy.csv"):
-        return 0.0, 0.0, 0.0
+        return bhav_map
 
     possible_expiries = []
     try:
@@ -144,7 +146,8 @@ def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
             dt_obj.strftime("%Y-%m-%d"),
             dt_obj.strftime("%d-%b-%Y").upper(),
             dt_obj.strftime("%d-%B-%Y").upper(),
-            dt_obj.strftime("%d%b%Y").upper()
+            dt_obj.strftime("%d%b%Y").upper(),
+            dt_obj.strftime("%d%b%y").upper()
         ]
     except Exception:
         possible_expiries = [str(target_expiry_str).upper()]
@@ -155,35 +158,47 @@ def parse_bhavcopy_for_strike(target_strike, option_type, target_expiry_str):
             for row in reader:
                 row = {k.strip().upper(): (v.strip() if v else "") for k, v in row.items() if k}
                 
-                symbol = row.get("TCKRSYMB", "") or row.get("SYMBOL", "")
+                symbol = row.get("TCKRSYMB") or row.get("SYMBOL") or row.get("FININSTNM") or ""
                 if "NIFTY" not in symbol.upper():
                     continue
 
-                strike_val = row.get("STRIKEPRIC") or row.get("STRIKE_PR") or row.get("STRIKE")
-                opt_typ = row.get("OPTNTP") or row.get("OPTION_TYP") or row.get("OPTIONTYPE")
-                expiry_val = (row.get("XPRYDT") or row.get("EXPIRY_DT") or row.get("EXPIRY") or "").upper()
-                
-                if strike_val and opt_typ:
-                    try:
-                        matches_strike = float(strike_val) == float(target_strike)
-                        matches_opt = option_type.upper() in opt_typ.upper()
-                        matches_expiry = not expiry_val or any(exp in expiry_val for exp in possible_expiries)
-                        
-                        if matches_strike and matches_opt and matches_expiry:
-                            high = float(row.get("HGHPRC") or row.get("HIGH") or row.get("HIGH_PRICE") or 0.0)
-                            low = float(row.get("LWPRC") or row.get("LOW") or row.get("LOW_PRICE") or 0.0)
-                            close = float(row.get("CLSPRC") or row.get("CLOSE") or row.get("CLOSE_PRICE") or row.get("SETTLE_PR") or 0.0)
-                            
-                            if high > 0 or low > 0 or close > 0:
-                                val_high = max(high, close)
-                                val_low = min(low, close) if low > 0 else close
-                                return val_high, val_low, close
-                    except ValueError:
-                        continue
+                strike_raw = row.get("STRIKEPRIC") or row.get("STRIKE_PR") or row.get("STRIKE") or row.get("STRK_PRC")
+                if not strike_raw:
+                    continue
+
+                try:
+                    row_strike = float(strike_raw)
+                except ValueError:
+                    continue
+
+                opt_type_raw = row.get("OPTNTP") or row.get("OPTION_TYP") or row.get("OPTIONTYPE") or row.get("OPT_TP") or ""
+                opt_type = ""
+                if "CE" in opt_type_raw.upper() or symbol.upper().endswith("CE"):
+                    opt_type = "CE"
+                elif "PE" in opt_type_raw.upper() or symbol.upper().endswith("PE"):
+                    opt_type = "PE"
+
+                if not opt_type:
+                    continue
+
+                expiry_raw = (row.get("XPRYDT") or row.get("EXPIRY_DT") or row.get("EXPIRY") or row.get("XPRY_DT") or "").upper()
+                matches_expiry = True
+                if expiry_raw:
+                    matches_expiry = any(exp in expiry_raw for exp in possible_expiries)
+
+                if matches_expiry:
+                    high = float(row.get("HGHPRC") or row.get("HIGH") or row.get("HIGH_PRICE") or row.get("HGST_PRC") or 0.0)
+                    low = float(row.get("LWPRC") or row.get("LOW") or row.get("LOW_PRICE") or row.get("LWST_PRC") or 0.0)
+                    close = float(row.get("CLSPRC") or row.get("CLOSE") or row.get("CLOSE_PRICE") or row.get("SETTLE_PR") or row.get("CLSG_PRC") or 0.0)
+
+                    if high > 0 or low > 0 or close > 0:
+                        val_high = max(high, close)
+                        val_low = min(low, close) if low > 0 else close
+                        bhav_map[(row_strike, opt_type)] = (val_high, val_low, close)
     except Exception as e:
-        print(f"Error reading bhavcopy.csv: {e}")
-        
-    return 0.0, 0.0, 0.0
+        print(f"Error reading bhavcopy into dict: {e}")
+
+    return bhav_map
 
 
 def fetch_option_chain_data(access_token, expiry_date):
@@ -208,11 +223,14 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         print("Invalid data or spot price received.")
         return
 
+    # 1. Download Bhavcopy and load all strike details into memory
     download_nse_bhavcopy()
+    bhav_map = load_bhavcopy_dict(expiry_date_str)
 
     min_diff = float('inf')
     hlc_atm_strike = int(round(spot / 50.0) * 50)
 
+    # 2. OPTION 1: Calculate HLC ATM using strictly |CE Close - PE Close| from Bhavcopy
     for item in data:
         item_strike = item.get("strike_price")
         if item_strike is None:
@@ -221,20 +239,17 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         s_val = float(item_strike)
         if abs(s_val - spot) > 500:
             continue
-            
-        call_opts = item.get("call_options", {})
-        put_opts = item.get("put_options", {})
-        
-        m_call = call_opts.get("market_data", {})
-        m_put = put_opts.get("market_data", {})
-        
-        ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
-        pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
-        
-        diff = abs(ce_ltp - pe_ltp)
-        if diff < min_diff:
-            min_diff = diff
-            hlc_atm_strike = int(s_val)
+
+        ce_bhav_close = bhav_map.get((s_val, "CE"), (0.0, 0.0, 0.0))[2]
+        pe_bhav_close = bhav_map.get((s_val, "PE"), (0.0, 0.0, 0.0))[2]
+
+        if ce_bhav_close > 0 and pe_bhav_close > 0:
+            diff = abs(ce_bhav_close - pe_bhav_close)
+            if diff < min_diff:
+                min_diff = diff
+                hlc_atm_strike = int(s_val)
+
+    print(f"Calculated HLC ATM Strike (via Bhavcopy Close): {hlc_atm_strike} (Min Diff: {min_diff})")
 
     sniper1_atm_strike = int(round(spot / 100.0) * 100)
     sniper2_atm_strike = hlc_atm_strike
@@ -244,8 +259,9 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    ce_high, ce_low, ce_close = parse_bhavcopy_for_strike(hlc_atm_strike, "CE", expiry_date_str)
-    pe_high, pe_low, pe_close = parse_bhavcopy_for_strike(hlc_atm_strike, "PE", expiry_date_str)
+    # Retrieve High, Low, Close for HLC ATM Strike directly from Bhavcopy map
+    ce_high, ce_low, ce_close = bhav_map.get((float(hlc_atm_strike), "CE"), (0.0, 0.0, 0.0))
+    pe_high, pe_low, pe_close = bhav_map.get((float(hlc_atm_strike), "PE"), (0.0, 0.0, 0.0))
 
     s1_atm_ce_val, s1_atm_pe_val = 0.0, 0.0
     s2_atm_ce_val, s2_atm_pe_val = 0.0, 0.0
@@ -267,6 +283,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
         pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
 
+        # Safety Fallback: Use API data if Bhavcopy didn't contain values for the strike
         if s_val == hlc_atm_strike:
             ce_h = float(m_call.get("high_price") or call_opts.get("high_price") or 0.0)
             ce_l = float(m_call.get("low_price") or call_opts.get("low_price") or 0.0)
