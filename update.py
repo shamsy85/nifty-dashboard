@@ -2,6 +2,7 @@ import csv
 import datetime
 import io
 import json
+import math
 import os
 import subprocess
 import zipfile
@@ -58,7 +59,7 @@ def fetch_live_spot_price(access_token):
     return 0.0
 
 
-def get_current_expiry(access_token):
+def get_expiries(access_token):
     instrument_key = "NSE_INDEX|Nifty 50"
     url = f"https://api.upstox.com/v2/option/contract?instrument_key={instrument_key}"
     headers = {
@@ -67,7 +68,6 @@ def get_current_expiry(access_token):
     }
     now_ist = datetime.datetime.now(IST)
     today_str = now_ist.strftime("%Y-%m-%d")
-    market_closed = now_ist.hour > 15 or (now_ist.hour == 15 and now_ist.minute >= 30)
     
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -86,16 +86,17 @@ def get_current_expiry(access_token):
                 
                 expiry_list = sorted(list(set(expiry_list)))
                 if expiry_list:
-                    if today_str in expiry_list and not market_closed:
-                        return today_str
-                    for exp in expiry_list:
-                        if exp >= today_str:
-                            return exp
-                    return expiry_list[-1]
+                    future_exp = [e for e in expiry_list if e >= today_str]
+                    w_exp = future_exp[0] if future_exp else expiry_list[-1]
+                    
+                    # Find monthly expiry (last expiry of the current month or matching string)
+                    m_exp = [e for e in expiry_list if e.startswith(today_str[:7])]
+                    m_exp = m_exp[-1] if m_exp else w_exp
+                    return w_exp, m_exp
     except Exception as e:
         print(f"Error fetching option contract expiry: {e}")
         
-    return today_str
+    return today_str, today_str
 
 
 def download_today_bhavcopy():
@@ -105,7 +106,6 @@ def download_today_bhavcopy():
         "Referer": "https://www.nseindia.com/"
     }
     now_ist = datetime.datetime.now(IST)
-    
     yyyy = now_ist.strftime("%Y")
     mm = now_ist.strftime("%m")
     dd = now_ist.strftime("%d")
@@ -118,10 +118,8 @@ def download_today_bhavcopy():
         
         if response.status_code == 200 and len(response.content) > 1000:
             if os.path.exists("bhavcopy.csv"):
-                try:
-                    os.remove("bhavcopy.csv")
-                except Exception:
-                    pass
+                try: os.remove("bhavcopy.csv")
+                except Exception: pass
 
             with zipfile.ZipFile(io.BytesIO(response.content)) as z:
                 csv_filename = z.namelist()[0]
@@ -171,7 +169,6 @@ def load_bhavcopy_dict(target_expiry_str):
             reader = csv.DictReader(f)
             for row in reader:
                 cleaned_row = {k.strip().upper(): (v.strip() if v else "") for k, v in row.items() if k}
-                
                 symbol = cleaned_row.get("TCKRSYMB") or cleaned_row.get("SYMBOL") or cleaned_row.get("FININSTRNM") or ""
                 if "NIFTY" not in symbol.upper():
                     continue
@@ -202,11 +199,7 @@ def load_bhavcopy_dict(target_expiry_str):
 
                     if high > 0 or low > 0 or close > 0:
                         bhav_map[(row_strike, opt_type)] = {
-                            "open": open_p,
-                            "high": high,
-                            "low": low,
-                            "close": close,
-                            "chg_oi": chg_oi
+                            "open": open_p, "high": high, "low": low, "close": close, "chg_oi": chg_oi
                         }
     except Exception as e:
         print(f"Error reading bhavcopy into dict: {e}")
@@ -251,7 +244,6 @@ def get_market_sentiment_tag(data_dict):
     chg_oi = data_dict.get("chg_oi", 0.0)
 
     price_up = close >= open_p
-
     if chg_oi > 0:
         if price_up or (high - low > 0 and (close - low) / (high - low) > 0.5):
             return "BUYERS", "tag-buyers"
@@ -261,7 +253,27 @@ def get_market_sentiment_tag(data_dict):
     return "NEUTRAL", "tag-neutral"
 
 
-def process_and_save_data(res_json, spot, expiry_date_str):
+def calculate_zone_row_one(wl, wh, bhav_map, chain_data):
+    def get_p(s, t):
+        p = bhav_map.get((s, t), {}).get("close", 0.0)
+        if p > 0: return p
+        if not chain_data: return 0.0
+        for item in chain_data.get("data", []):
+            if int(round(float(item.get("strike_price", 0)))) == s:
+                opts = item.get("call_options", {}) if t == "CE" else item.get("put_options", {})
+                return float(opts.get("market_data", {}).get("close_price") or opts.get("last_price") or 0.0)
+        return 0.0
+
+    ce1, pe1 = get_p(wl, "CE"), get_p(wl, "PE")
+    ce2, pe2 = get_p(wh, "CE"), get_p(wh, "PE")
+
+    return {
+        "line1": round(wl + (ce1 + pe1), 2),  # Red Zone value
+        "line2": round(wh - (ce2 + pe2), 2)   # Green Zone value
+    }
+
+
+def process_and_save_data(res_json, spot, w_exp, m_exp, access_token):
     data = res_json.get("data", [])
     if not data or spot <= 0:
         print("Invalid data or spot price received.")
@@ -271,22 +283,20 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     today_str = now_ist.strftime("%d %b %Y").upper()
 
     bhavcopy_is_ready = download_today_bhavcopy()
-    bhav_map = load_bhavcopy_dict(expiry_date_str)
+    w_bhav = load_bhavcopy_dict(w_exp)
+    m_bhav = load_bhavcopy_dict(m_exp)
 
     min_diff = float('inf')
     hlc_atm_strike = int(round(spot / 50.0) * 50)
 
     for item in data:
         item_strike = item.get("strike_price")
-        if item_strike is None:
-            continue
-        
+        if item_strike is None: continue
         s_val = int(round(float(item_strike)))
-        if abs(s_val - spot) > 500:
-            continue
+        if abs(s_val - spot) > 500: continue
 
-        ce_close = get_strike_close_price(bhav_map, item, s_val, "CE")
-        pe_close = get_strike_close_price(bhav_map, item, s_val, "PE")
+        ce_close = get_strike_close_price(w_bhav, item, s_val, "CE")
+        pe_close = get_strike_close_price(w_bhav, item, s_val, "PE")
 
         if ce_close > 0 and pe_close > 0:
             diff = abs(ce_close - pe_close)
@@ -302,8 +312,8 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    ce_dict = bhav_map.get((int(hlc_atm_strike), "CE"), {"high": 0.0, "low": 0.0, "close": 0.0, "open": 0.0, "chg_oi": 0.0})
-    pe_dict = bhav_map.get((int(hlc_atm_strike), "PE"), {"high": 0.0, "low": 0.0, "close": 0.0, "open": 0.0, "chg_oi": 0.0})
+    ce_dict = w_bhav.get((int(hlc_atm_strike), "CE"), {"high": 0.0, "low": 0.0, "close": 0.0, "open": 0.0, "chg_oi": 0.0})
+    pe_dict = w_bhav.get((int(hlc_atm_strike), "PE"), {"high": 0.0, "low": 0.0, "close": 0.0, "open": 0.0, "chg_oi": 0.0})
 
     ce_high, ce_low, ce_close = ce_dict.get("high", 0.0), ce_dict.get("low", 0.0), ce_dict.get("close", 0.0)
     pe_high, pe_low, pe_close = pe_dict.get("high", 0.0), pe_dict.get("low", 0.0), pe_dict.get("close", 0.0)
@@ -315,8 +325,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
 
     for item in data:
         item_strike = item.get("strike_price")
-        if item_strike is None:
-            continue
+        if item_strike is None: continue
         s_val = int(round(float(item_strike)))
         
         call_opts = item.get("call_options", {})
@@ -325,41 +334,27 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         m_put = put_opts.get("market_data", {})
 
         if s_val == hlc_atm_strike:
-            if ce_close == 0.0:
-                ce_close = float(m_call.get("close_price") or call_opts.get("last_price") or 0.0)
-            if ce_high == 0.0:
-                ce_high = float(m_call.get("high_price") or ce_close)
-            if ce_low == 0.0:
-                ce_low = float(m_call.get("low_price") or ce_close)
-            ce_dict["close"] = ce_close
-            ce_dict["high"] = ce_high
-            ce_dict["low"] = ce_low
+            if ce_close == 0.0: ce_close = float(m_call.get("close_price") or call_opts.get("last_price") or 0.0)
+            if ce_high == 0.0: ce_high = float(m_call.get("high_price") or ce_close)
+            if ce_low == 0.0: ce_low = float(m_call.get("low_price") or ce_close)
+            ce_dict["close"], ce_dict["high"], ce_dict["low"] = ce_close, ce_high, ce_low
 
-            if pe_close == 0.0:
-                pe_close = float(m_put.get("close_price") or put_opts.get("last_price") or 0.0)
-            if pe_high == 0.0:
-                pe_high = float(m_put.get("high_price") or pe_close)
-            if pe_low == 0.0:
-                pe_low = float(m_put.get("low_price") or pe_close)
-            pe_dict["close"] = pe_close
-            pe_dict["high"] = pe_high
-            pe_dict["low"] = pe_low
+            if pe_close == 0.0: pe_close = float(m_put.get("close_price") or put_opts.get("last_price") or 0.0)
+            if pe_high == 0.0: pe_high = float(m_put.get("high_price") or pe_close)
+            if pe_low == 0.0: pe_low = float(m_put.get("low_price") or pe_close)
+            pe_dict["close"], pe_dict["high"], pe_dict["low"] = pe_close, pe_high, pe_low
 
         if s_val == sniper1_atm_strike:
-            s1_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
-            s1_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
-        if s_val == target_s1_ce_strike:
-            s1_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
-        if s_val == target_s1_pe_strike:
-            s1_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
+            s1_atm_ce_val = get_strike_close_price(w_bhav, item, s_val, "CE")
+            s1_atm_pe_val = get_strike_close_price(w_bhav, item, s_val, "PE")
+        if s_val == target_s1_ce_strike: s1_ce_val = get_strike_close_price(w_bhav, item, s_val, "CE")
+        if s_val == target_s1_pe_strike: s1_pe_val = get_strike_close_price(w_bhav, item, s_val, "PE")
 
         if s_val == sniper2_atm_strike:
-            s2_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
-            s2_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
-        if s_val == target_s2_ce_strike:
-            s2_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
-        if s_val == target_s2_pe_strike:
-            s2_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
+            s2_atm_ce_val = get_strike_close_price(w_bhav, item, s_val, "CE")
+            s2_atm_pe_val = get_strike_close_price(w_bhav, item, s_val, "PE")
+        if s_val == target_s2_ce_strike: s2_ce_val = get_strike_close_price(w_bhav, item, s_val, "CE")
+        if s_val == target_s2_pe_strike: s2_pe_val = get_strike_close_price(w_bhav, item, s_val, "PE")
 
     ce_tag, ce_class = get_market_sentiment_tag(ce_dict)
     pe_tag, pe_class = get_market_sentiment_tag(pe_dict)
@@ -372,63 +367,44 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     max_supply_val = round(hlc_atm_strike + (ce_close + pe_close), 2)
     max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
 
-    # Weekly and Monthly zone computations
-    weekly_high = round(spot * 1.011, 2)
-    weekly_low = round(spot * 0.989, 2)
-    monthly_high = round(spot * 1.025, 2)
-    monthly_low = round(spot * 0.975, 2)
+    # Compute Row 1 Weekly and Monthly Zones based on floor/ceil strikes
+    wl = int(math.floor(spot / 100.0) * 100)
+    wh = int(math.ceil(spot / 100.0) * 100)
+
+    weekly_zones = calculate_zone_row_one(wl, wh, w_bhav, res_json)
+    
+    m_res = res_json if m_exp == w_exp else fetch_option_chain_data(access_token, m_exp)
+    monthly_zones = calculate_zone_row_one(wl, wh, m_bhav, m_res)
 
     payload = {
         "dataStatus": "SUCCESS",
         "bhavcopyReady": bhavcopy_is_ready,
         "currentDate": today_str,
-        "expiryDate": datetime.datetime.strptime(expiry_date_str, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
+        "expiryDate": datetime.datetime.strptime(w_exp, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
         "spotPrice": spot,
         "hlcAtmStrike": hlc_atm_strike,
-        "ce": {
-            "high": round(ce_high, 2), 
-            "close": round(ce_close, 2), 
-            "low": round(ce_low, 2)
-        },
-        "pe": {
-            "high": round(pe_high, 2), 
-            "close": round(pe_close, 2), 
-            "low": round(pe_low, 2)
-        },
-        "ceTag": ce_tag,
-        "ceClass": ce_class,
-        "peTag": pe_tag,
-        "peClass": pe_class,
+        "ce": {"high": round(ce_high, 2), "close": round(ce_close, 2), "low": round(ce_low, 2)},
+        "pe": {"high": round(pe_high, 2), "close": round(pe_close, 2), "low": round(pe_low, 2)},
+        "ceTag": ce_tag, "ceClass": ce_class,
+        "peTag": pe_tag, "peClass": pe_class,
         "bannerTotal": round(ce_close + pe_close, 2),
         "minSupply": min_supply_val,
         "minDemand": min_demand_val,
         "maxSupply": max_supply_val,
         "maxDemand": max_demand_val,
-        "weeklyHigh": weekly_high,
-        "weeklyLow": weekly_low,
-        "monthlyHigh": monthly_high,
-        "monthlyLow": monthly_low,
+        "weeklyZones": weekly_zones,
+        "monthlyZones": monthly_zones,
         "spotHigh": spot,
         "spotLow": spot,
         "sniper1": {
-            "strike": sniper1_atm_strike, 
-            "ce": round(s1_atm_ce_val, 2), 
-            "pe": round(s1_atm_pe_val, 2),
-            "otmCeStrike": target_s1_ce_strike, 
-            "otmPeStrike": target_s1_pe_strike,
-            "otmCe": round(s1_ce_val, 2), 
-            "otmPe": round(s1_pe_val, 2),
-            "value": sniper1_val
+            "strike": sniper1_atm_strike, "ce": round(s1_atm_ce_val, 2), "pe": round(s1_atm_pe_val, 2),
+            "otmCeStrike": target_s1_ce_strike, "otmPeStrike": target_s1_pe_strike,
+            "otmCe": round(s1_ce_val, 2), "otmPe": round(s1_pe_val, 2), "value": sniper1_val
         },
         "sniper2": {
-            "strike": sniper2_atm_strike, 
-            "ce": round(s2_atm_ce_val, 2), 
-            "pe": round(s2_atm_pe_val, 2),
-            "otmCeStrike": target_s2_ce_strike, 
-            "otmPeStrike": target_s2_pe_strike,
-            "otmCe": round(s2_ce_val, 2), 
-            "otmPe": round(s2_pe_val, 2),
-            "value": sniper2_val
+            "strike": sniper2_atm_strike, "ce": round(s2_atm_ce_val, 2), "pe": round(s2_atm_pe_val, 2),
+            "otmCeStrike": target_s2_ce_strike, "otmPeStrike": target_s2_pe_strike,
+            "otmCe": round(s2_ce_val, 2), "otmPe": round(s2_pe_val, 2), "value": sniper2_val
         }
     }
 
@@ -455,10 +431,10 @@ if __name__ == "__main__":
 
     access_token = load_access_token()
     if access_token:
-        expiry = get_current_expiry(access_token)
+        w_exp, m_exp = get_expiries(access_token)
         spot = fetch_live_spot_price(access_token)
-        res = fetch_option_chain_data(access_token, expiry)
+        res = fetch_option_chain_data(access_token, w_exp)
         if res and spot > 0:
-            process_and_save_data(res, spot, expiry)
+            process_and_save_data(res, spot, w_exp, m_exp, access_token)
     else:
         print("No valid Upstox access token found.")
