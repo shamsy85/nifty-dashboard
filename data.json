@@ -1,5 +1,6 @@
 {
     "dataStatus": "SUCCESS",
+    "bhavcopyReady": false,
     "currentDate": "06 SEP 2026",
     "expiryDate": "08-SEP-2026",
     "spotPrice": 23897.7,
