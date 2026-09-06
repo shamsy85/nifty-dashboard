@@ -5,16 +5,16 @@
     "spotPrice": 23897.7,
     "hlcAtmStrike": 23950,
     "ce": {
-        "high": 97.1,
-        "close": 97.1,
-        "low": 97.1
+        "high": 146.0,
+        "close": 94.15,
+        "low": 84.15
     },
     "pe": {
-        "high": 116.75,
-        "close": 116.75,
-        "low": 116.75
+        "high": 111.3,
+        "close": 79.9,
+        "low": 63.55
     },
-    "bannerTotal": 213.85,
+    "bannerTotal": 174.05,
     "spotHigh": 23897.7,
     "spotLow": 23897.7,
     "sniper1": {
