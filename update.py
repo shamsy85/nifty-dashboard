@@ -23,7 +23,7 @@ def push_to_github():
         diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
         
         if diff_check.returncode != 0:
-            subprocess.run(["git", "commit", "-m", "Auto-update dashboard and bhavcopy [skip ci]"], check=True)
+            subprocess.run(["git", "commit", "-m", "Auto-update dashboard, bhavcopy, and sniper calculations [skip ci]"], check=True)
             subprocess.run(["git", "push", "origin", "main"], check=True)
             print("Changes pushed to GitHub successfully.")
         else:
@@ -318,7 +318,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             if pe_low == 0.0:
                 pe_low = float(m_put.get("low_price") or pe_close)
 
-        # Fix: Fetch Bhavcopy values for Snipers first
+        # Fetch Bhavcopy values for Snipers
         if s_val == sniper1_atm_strike:
             s1_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
             s1_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
@@ -334,6 +334,10 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             s2_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
         elif s_val == target_s2_pe_strike:
             s2_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
+
+    # Sniper calculation: (OTM CE + OTM PE) / 2
+    sniper1_val = round((s1_ce_val + s1_pe_val) / 2.0, 2)
+    sniper2_val = round((s2_ce_val + s2_pe_val) / 2.0, 2)
 
     payload = {
         "dataStatus": "SUCCESS",
@@ -361,7 +365,8 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             "otmCeStrike": target_s1_ce_strike, 
             "otmPeStrike": target_s1_pe_strike,
             "otmCe": round(s1_ce_val, 2), 
-            "otmPe": round(s1_pe_val, 2)
+            "otmPe": round(s1_pe_val, 2),
+            "value": sniper1_val
         },
         "sniper2": {
             "strike": sniper2_atm_strike, 
@@ -370,14 +375,15 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             "otmCeStrike": target_s2_ce_strike, 
             "otmPeStrike": target_s2_pe_strike,
             "otmCe": round(s2_ce_val, 2), 
-            "otmPe": round(s2_pe_val, 2)
+            "otmPe": round(s2_pe_val, 2),
+            "value": sniper2_val
         }
     }
 
     with open("data.json", "w") as f:
         json.dump(payload, f, indent=4)
         
-    print("Dashboard data updated successfully.")
+    print(f"Dashboard data updated successfully. Sniper1: {sniper1_val}, Sniper2: {sniper2_val}")
     push_to_github()
 
 
