@@ -1,507 +1,394 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#030712">
-    <link rel="manifest" href="manifest.json">
-    <title>NIFTY Live Dashboard</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+import csv
+import datetime
+import io
+import json
+import os
+import subprocess
+import zipfile
+import requests
 
-        body {
-            background-color: #030712;
-            color: #f3f4f6;
-            display: flex;
-            justify-content: center;
-            padding: 20px 10px;
-        }
+# Indian Standard Time (IST) offset
+IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
-        .dashboard {
-            width: 100%;
-            max-width: 420px;
-            background: #090d16;
-            border: 1px solid #1f293d;
-            border-radius: 16px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-        }
 
-        .status-banner {
-            display: block;
-            text-align: center;
-            font-weight: 800;
-            font-size: 0.85rem;
-            padding: 10px;
-            border-radius: 8px;
-            letter-spacing: 0.5px;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
+def push_to_github():
+    try:
+        subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
+        subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
+        
+        subprocess.run(["git", "add", "-f", "data.json"], check=False)
+        if os.path.exists("bhavcopy.csv"):
+            subprocess.run(["git", "add", "-f", "bhavcopy.csv"], check=False)
+        
+        diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
+        
+        if diff_check.returncode != 0:
+            subprocess.run(["git", "commit", "-m", "Auto-update dashboard and bhavcopy status [skip ci]"], check=True)
+            subprocess.run(["git", "push", "origin", "main"], check=True)
+            print("Changes pushed to GitHub successfully.")
+        else:
+            print("No changes detected in repository. Skipping commit.")
+    except Exception as e:
+        print(f"Git push failed: {e}")
 
-        .status-banner.not-ready {
-            background-color: #dc2626;
-            color: #ffffff;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-            animation: pulse 2s infinite;
-        }
 
-        .status-banner.ready {
-            background-color: rgba(34, 197, 94, 0.15);
-            color: #22c55e;
-            border: 1px solid #22c55e;
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
-            animation: none;
-        }
+def load_access_token():
+    if os.path.exists("token.txt"):
+        with open("token.txt", "r") as f:
+            token = f.read().strip()
+            if token:
+                return token
+    return os.getenv("UPSTOX_ACCESS_TOKEN", "")
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.75; }
-            100% { opacity: 1; }
-        }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .spot-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .spot-price {
-            font-size: 1.1rem;
-            color: #38bdf8;
-            margin-left: 8px;
-            font-weight: 600;
-        }
-
-        .badge-exp {
-            background: rgba(14, 165, 233, 0.1);
-            border: 1px solid #0ea5e9;
-            color: #38bdf8;
-            font-size: 0.65rem;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .sub-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #0f172a;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #1e293b;
-        }
-
-        .date-box {
-            font-size: 0.65rem;
-            color: #94a3b8;
-            border: 1px solid #334155;
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
-        }
-
-        .atm-box {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-top: 4px;
-        }
-
-        .straddle-total {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #22c55e;
-            text-align: right;
-        }
-
-        .straddle-sub {
-            font-size: 0.7rem;
-            color: #38bdf8;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .card {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 10px;
-            padding: 12px;
-        }
-
-        .card-tag {
-            font-size: 0.65rem;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 8px;
-        }
-
-        .tag-neutral {
-            background: rgba(234, 179, 8, 0.15);
-            color: #eab308;
-            border: 1px solid #eab308;
-        }
-
-        .strike-header {
-            display: flex;
-            justify-content: space-between;
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 8px;
-        }
-
-        .hcl-box {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            line-height: 1.4;
-            text-align: right;
-        }
-
-        .hcl-val {
-            color: #ffffff;
-            font-weight: 700;
-        }
-
-        .hcl-close {
-            color: #eab308;
-        }
-
-        .diff-footer {
-            margin-top: 8px;
-            padding-top: 6px;
-            border-top: 1px dashed #334155;
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.65rem;
-            color: #38bdf8;
-            font-weight: 700;
-        }
-
-        .target-card {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 8px;
-            padding: 10px;
-        }
-
-        .target-title {
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: #38bdf8;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-        }
-
-        .target-val-red {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #ef4444;
-        }
-
-        .target-val-green {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #22c55e;
-        }
-
-        .zone-title {
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: #38bdf8;
-            text-align: center;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-
-        .zone-grid {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-
-        .sniper-card {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .sniper-tag {
-            background: rgba(34, 197, 94, 0.15);
-            color: #22c55e;
-            border: 1px solid #22c55e;
-            font-size: 0.6rem;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 6px;
-        }
-
-        .sniper-val {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #38bdf8;
-        }
-
-        .earth-card {
-            background: #0f172a;
-            border: 1px solid #22c55e;
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-    </style>
-</head>
-<body>
-
-<div class="dashboard">
-    <div id="bhavcopyAlert" class="status-banner not-ready">
-        ⚠️ BHAVCOPY NOT READY, PLS WAIT
-    </div>
-
-    <div class="header">
-        <div>
-            <span class="spot-title">NIFTY</span>
-            <span class="spot-price" id="spotPrice">--.--</span>
-        </div>
-        <div class="badge-exp" id="expiryBadge">EXP ACTIVE</div>
-    </div>
-
-    <div class="sub-header">
-        <div>
-            <div class="date-box" id="currentDate">-- --- ----</div>
-            <div class="atm-box">HLC ATM <span id="hlcAtmStrike">-----</span></div>
-        </div>
-        <div style="text-align: right;">
-            <div class="straddle-total" id="bannerTotal">0.00</div>
-            <div class="straddle-sub">CE <span id="ceCloseHeader">0.00</span> - PE <span id="peCloseHeader">0.00</span></div>
-        </div>
-    </div>
-
-    <div class="grid-2">
-        <div class="card">
-            <div class="card-tag tag-neutral">NEUTRAL</div>
-            <div class="strike-header">
-                <span id="ceStrike">-----</span>
-                <span style="color: #38bdf8;">CE</span>
-            </div>
-            <div class="hcl-box">
-                <div>H <span class="hcl-val" id="ceHigh">0.00</span></div>
-                <div>C <span class="hcl-val hcl-close" id="ceClose">0.00</span></div>
-                <div>L <span class="hcl-val" id="ceLow">0.00</span></div>
-            </div>
-            <div class="diff-footer">
-                <span>H-C <span id="ceHC">0.00</span></span>
-                <span>C-L <span id="ceCL">0.00</span></span>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-tag tag-neutral">NEUTRAL</div>
-            <div class="strike-header">
-                <span id="peStrike">-----</span>
-                <span style="color: #ef4444;">PE</span>
-            </div>
-            <div class="hcl-box">
-                <div>H <span class="hcl-val" id="peHigh">0.00</span></div>
-                <div>C <span class="hcl-val hcl-close" id="peClose">0.00</span></div>
-                <div>L <span class="hcl-val" id="peLow">0.00</span></div>
-            </div>
-            <div class="diff-footer">
-                <span>H-C <span id="peHC">0.00</span></span>
-                <span>C-L <span id="peCL">0.00</span></span>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid-2">
-        <div class="target-card">
-            <div class="target-title" style="color: #ef4444;">Minimum Supply</div>
-            <div class="target-val-red" id="minSupply">0.00</div>
-        </div>
-        <div class="target-card">
-            <div class="target-title" style="color: #22c55e;">Minimum Demand</div>
-            <div class="target-val-green" id="minDemand">0.00</div>
-        </div>
-    </div>
-
-    <div class="grid-2">
-        <div class="card">
-            <div class="zone-title">Weekly Zone</div>
-            <div class="zone-grid">
-                <span style="color: #ef4444;" id="wHigh">0.00</span>
-                <span style="color: #22c55e;" id="wLow">0.00</span>
-            </div>
-        </div>
-        <div class="card">
-            <div class="zone-title">Monthly Zone</div>
-            <div class="zone-grid">
-                <span style="color: #ef4444;" id="mHigh">0.00</span>
-                <span style="color: #22c55e;" id="mLow">0.00</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="sniper-card">
-        <div>
-            <div class="sniper-tag">SNIPER ATM (Round 100)</div>
-            <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">
-                <span id="snip1Atm">-----</span> CE <span id="snip1Ce">0.00</span> • PE <span id="snip1Pe">0.00</span>
-            </div>
-            <div style="font-size: 0.65rem; color: #94a3b8; margin-top: 4px;">
-                OTM <span id="snip1OtmCeStr">0</span> CE <span id="snip1OtmCe">0.00</span> | <span id="snip1OtmPeStr">0</span> PE <span id="snip1OtmPe">0.00</span>
-            </div>
-        </div>
-        <div class="sniper-val" id="snip1Val">0.00</div>
-    </div>
-
-    <div class="sniper-card">
-        <div>
-            <div class="sniper-tag" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-color: #38bdf8;">SNIPER ATM (HLC Match)</div>
-            <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">
-                <span id="snip2Atm">-----</span> CE <span id="snip2Ce">0.00</span> • PE <span id="snip2Pe">0.00</span>
-            </div>
-            <div style="font-size: 0.65rem; color: #94a3b8; margin-top: 4px;">
-                OTM <span id="snip2OtmCeStr">0</span> CE <span id="snip2OtmCe">0.00</span> | <span id="snip2OtmPeStr">0</span> PE <span id="snip2OtmPe">0.00</span>
-            </div>
-        </div>
-        <div class="sniper-val" id="snip2Val">0.00</div>
-    </div>
-
-    <div class="earth-card">
-        <div style="font-weight: 700; font-size: 0.85rem; color: #ffffff;">🌏 EARTH</div>
-        <div class="sniper-val" style="color: #22c55e;" id="earthVal">0.00</div>
-    </div>
-</div>
-
-<script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.error('SW Registration Failed:', err));
+def fetch_live_spot_price(access_token):
+    url = "https://api.upstox.com/v2/market-quote/ltp?instrument_key=NSE_INDEX%7CNifty%2050"
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {access_token}"
     }
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            spot = data.get("data", {}).get("NSE_INDEX:Nifty 50", {}).get("last_price", 0.0)
+            return float(spot)
+    except Exception as e:
+        print(f"Failed to fetch live spot price: {e}")
+    return 0.0
 
-    async function updateDashboard() {
-        try {
-            const response = await fetch(`data.json?t=${Date.now()}`);
-            if (!response.ok) return;
-            const data = await response.json();
 
-            // Toggle top banner text and style based on Bhavcopy readiness
-            const alertBanner = document.getElementById('bhavcopyAlert');
-            if (data.bhavcopyReady === true) {
-                alertBanner.innerText = '✅ BHAVCOPY UPDATED SUCCESSFULLY';
-                alertBanner.className = 'status-banner ready';
-            } else {
-                alertBanner.innerText = '⚠️ BHAVCOPY NOT READY, PLS WAIT';
-                alertBanner.className = 'status-banner not-ready';
-            }
-
-            const spotPrice = Number(data.spotPrice) || 0;
-            const ceClose = Number(data.ce?.close) || 0;
-            const ceHigh = Number(data.ce?.high) || 0;
-            const ceLow = Number(data.ce?.low) || 0;
-            const peClose = Number(data.pe?.close) || 0;
-            const peHigh = Number(data.pe?.high) || 0;
-            const peLow = Number(data.pe?.low) || 0;
-
-            const cePeDiff = Math.abs(ceClose - peClose);
-            const bannerTotal = Number(data.bannerTotal) || (ceClose + peClose);
-
-            document.getElementById('spotPrice').innerText = spotPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('currentDate').innerText = data.currentDate || '--';
-            document.getElementById('expiryBadge').innerText = data.expiryDate || 'EXP ACTIVE';
-            document.getElementById('hlcAtmStrike').innerText = data.hlcAtmStrike || '-----';
-
-            document.getElementById('bannerTotal').innerText = cePeDiff.toFixed(2);
-            document.getElementById('ceCloseHeader').innerText = ceClose.toFixed(2);
-            document.getElementById('peCloseHeader').innerText = peClose.toFixed(2);
-
-            document.getElementById('ceStrike').innerText = data.hlcAtmStrike || '-----';
-            document.getElementById('ceHigh').innerText = ceHigh.toFixed(2);
-            document.getElementById('ceClose').innerText = ceClose.toFixed(2);
-            document.getElementById('ceLow').innerText = ceLow.toFixed(2);
-            document.getElementById('ceHC').innerText = (ceHigh - ceClose).toFixed(2);
-            document.getElementById('ceCL').innerText = (ceClose - ceLow).toFixed(2);
-
-            document.getElementById('peStrike').innerText = data.hlcAtmStrike || '-----';
-            document.getElementById('peHigh').innerText = peHigh.toFixed(2);
-            document.getElementById('peClose').innerText = peClose.toFixed(2);
-            document.getElementById('peLow').innerText = peLow.toFixed(2);
-            document.getElementById('peHC').innerText = (peHigh - peClose).toFixed(2);
-            document.getElementById('peCL').innerText = (peClose - peLow).toFixed(2);
-
-            document.getElementById('minSupply').innerText = (spotPrice + (ceClose * 0.9)).toLocaleString('en-IN', {maximumFractionDigits: 2});
-            document.getElementById('minDemand').innerText = (spotPrice - (peClose * 0.9)).toLocaleString('en-IN', {maximumFractionDigits: 2});
-            
-            document.getElementById('wHigh').innerText = (spotPrice * 1.011).toFixed(2);
-            document.getElementById('wLow').innerText = (spotPrice * 0.989).toFixed(2);
-            document.getElementById('mHigh').innerText = (spotPrice * 1.025).toFixed(2);
-            document.getElementById('mLow').innerText = (spotPrice * 0.975).toFixed(2);
-
-            if (data.sniper1) {
-                const s1Ce = Number(data.sniper1.ce) || 0;
-                const s1Pe = Number(data.sniper1.pe) || 0;
-                document.getElementById('snip1Atm').innerText = data.sniper1.strike || '-----';
-                document.getElementById('snip1Ce').innerText = s1Ce.toFixed(2);
-                document.getElementById('snip1Pe').innerText = s1Pe.toFixed(2);
-                document.getElementById('snip1OtmCeStr').innerText = data.sniper1.otmCeStrike || 0;
-                document.getElementById('snip1OtmPeStr').innerText = data.sniper1.otmPeStrike || 0;
-                document.getElementById('snip1OtmCe').innerText = (Number(data.sniper1.otmCe) || 0).toFixed(2);
-                document.getElementById('snip1OtmPe').innerText = (Number(data.sniper1.otmPe) || 0).toFixed(2);
+def get_current_expiry(access_token):
+    instrument_key = "NSE_INDEX|Nifty 50"
+    url = f"https://api.upstox.com/v2/option/contract?instrument_key={instrument_key}"
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    now_ist = datetime.datetime.now(IST)
+    today_str = now_ist.strftime("%Y-%m-%d")
+    market_closed = now_ist.hour > 15 or (now_ist.hour == 15 and now_ist.minute >= 30)
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            res_json = response.json()
+            raw_list = res_json.get("data", [])
+            if raw_list:
+                expiry_list = []
+                for item in raw_list:
+                    if isinstance(item, dict):
+                        exp = item.get("expiry") or item.get("expiry_date") or item.get("date")
+                        if exp:
+                            expiry_list.append(str(exp))
+                    elif isinstance(item, str):
+                        expiry_list.append(item)
                 
-                document.getElementById('snip1Val').innerText = (Number(data.sniper1.value) || 0).toFixed(2);
-            }
+                expiry_list = sorted(list(set(expiry_list)))
+                if expiry_list:
+                    if today_str in expiry_list and not market_closed:
+                        return today_str
+                    for exp in expiry_list:
+                        if exp >= today_str:
+                            return exp
+                    return expiry_list[-1]
+    except Exception as e:
+        print(f"Error fetching option contract expiry: {e}")
+        
+    return today_str
 
-            if (data.sniper2) {
-                const s2Ce = Number(data.sniper2.ce) || 0;
-                const s2Pe = Number(data.sniper2.pe) || 0;
-                document.getElementById('snip2Atm').innerText = data.sniper2.strike || '-----';
-                document.getElementById('snip2Ce').innerText = s2Ce.toFixed(2);
-                document.getElementById('snip2Pe').innerText = s2Pe.toFixed(2);
-                document.getElementById('snip2OtmCeStr').innerText = data.sniper2.otmCeStrike || 0;
-                document.getElementById('snip2OtmPeStr').innerText = data.sniper2.otmPeStrike || 0;
-                document.getElementById('snip2OtmCe').innerText = (Number(data.sniper2.otmCe) || 0).toFixed(2);
-                document.getElementById('snip2OtmPe').innerText = (Number(data.sniper2.otmPe) || 0).toFixed(2);
+
+def download_today_bhavcopy():
+    """Attempts to download ONLY TODAY's Bhavcopy from NSE."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.nseindia.com/"
+    }
+    now_ist = datetime.datetime.now(IST)
+    
+    yyyy = now_ist.strftime("%Y")
+    mm = now_ist.strftime("%m")
+    dd = now_ist.strftime("%d")
+    
+    url = f"https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
+    try:
+        session = requests.Session()
+        session.get("https://www.nseindia.com", headers=headers, timeout=10)
+        response = session.get(url, headers=headers, timeout=30)
+        
+        if response.status_code == 200 and len(response.content) > 1000:
+            if os.path.exists("bhavcopy.csv"):
+                try:
+                    os.remove("bhavcopy.csv")
+                except Exception:
+                    pass
+
+            with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+                csv_filename = z.namelist()[0]
+                with z.open(csv_filename) as csv_file:
+                    content = csv_file.read().decode('utf-8', errors='ignore')
+                    lines = content.splitlines()
+                    
+                    nifty_lines = []
+                    if lines:
+                        nifty_lines.append(lines[0])
+                        for line in lines[1:]:
+                            if "NIFTY" in line.upper():
+                                nifty_lines.append(line)
+                    
+                    with open("bhavcopy.csv", "w", encoding="utf-8") as f:
+                        f.write("\n".join(nifty_lines))
+
+            print(f"Successfully downloaded TODAY'S Bhavcopy for {now_ist.strftime('%Y-%m-%d')}")
+            return True
+    except Exception as e:
+        print(f"Today's Bhavcopy is not available yet: {e}")
+        
+    return False
+
+
+def load_bhavcopy_dict(target_expiry_str):
+    """Loads Bhavcopy into a dictionary: { (int_strike, option_type): (high, low, close) }"""
+    bhav_map = {}
+    if not os.path.exists("bhavcopy.csv"):
+        return bhav_map
+
+    possible_expiries = set()
+    clean_target = target_expiry_str.strip().upper()
+    possible_expiries.add(clean_target)
+    
+    try:
+        dt_obj = datetime.datetime.strptime(clean_target, "%Y-%m-%d")
+        possible_expiries.add(dt_obj.strftime("%Y-%m-%d"))
+        possible_expiries.add(dt_obj.strftime("%d-%b-%Y").upper())
+        possible_expiries.add(dt_obj.strftime("%d-%B-%Y").upper())
+        possible_expiries.add(dt_obj.strftime("%d%b%Y").upper())
+        possible_expiries.add(dt_obj.strftime("%d%b%y").upper())
+    except Exception:
+        pass
+
+    try:
+        with open("bhavcopy.csv", mode="r", encoding="utf-8", errors="ignore") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                cleaned_row = {k.strip().upper(): (v.strip() if v else "") for k, v in row.items() if k}
                 
-                document.getElementById('snip2Val').innerText = (Number(data.sniper2.value) || 0).toFixed(2);
-            }
+                symbol = cleaned_row.get("TCKRSYMB") or cleaned_row.get("SYMBOL") or cleaned_row.get("FININSTRNM") or ""
+                if "NIFTY" not in symbol.upper():
+                    continue
 
-            document.getElementById('earthVal').innerText = (bannerTotal * 0.1215).toFixed(2);
+                strike_raw = (cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or 
+                              cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
+                try:
+                    row_strike = int(round(float(strike_raw)))
+                except ValueError:
+                    continue
 
-        } catch (e) {
-            console.error("Error loading dashboard data:", e);
+                opt_type_raw = (cleaned_row.get("OPTNTP") or cleaned_row.get("OPTION_TYP") or 
+                                cleaned_row.get("OPTIONTYPE") or "")
+                opt_type = ""
+                if "CE" in opt_type_raw.upper():
+                    opt_type = "CE"
+                elif "PE" in opt_type_raw.upper():
+                    opt_type = "PE"
+
+                if not opt_type:
+                    continue
+
+                expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or 
+                              cleaned_row.get("EXPIRY") or "").strip().upper()
+                
+                matches_expiry = any(exp in expiry_raw for exp in possible_expiries)
+
+                if matches_expiry:
+                    high = float(cleaned_row.get("HGHPRIC") or cleaned_row.get("HIGH") or 0.0)
+                    low = float(cleaned_row.get("LWPRIC") or cleaned_row.get("LOW") or 0.0)
+                    close = float(cleaned_row.get("CLSPRIC") or cleaned_row.get("CLOSE") or cleaned_row.get("SETTLE_PR") or 0.0)
+
+                    if high > 0 or low > 0 or close > 0:
+                        bhav_map[(row_strike, opt_type)] = (high, low, close)
+    except Exception as e:
+        print(f"Error reading bhavcopy into dict: {e}")
+
+    return bhav_map
+
+
+def fetch_option_chain_data(access_token, expiry_date):
+    instrument_key = "NSE_INDEX|Nifty 50"
+    url = f"https://api.upstox.com/v2/option/chain?instrument_key={instrument_key}&expiry_date={expiry_date}"
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        print(f"Failed to fetch option chain data: {e}")
+    return None
+
+
+def get_strike_close_price(bhav_map, item, strike, opt_type):
+    if (strike, opt_type) in bhav_map and bhav_map[(strike, opt_type)][2] > 0:
+        return bhav_map[(strike, opt_type)][2]
+    
+    opts = item.get("call_options", {}) if opt_type == "CE" else item.get("put_options", {})
+    m_data = opts.get("market_data", {})
+    return float(m_data.get("close_price") or opts.get("last_price") or m_data.get("ltp") or 0.0)
+
+
+def process_and_save_data(res_json, spot, expiry_date_str):
+    data = res_json.get("data", [])
+    if not data or spot <= 0:
+        print("Invalid data or spot price received.")
+        return
+
+    now_ist = datetime.datetime.now(IST)
+    today_str = now_ist.strftime("%d %b %Y").upper()
+
+    bhavcopy_is_ready = download_today_bhavcopy()
+    bhav_map = load_bhavcopy_dict(expiry_date_str)
+
+    min_diff = float('inf')
+    hlc_atm_strike = int(round(spot / 50.0) * 50)
+
+    for item in data:
+        item_strike = item.get("strike_price")
+        if item_strike is None:
+            continue
+        
+        s_val = int(round(float(item_strike)))
+        if abs(s_val - spot) > 500:
+            continue
+
+        ce_close = get_strike_close_price(bhav_map, item, s_val, "CE")
+        pe_close = get_strike_close_price(bhav_map, item, s_val, "PE")
+
+        if ce_close > 0 and pe_close > 0:
+            diff = abs(ce_close - pe_close)
+            if diff < min_diff:
+                min_diff = diff
+                hlc_atm_strike = s_val
+
+    sniper1_atm_strike = int(round(spot / 100.0) * 100)
+    sniper2_atm_strike = hlc_atm_strike
+
+    target_s1_ce_strike = sniper1_atm_strike + 100
+    target_s1_pe_strike = sniper1_atm_strike - 100
+    target_s2_ce_strike = sniper2_atm_strike + 100
+    target_s2_pe_strike = sniper2_atm_strike - 100
+
+    ce_high, ce_low, ce_close = bhav_map.get((int(hlc_atm_strike), "CE"), (0.0, 0.0, 0.0))
+    pe_high, pe_low, pe_close = bhav_map.get((int(hlc_atm_strike), "PE"), (0.0, 0.0, 0.0))
+
+    s1_atm_ce_val, s1_atm_pe_val = 0.0, 0.0
+    s2_atm_ce_val, s2_atm_pe_val = 0.0, 0.0
+    s1_ce_val, s1_pe_val = 0.0, 0.0
+    s2_ce_val, s2_pe_val = 0.0, 0.0
+
+    for item in data:
+        item_strike = item.get("strike_price")
+        if item_strike is None:
+            continue
+        s_val = int(round(float(item_strike)))
+        
+        call_opts = item.get("call_options", {})
+        put_opts = item.get("put_options", {})
+        m_call = call_opts.get("market_data", {})
+        m_put = put_opts.get("market_data", {})
+
+        if s_val == hlc_atm_strike:
+            if ce_close == 0.0:
+                ce_close = float(m_call.get("close_price") or call_opts.get("last_price") or 0.0)
+            if ce_high == 0.0:
+                ce_high = float(m_call.get("high_price") or ce_close)
+            if ce_low == 0.0:
+                ce_low = float(m_call.get("low_price") or ce_close)
+
+            if pe_close == 0.0:
+                pe_close = float(m_put.get("close_price") or put_opts.get("last_price") or 0.0)
+            if pe_high == 0.0:
+                pe_high = float(m_put.get("high_price") or pe_close)
+            if pe_low == 0.0:
+                pe_low = float(m_put.get("low_price") or pe_close)
+
+        if s_val == sniper1_atm_strike:
+            s1_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
+            s1_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
+        if s_val == target_s1_ce_strike:
+            s1_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
+        if s_val == target_s1_pe_strike:
+            s1_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
+
+        if s_val == sniper2_atm_strike:
+            s2_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
+            s2_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
+        if s_val == target_s2_ce_strike:
+            s2_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
+        if s_val == target_s2_pe_strike:
+            s2_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
+
+    sniper1_val = round((s1_ce_val + s1_pe_val) / 2.0, 2)
+    sniper2_val = round((s2_ce_val + s2_pe_val) / 2.0, 2)
+
+    payload = {
+        "dataStatus": "SUCCESS",
+        "bhavcopyReady": bhavcopy_is_ready,
+        "currentDate": today_str,
+        "expiryDate": datetime.datetime.strptime(expiry_date_str, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
+        "spotPrice": spot,
+        "hlcAtmStrike": hlc_atm_strike,
+        "ce": {
+            "high": round(ce_high, 2), 
+            "close": round(ce_close, 2), 
+            "low": round(ce_low, 2)
+        },
+        "pe": {
+            "high": round(pe_high, 2), 
+            "close": round(pe_close, 2), 
+            "low": round(pe_low, 2)
+        },
+        "bannerTotal": round(ce_close + pe_close, 2),
+        "spotHigh": spot,
+        "spotLow": spot,
+        "sniper1": {
+            "strike": sniper1_atm_strike, 
+            "ce": round(s1_atm_ce_val, 2), 
+            "pe": round(s1_atm_pe_val, 2),
+            "otmCeStrike": target_s1_ce_strike, 
+            "otmPeStrike": target_s1_pe_strike,
+            "otmCe": round(s1_ce_val, 2), 
+            "otmPe": round(s1_pe_val, 2),
+            "value": sniper1_val
+        },
+        "sniper2": {
+            "strike": sniper2_atm_strike, 
+            "ce": round(s2_atm_ce_val, 2), 
+            "pe": round(s2_atm_pe_val, 2),
+            "otmCeStrike": target_s2_ce_strike, 
+            "otmPeStrike": target_s2_pe_strike,
+            "otmCe": round(s2_ce_val, 2), 
+            "otmPe": round(s2_pe_val, 2),
+            "value": sniper2_val
         }
     }
 
-    updateDashboard();
-    setInterval(updateDashboard, 30000);
-</script>
+    with open("data.json", "w") as f:
+        json.dump(payload, f, indent=4)
+        
+    print(f"Data saved. Bhavcopy status: {bhavcopy_is_ready}")
+    push_to_github()
 
-</body>
-</html>
+
+if __name__ == "__main__":
+    access_token = load_access_token()
+    if access_token:
+        expiry = get_current_expiry(access_token)
+        spot = fetch_live_spot_price(access_token)
+        res = fetch_option_chain_data(access_token, expiry)
+        if res and spot > 0:
+            process_and_save_data(res, spot, expiry)
+    else:
+        print("No valid Upstox access token found.")
