@@ -149,7 +149,7 @@ def download_today_bhavcopy():
 
 
 def load_bhavcopy_dict(target_expiry_str):
-    """Loads Bhavcopy into a dictionary: { (int_strike, option_type): (high, low, close) }"""
+    """Loads Bhavcopy into a dictionary with OHLC, Close, and OI metrics"""
     bhav_map = {}
     if not os.path.exists("bhavcopy.csv"):
         return bhav_map
@@ -187,11 +187,7 @@ def load_bhavcopy_dict(target_expiry_str):
 
                 opt_type_raw = (cleaned_row.get("OPTNTP") or cleaned_row.get("OPTION_TYP") or 
                                 cleaned_row.get("OPTIONTYPE") or "")
-                opt_type = ""
-                if "CE" in opt_type_raw.upper():
-                    opt_type = "CE"
-                elif "PE" in opt_type_raw.upper():
-                    opt_type = "PE"
+                opt_type = "CE" if "CE" in opt_type_raw.upper() else "PE" if "PE" in opt_type_raw.upper() else ""
 
                 if not opt_type:
                     continue
@@ -199,15 +195,21 @@ def load_bhavcopy_dict(target_expiry_str):
                 expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or 
                               cleaned_row.get("EXPIRY") or "").strip().upper()
                 
-                matches_expiry = any(exp in expiry_raw for exp in possible_expiries)
-
-                if matches_expiry:
+                if any(exp in expiry_raw for exp in possible_expiries):
+                    open_p = float(cleaned_row.get("OPENPRIC") or cleaned_row.get("OPEN") or 0.0)
                     high = float(cleaned_row.get("HGHPRIC") or cleaned_row.get("HIGH") or 0.0)
                     low = float(cleaned_row.get("LWPRIC") or cleaned_row.get("LOW") or 0.0)
                     close = float(cleaned_row.get("CLSPRIC") or cleaned_row.get("CLOSE") or cleaned_row.get("SETTLE_PR") or 0.0)
+                    chg_oi = float(cleaned_row.get("CHGINOI") or cleaned_row.get("CHG_IN_OI") or 0.0)
 
                     if high > 0 or low > 0 or close > 0:
-                        bhav_map[(row_strike, opt_type)] = (high, low, close)
+                        bhav_map[(row_strike, opt_type)] = {
+                            "open": open_p,
+                            "high": high,
+                            "low": low,
+                            "close": close,
+                            "chg_oi": chg_oi
+                        }
     except Exception as e:
         print(f"Error reading bhavcopy into dict: {e}")
 
@@ -231,12 +233,35 @@ def fetch_option_chain_data(access_token, expiry_date):
 
 
 def get_strike_close_price(bhav_map, item, strike, opt_type):
-    if (strike, opt_type) in bhav_map and bhav_map[(strike, opt_type)][2] > 0:
-        return bhav_map[(strike, opt_type)][2]
+    data_dict = bhav_map.get((strike, opt_type), {})
+    if data_dict.get("close", 0.0) > 0:
+        return data_dict["close"]
     
     opts = item.get("call_options", {}) if opt_type == "CE" else item.get("put_options", {})
     m_data = opts.get("market_data", {})
     return float(m_data.get("close_price") or opts.get("last_price") or m_data.get("ltp") or 0.0)
+
+
+def get_market_sentiment_tag(data_dict):
+    """Determines if the option is driven by Buyers, Sellers, or Neutral"""
+    if not data_dict:
+        return "NEUTRAL", "tag-neutral"
+    
+    close = data_dict.get("close", 0.0)
+    open_p = data_dict.get("open", 0.0)
+    high = data_dict.get("high", 0.0)
+    low = data_dict.get("low", 0.0)
+    chg_oi = data_dict.get("chg_oi", 0.0)
+
+    price_up = close >= open_p
+
+    if chg_oi > 0:
+        if price_up or (high - low > 0 and (close - low) / (high - low) > 0.5):
+            return "BUYERS", "tag-buyers"
+        else:
+            return "SELLERS", "tag-sellers"
+            
+    return "NEUTRAL", "tag-neutral"
 
 
 def process_and_save_data(res_json, spot, expiry_date_str):
@@ -280,8 +305,11 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    ce_high, ce_low, ce_close = bhav_map.get((int(hlc_atm_strike), "CE"), (0.0, 0.0, 0.0))
-    pe_high, pe_low, pe_close = bhav_map.get((int(hlc_atm_strike), "PE"), (0.0, 0.0, 0.0))
+    ce_dict = bhav_map.get((int(hlc_atm_strike), "CE"), {"high": 0.0, "low": 0.0, "close": 0.0, "open": 0.0, "chg_oi": 0.0})
+    pe_dict = bhav_map.get((int(hlc_atm_strike), "PE"), {"high": 0.0, "low": 0.0, "close": 0.0, "open": 0.0, "chg_oi": 0.0})
+
+    ce_high, ce_low, ce_close = ce_dict.get("high", 0.0), ce_dict.get("low", 0.0), ce_dict.get("close", 0.0)
+    pe_high, pe_low, pe_close = pe_dict.get("high", 0.0), pe_dict.get("low", 0.0), pe_dict.get("close", 0.0)
 
     s1_atm_ce_val, s1_atm_pe_val = 0.0, 0.0
     s2_atm_ce_val, s2_atm_pe_val = 0.0, 0.0
@@ -306,6 +334,9 @@ def process_and_save_data(res_json, spot, expiry_date_str):
                 ce_high = float(m_call.get("high_price") or ce_close)
             if ce_low == 0.0:
                 ce_low = float(m_call.get("low_price") or ce_close)
+            ce_dict["close"] = ce_close
+            ce_dict["high"] = ce_high
+            ce_dict["low"] = ce_low
 
             if pe_close == 0.0:
                 pe_close = float(m_put.get("close_price") or put_opts.get("last_price") or 0.0)
@@ -313,6 +344,9 @@ def process_and_save_data(res_json, spot, expiry_date_str):
                 pe_high = float(m_put.get("high_price") or pe_close)
             if pe_low == 0.0:
                 pe_low = float(m_put.get("low_price") or pe_close)
+            pe_dict["close"] = pe_close
+            pe_dict["high"] = pe_high
+            pe_dict["low"] = pe_low
 
         if s_val == sniper1_atm_strike:
             s1_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
@@ -329,6 +363,9 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             s2_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
         if s_val == target_s2_pe_strike:
             s2_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
+
+    ce_tag, ce_class = get_market_sentiment_tag(ce_dict)
+    pe_tag, pe_class = get_market_sentiment_tag(pe_dict)
 
     sniper1_val = round((s1_ce_val + s1_pe_val) / 2.0, 2)
     sniper2_val = round((s2_ce_val + s2_pe_val) / 2.0, 2)
@@ -350,6 +387,10 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             "close": round(pe_close, 2), 
             "low": round(pe_low, 2)
         },
+        "ceTag": ce_tag,
+        "ceClass": ce_class,
+        "peTag": pe_tag,
+        "peClass": pe_class,
         "bannerTotal": round(ce_close + pe_close, 2),
         "spotHigh": spot,
         "spotLow": spot,
@@ -383,7 +424,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
 
 
 if __name__ == "__main__":
-    # Check if data.json already has today's date and bhavcopyReady == True
     if os.path.exists("data.json"):
         try:
             with open("data.json", "r") as f:
