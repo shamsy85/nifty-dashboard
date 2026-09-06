@@ -121,7 +121,7 @@
             gap: 10px;
         }
 
-        /* Base Card Styling (Uniform Border) */
+        /* Static Card Border (Uniform for all states) */
         .card {
             background: #0f172a;
             border: 1px solid #1e293b;
@@ -139,7 +139,7 @@
             margin-bottom: 8px;
         }
 
-        /* Font & Tag Color Themes (Does not change card borders) */
+        /* Font & Tag Color Themes Only */
         .tag-neutral {
             background: rgba(234, 179, 8, 0.15);
             color: #eab308;
@@ -419,15 +419,16 @@
             if (!response.ok) return;
             const data = await response.json();
 
+            // Toggle alert banner text and background color
             const alertBanner = document.getElementById('bhavcopyAlert');
 
             if (data.bhavcopyReady === false) {
                 alertBanner.innerText = '⚠️ BHAVCOPY NOT READY, PLS WAIT';
-                alertBanner.style.backgroundColor = '#dc2626';
+                alertBanner.style.backgroundColor = '#dc2626'; // Red
                 alertBanner.style.display = 'block';
             } else {
                 alertBanner.innerText = '✅ BHAVCOPY LOADED SUCCESSFULLY';
-                alertBanner.style.backgroundColor = '#16a34a';
+                alertBanner.style.backgroundColor = '#16a34a'; // Green
                 alertBanner.style.display = 'block';
             }
 
@@ -451,9 +452,10 @@
             document.getElementById('ceCloseHeader').innerText = ceClose.toFixed(2);
             document.getElementById('peCloseHeader').innerText = peClose.toFixed(2);
 
-            // Update CE Tag Theme (Font & tag coloring only)
+            // Update CE Tag Theme (Only tag font/background changes, card border stays uniform)
             const ceTagEl = document.getElementById('ceTag');
             const ceClass = data.ceClass || 'tag-neutral';
+            
             ceTagEl.innerText = data.ceTag || 'NEUTRAL';
             ceTagEl.className = `card-tag ${ceClass}`;
 
@@ -464,9 +466,10 @@
             document.getElementById('ceHC').innerText = (ceHigh - ceClose).toFixed(2);
             document.getElementById('ceCL').innerText = (ceClose - ceLow).toFixed(2);
 
-            // Update PE Tag Theme (Font & tag coloring only)
+            // Update PE Tag Theme (Only tag font/background changes, card border stays uniform)
             const peTagEl = document.getElementById('peTag');
             const peClass = data.peClass || 'tag-neutral';
+
             peTagEl.innerText = data.peTag || 'NEUTRAL';
             peTagEl.className = `card-tag ${peClass}`;
 
@@ -475,8 +478,9 @@
             document.getElementById('peClose').innerText = peClose.toFixed(2);
             document.getElementById('peLow').innerText = peLow.toFixed(2);
             document.getElementById('peHC').innerText = (peHigh - peClose).toFixed(2);
-            document.getElementById('peCL').innerText = (ceClose - peLow).toFixed(2);
+            document.getElementById('peCL').innerText = (peClose - peLow).toFixed(2);
 
+            // Populate Supply & Demand values directly from the JSON payload
             document.getElementById('minSupply').innerText = (Number(data.minSupply) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('minDemand').innerText = (Number(data.minDemand) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('maxSupply').innerText = (Number(data.maxSupply) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
