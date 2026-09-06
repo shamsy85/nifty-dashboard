@@ -335,7 +335,7 @@
 
     <div class="sniper-card">
         <div>
-            <div class="sniper-tag">SNIPER ATM best</div>
+            <div class="sniper-tag">SNIPER ATM (Round 100)</div>
             <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">
                 <span id="snip1Atm">-----</span> CE <span id="snip1Ce">0.00</span> • PE <span id="snip1Pe">0.00</span>
             </div>
@@ -348,7 +348,7 @@
 
     <div class="sniper-card">
         <div>
-            <div class="sniper-tag" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-color: #38bdf8;">SNIPER ATM</div>
+            <div class="sniper-tag" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-color: #38bdf8;">SNIPER ATM (HLC Match)</div>
             <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">
                 <span id="snip2Atm">-----</span> CE <span id="snip2Ce">0.00</span> • PE <span id="snip2Pe">0.00</span>
             </div>
@@ -376,16 +376,16 @@
             if (!response.ok) return;
             const data = await response.json();
 
-            const spotPrice = data.spotPrice || 0;
-            const ceClose = data.ce?.close || 0;
-            const ceHigh = data.ce?.high || 0;
-            const ceLow = data.ce?.low || 0;
-            const peClose = data.pe?.close || 0;
-            const peHigh = data.pe?.high || 0;
-            const peLow = data.pe?.low || 0;
-            const bannerTotal = data.bannerTotal || (ceClose + peClose);
+            const spotPrice = Number(data.spotPrice) || 0;
+            const ceClose = Number(data.ce?.close) || 0;
+            const ceHigh = Number(data.ce?.high) || 0;
+            const ceLow = Number(data.ce?.low) || 0;
+            const peClose = Number(data.pe?.close) || 0;
+            const peHigh = Number(data.pe?.high) || 0;
+            const peLow = Number(data.pe?.low) || 0;
+            const bannerTotal = Number(data.bannerTotal) || (ceClose + peClose);
 
-            document.getElementById('spotPrice').innerText = spotPrice.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('spotPrice').innerText = spotPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('currentDate').innerText = data.currentDate || '--';
             document.getElementById('expiryBadge').innerText = data.expiryDate || 'EXP ACTIVE';
             document.getElementById('hlcAtmStrike').innerText = data.hlcAtmStrike || '-----';
@@ -417,25 +417,29 @@
             document.getElementById('mLow').innerText = (spotPrice * 0.975).toFixed(2);
 
             if (data.sniper1) {
+                const s1Ce = Number(data.sniper1.ce) || 0;
+                const s1Pe = Number(data.sniper1.pe) || 0;
                 document.getElementById('snip1Atm').innerText = data.sniper1.strike || '-----';
-                document.getElementById('snip1Ce').innerText = (data.sniper1.ce || 0).toFixed(2);
-                document.getElementById('snip1Pe').innerText = (data.sniper1.pe || 0).toFixed(2);
+                document.getElementById('snip1Ce').innerText = s1Ce.toFixed(2);
+                document.getElementById('snip1Pe').innerText = s1Pe.toFixed(2);
                 document.getElementById('snip1OtmCeStr').innerText = data.sniper1.otmCeStrike || 0;
                 document.getElementById('snip1OtmPeStr').innerText = data.sniper1.otmPeStrike || 0;
-                document.getElementById('snip1OtmCe').innerText = (data.sniper1.otmCe || 0).toFixed(2);
-                document.getElementById('snip1OtmPe').innerText = (data.sniper1.otmPe || 0).toFixed(2);
-                document.getElementById('snip1Val').innerText = (((data.sniper1.ce || 0) + (data.sniper1.pe || 0)) * 0.155).toFixed(2);
+                document.getElementById('snip1OtmCe').innerText = (Number(data.sniper1.otmCe) || 0).toFixed(2);
+                document.getElementById('snip1OtmPe').innerText = (Number(data.sniper1.otmPe) || 0).toFixed(2);
+                document.getElementById('snip1Val').innerText = ((s1Ce + s1Pe) * 0.155).toFixed(2);
             }
 
             if (data.sniper2) {
+                const s2Ce = Number(data.sniper2.ce) || 0;
+                const s2Pe = Number(data.sniper2.pe) || 0;
                 document.getElementById('snip2Atm').innerText = data.sniper2.strike || '-----';
-                document.getElementById('snip2Ce').innerText = (data.sniper2.ce || 0).toFixed(2);
-                document.getElementById('snip2Pe').innerText = (data.sniper2.pe || 0).toFixed(2);
+                document.getElementById('snip2Ce').innerText = s2Ce.toFixed(2);
+                document.getElementById('snip2Pe').innerText = s2Pe.toFixed(2);
                 document.getElementById('snip2OtmCeStr').innerText = data.sniper2.otmCeStrike || 0;
                 document.getElementById('snip2OtmPeStr').innerText = data.sniper2.otmPeStrike || 0;
-                document.getElementById('snip2OtmCe').innerText = (data.sniper2.otmCe || 0).toFixed(2);
-                document.getElementById('snip2OtmPe').innerText = (data.sniper2.otmPe || 0).toFixed(2);
-                document.getElementById('snip2Val').innerText = (((data.sniper2.ce || 0) + (data.sniper2.pe || 0)) * 0.103).toFixed(2);
+                document.getElementById('snip2OtmCe').innerText = (Number(data.sniper2.otmCe) || 0).toFixed(2);
+                document.getElementById('snip2OtmPe').innerText = (Number(data.sniper2.otmPe) || 0).toFixed(2);
+                document.getElementById('snip2Val').innerText = ((s2Ce + s2Pe) * 0.103).toFixed(2);
             }
 
             document.getElementById('earthVal').innerText = (bannerTotal * 0.1215).toFixed(2);
