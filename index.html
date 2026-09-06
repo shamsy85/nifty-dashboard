@@ -129,7 +129,6 @@
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* Dynamic Card Theme States */
         .card.tag-neutral {
             border-color: #eab308;
             box-shadow: 0 0 10px rgba(234, 179, 8, 0.1);
@@ -504,10 +503,11 @@
             document.getElementById('maxSupply').innerText = (Number(data.maxSupply) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('maxDemand').innerText = (Number(data.maxDemand) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
-            document.getElementById('wHigh').innerText = (spotPrice * 1.011).toFixed(2);
-            document.getElementById('wLow').innerText = (spotPrice * 0.989).toFixed(2);
-            document.getElementById('mHigh').innerText = (spotPrice * 1.025).toFixed(2);
-            document.getElementById('mLow').innerText = (spotPrice * 0.975).toFixed(2);
+            // Populate Weekly & Monthly Zones directly from the JSON payload
+            document.getElementById('wHigh').innerText = (Number(data.weeklyHigh) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('wLow').innerText = (Number(data.weeklyLow) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('mHigh').innerText = (Number(data.monthlyHigh) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('mLow').innerText = (Number(data.monthlyLow) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             if (data.sniper1) {
                 const s1Ce = Number(data.sniper1.ce) || 0;
