@@ -1,47 +1,47 @@
 name: Update Dashboard Data
 
 on:
-  schedule:
-    # Runs every 30 minutes from 5:00 PM IST to 9:30 PM IST (11:30 UTC to 16:00 UTC) Mon-Fri
-    - cron: '30 11 * * 1-5'
-    - cron: '0,30 12-15 * * 1-5'
-    - cron: '0 16 * * 1-5'
+  schedule:
+    # Runs every 30 minutes from 5:00 PM IST to 9:30 PM IST (11:30 UTC to 16:00 UTC) Mon-Fri
+    - cron: '30 11 * * 1-5'
+    - cron: '0,30 12-15 * * 1-5'
+    - cron: '0 16 * * 1-5'
 
-  workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-  update-data:
-    runs-on: ubuntu-latest
+  update-data:
+    runs-on: ubuntu-latest
 
-    # Optional: grant permissions so the action can push to your repository
-    permissions:
-      contents: write
+    # Optional: grant permissions so the action can push to your repository
+    permissions:
+      contents: write
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
 
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          playwright install --with-deps chromium
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
 
-      - name: Generate Upstox Access Token
-        env:
-          UPSTOX_API_KEY: ${{ secrets.UPSTOX_API_KEY }}
-          UPSTOX_API_SECRET: ${{ secrets.UPSTOX_API_SECRET }}
-          UPSTOX_REDIRECT_URI: ${{ secrets.UPSTOX_REDIRECT_URI }}
-          UPSTOX_MOBILE_NO: ${{ secrets.UPSTOX_MOBILE_NO }}
-          UPSTOX_PIN: ${{ secrets.UPSTOX_PIN }}
-          UPSTOX_TOTP_KEY: ${{ secrets.UPSTOX_TOTP_SECRET }}
-        run: python get_token.py
+      - name: Generate Upstox Access Token
+        env:
+          UPSTOX_API_KEY: ${{ secrets.UPSTOX_API_KEY }}
+          UPSTOX_API_SECRET: ${{ secrets.UPSTOX_API_SECRET }}
+          UPSTOX_REDIRECT_URI: ${{ secrets.UPSTOX_REDIRECT_URI }}
+          UPSTOX_MOBILE_NO: ${{ secrets.UPSTOX_MOBILE_NO }}
+          UPSTOX_PIN: ${{ secrets.UPSTOX_PIN }}
+          UPSTOX_TOTP_KEY: ${{ secrets.UPSTOX_TOTP_SECRET }}
+        run: python get_token.py
 
-      - name: Fetch Market Data and Update JSON
-        run: python update.py
+      - name: Fetch Market Data and Update JSON
+        run: python update.py
