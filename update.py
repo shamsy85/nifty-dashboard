@@ -16,18 +16,20 @@ def push_to_github():
         subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
         subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
         
-        # Force stage data.json
+        # Force stage both data.json and bhavcopy.csv so it stays visible in GitHub
         subprocess.run(["git", "add", "-f", "data.json"], check=False)
+        if os.path.exists("bhavcopy.csv"):
+            subprocess.run(["git", "add", "-f", "bhavcopy.csv"], check=False)
         
-        # Check if staged data.json has actual diffs against HEAD
+        # Check if staged files have actual diffs against HEAD
         diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
         
         if diff_check.returncode != 0:
-            subprocess.run(["git", "commit", "-m", "Auto-update dashboard [skip ci]"], check=True)
+            subprocess.run(["git", "commit", "-m", "Auto-update dashboard and bhavcopy [skip ci]"], check=True)
             subprocess.run(["git", "push", "origin", "main"], check=True)
             print("Changes pushed to GitHub successfully.")
         else:
-            print("No changes detected in data.json. Skipping commit.")
+            print("No changes detected in repository. Skipping commit.")
     except Exception as e:
         print(f"Git push failed: {e}")
 
@@ -122,11 +124,18 @@ def download_nse_bhavcopy():
             session.get("https://www.nseindia.com", headers=headers, timeout=10)
             response = session.get(url, headers=headers, timeout=30)
             if response.status_code == 200 and len(response.content) > 1000:
+                # Delete existing old bhavcopy file before saving the new one
+                if os.path.exists("bhavcopy.csv"):
+                    try:
+                        os.remove("bhavcopy.csv")
+                    except Exception as e:
+                        print(f"Notice: Could not remove old bhavcopy: {e}")
+
                 with zipfile.ZipFile(io.BytesIO(response.content)) as z:
                     csv_filename = z.namelist()[0]
                     with z.open(csv_filename) as csv_file, open("bhavcopy.csv", "wb") as f:
                         f.write(csv_file.read())
-                print(f"Successfully downloaded UDiFF F&O Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
+                print(f"Successfully downloaded new UDiFF F&O Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
                 return True
         except Exception as e:
             print(f"Attempt for UDiFF F&O Bhavcopy on {target_date.strftime('%Y-%m-%d')} failed: {e}")
@@ -165,7 +174,6 @@ def load_bhavcopy_dict(target_expiry_str):
                 strike_raw = (cleaned_row.get("STRIKEPRIC") or cleaned_row.get("STRIKE_PR") or 
                               cleaned_row.get("STRIKE") or cleaned_row.get("STRK_PRC") or "0")
                 try:
-                    # Cast strike explicitly to int to avoid floating-point lookup mismatches
                     row_strike = int(round(float(strike_raw)))
                 except ValueError:
                     continue
@@ -225,7 +233,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         print("Invalid data or spot price received.")
         return
 
-    # Download Bhavcopy and parse into memory
+    # Download latest Bhavcopy (deletes old bhavcopy.csv automatically)
     download_nse_bhavcopy()
     bhav_map = load_bhavcopy_dict(expiry_date_str)
 
@@ -248,7 +256,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         ce_close = bhav_map.get((s_val, "CE"), (0.0, 0.0, 0.0))[2]
         pe_close = bhav_map.get((s_val, "PE"), (0.0, 0.0, 0.0))[2]
 
-        # Fallback to API LTP if Bhavcopy value is zero
         if ce_close == 0.0:
             ce_close = float(call_opts.get("last_price") or call_opts.get("market_data", {}).get("ltp") or 0.0)
         if pe_close == 0.0:
@@ -270,7 +277,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     target_s2_ce_strike = sniper2_atm_strike + 100
     target_s2_pe_strike = sniper2_atm_strike - 100
 
-    # Retrieve High, Low, Close using integer strike keys directly from Bhavcopy
+    # Extract High, Low, Close directly from Bhavcopy
     ce_high, ce_low, ce_close = bhav_map.get((int(hlc_atm_strike), "CE"), (0.0, 0.0, 0.0))
     pe_high, pe_low, pe_close = bhav_map.get((int(hlc_atm_strike), "PE"), (0.0, 0.0, 0.0))
 
@@ -294,6 +301,7 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
         pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
 
+        # STRICT FALLBACK ONLY: If Bhavcopy values were missing (0.0), fill from API
         if s_val == hlc_atm_strike:
             ce_h = float(m_call.get("high_price") or call_opts.get("high_price") or 0.0)
             ce_l = float(m_call.get("low_price") or call_opts.get("low_price") or 0.0)
@@ -306,14 +314,14 @@ def process_and_save_data(res_json, spot, expiry_date_str):
             if ce_close == 0.0:
                 ce_close = ce_c
             if ce_high == 0.0:
-                ce_high = max(ce_h, ce_close)
+                ce_high = ce_h if ce_h > 0 else ce_close
             if ce_low == 0.0:
                 ce_low = ce_l if ce_l > 0 else ce_close
 
             if pe_close == 0.0:
                 pe_close = pe_c
             if pe_high == 0.0:
-                pe_high = max(pe_h, pe_close)
+                pe_high = pe_h if pe_h > 0 else pe_close
             if pe_low == 0.0:
                 pe_low = pe_l if pe_l > 0 else pe_close
 
@@ -376,9 +384,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         json.dump(payload, f, indent=4)
         
     print("Dashboard data updated successfully.")
-    
-    if os.path.exists("bhavcopy.csv"):
-        os.remove("bhavcopy.csv")
 
     push_to_github()
 
