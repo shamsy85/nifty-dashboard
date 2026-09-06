@@ -173,7 +173,7 @@ def load_bhavcopy_dict(target_expiry_str):
                     continue
 
                 strike_raw = (cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or 
-                             cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
+                              cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0")
                 try:
                     row_strike = int(round(float(strike_raw)))
                 except ValueError:
@@ -252,27 +252,24 @@ def get_market_sentiment_tag(data_dict):
     return "NEUTRAL", "tag-neutral"
 
 
-def calculate_zone_row_one(spot, bhav_map, chain_data):
+def calculate_zone_row_one(wl, wh, bhav_map, chain_data):
+    """Calculates Row 1 Upper and Lower Zones using floor (wl) and ceiling (wh) strikes only."""
     def get_p(s, t):
         p = bhav_map.get((s, t), {}).get("close", 0.0)
         if p > 0: return p
         if not chain_data: return 0.0
         for item in chain_data.get("data", []):
-            if int(round(float(item.get("strike_price", 0)))) == s:
+            if int(round(float(item.get("strike_pr_or_price", item.get("strike_price", 0))))) == s:
                 opts = item.get("call_options", {}) if t == "CE" else item.get("put_options", {})
                 return float(opts.get("market_data", {}).get("close_price") or opts.get("last_price") or 0.0)
         return 0.0
 
-    # Row 1 Strikes (immediate floor/ceil)
-    wl = int(math.floor(spot / 100.0) * 100)
-    wh = int(math.ceil(spot / 100.0) * 100)
-    
-    ce2 = get_p(wh, "CE")
-    pe1 = get_p(wl, "PE")
+    ce_close = get_p(wh, "CE")  # CE close at Ceiling Strike (wh)
+    pe_close = get_p(wl, "PE")  # PE close at Floor Strike (wl)
 
     return {
-        "line1": round(wh + ce2, 2),  # Upper Zone (Red Line)
-        "line2": round(wl - pe1, 2)   # Lower Zone (Green Line)
+        "line1": round(wh + ce_close, 2),  # Upper Zone: Ceiling Strike + CE Close
+        "line2": round(wl - pe_close, 2)   # Lower Zone: Floor Strike - PE Close
     }
 
 
@@ -370,11 +367,14 @@ def process_and_save_data(res_json, spot, w_exp, m_exp, access_token):
     max_supply_val = round(hlc_atm_strike + (ce_close + pe_close), 2)
     max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
 
-    # Compute Row 1 Weekly and Monthly Zones only
-    weekly_zones = calculate_zone_row_one(spot, w_bhav, res_json)
+    # Compute Floor (wl) and Ceiling (wh) strikes for Row 1
+    wl = int(math.floor(spot / 100.0) * 100)
+    wh = int(math.ceil(spot / 100.0) * 100)
+
+    weekly_zones = calculate_zone_row_one(wl, wh, w_bhav, res_json)
     
     m_res = res_json if m_exp == w_exp else fetch_option_chain_data(access_token, m_exp)
-    monthly_zones = calculate_zone_row_one(spot, m_bhav, m_res)
+    monthly_zones = calculate_zone_row_one(wl, wh, m_bhav, m_res)
 
     payload = {
         "dataStatus": "SUCCESS",
