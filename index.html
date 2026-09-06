@@ -35,6 +35,26 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
         }
 
+        .warning-banner {
+            display: none;
+            background-color: #dc2626;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.75; }
+            100% { opacity: 1; }
+        }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -250,6 +270,10 @@
 <body>
 
 <div class="dashboard">
+    <div id="bhavcopyAlert" class="warning-banner">
+        ⚠️ BHAVCOPY NOT READY, PLS WAIT
+    </div>
+
     <div class="header">
         <div>
             <span class="spot-title">NIFTY</span>
@@ -376,6 +400,14 @@
             if (!response.ok) return;
             const data = await response.json();
 
+            // Toggle warning banner based on Bhavcopy readiness
+            const alertBanner = document.getElementById('bhavcopyAlert');
+            if (data.bhavcopyReady === false) {
+                alertBanner.style.display = 'block';
+            } else {
+                alertBanner.style.display = 'none';
+            }
+
             const spotPrice = Number(data.spotPrice) || 0;
             const ceClose = Number(data.ce?.close) || 0;
             const ceHigh = Number(data.ce?.high) || 0;
@@ -429,7 +461,6 @@
                 document.getElementById('snip1OtmCe').innerText = (Number(data.sniper1.otmCe) || 0).toFixed(2);
                 document.getElementById('snip1OtmPe').innerText = (Number(data.sniper1.otmPe) || 0).toFixed(2);
                 
-                // Directly load calculated value from JSON
                 document.getElementById('snip1Val').innerText = (Number(data.sniper1.value) || 0).toFixed(2);
             }
 
@@ -444,7 +475,6 @@
                 document.getElementById('snip2OtmCe').innerText = (Number(data.sniper2.otmCe) || 0).toFixed(2);
                 document.getElementById('snip2OtmPe').innerText = (Number(data.sniper2.otmPe) || 0).toFixed(2);
                 
-                // Directly load calculated value from JSON
                 document.getElementById('snip2Val').innerText = (Number(data.sniper2.value) || 0).toFixed(2);
             }
 
