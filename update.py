@@ -124,7 +124,6 @@ def download_nse_bhavcopy():
             session.get("https://www.nseindia.com", headers=headers, timeout=10)
             response = session.get(url, headers=headers, timeout=30)
             if response.status_code == 200 and len(response.content) > 1000:
-                # Delete existing old bhavcopy file before saving the new one
                 if os.path.exists("bhavcopy.csv"):
                     try:
                         os.remove("bhavcopy.csv")
@@ -133,9 +132,22 @@ def download_nse_bhavcopy():
 
                 with zipfile.ZipFile(io.BytesIO(response.content)) as z:
                     csv_filename = z.namelist()[0]
-                    with z.open(csv_filename) as csv_file, open("bhavcopy.csv", "wb") as f:
-                        f.write(csv_file.read())
-                print(f"Successfully downloaded new UDiFF F&O Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
+                    with z.open(csv_filename) as csv_file:
+                        content = csv_file.read().decode('utf-8', errors='ignore')
+                        lines = content.splitlines()
+                        
+                        # Filter to keep header and NIFTY specific rows only (shrinks file size drastically)
+                        nifty_lines = []
+                        if lines:
+                            nifty_lines.append(lines[0])  # Header row
+                            for line in lines[1:]:
+                                if "NIFTY" in line.upper():
+                                    nifty_lines.append(line)
+                        
+                        with open("bhavcopy.csv", "w", encoding="utf-8") as f:
+                            f.write("\n".join(nifty_lines))
+
+                print(f"Successfully downloaded and filtered NIFTY Bhavcopy for {target_date.strftime('%Y-%m-%d')}")
                 return True
         except Exception as e:
             print(f"Attempt for UDiFF F&O Bhavcopy on {target_date.strftime('%Y-%m-%d')} failed: {e}")
