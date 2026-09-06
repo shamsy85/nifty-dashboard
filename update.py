@@ -2,7 +2,6 @@ import csv
 import datetime
 import io
 import json
-import math
 import os
 import subprocess
 import zipfile
@@ -100,7 +99,7 @@ def get_current_expiry(access_token):
 
 
 def download_today_bhavcopy():
-    """Attempts to download TODAY's Bhavcopy from NSE, falls back to existing if weekend/holiday."""
+    """Attempts to download ONLY TODAY's Bhavcopy from NSE."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
@@ -108,11 +107,6 @@ def download_today_bhavcopy():
     }
     now_ist = datetime.datetime.now(IST)
     
-    if now_ist.weekday() >= 5:
-        if os.path.exists("bhavcopy.csv"):
-            print("Weekend detected. Using existing latest Bhavcopy file.")
-            return True
-
     yyyy = now_ist.strftime("%Y")
     mm = now_ist.strftime("%m")
     dd = now_ist.strftime("%d")
@@ -150,10 +144,6 @@ def download_today_bhavcopy():
             return True
     except Exception as e:
         print(f"Today's Bhavcopy is not available yet: {e}")
-    
-    if os.path.exists("bhavcopy.csv"):
-        print("Falling back to previously saved Bhavcopy file.")
-        return True
         
     return False
 
@@ -224,70 +214,6 @@ def load_bhavcopy_dict(target_expiry_str):
         print(f"Error reading bhavcopy into dict: {e}")
 
     return bhav_map
-
-
-def load_all_bhavcopy_expiries():
-    """Loads all Nifty F&O options across all expiries from bhavcopy.csv"""
-    bhav_all = {}
-    if not os.path.exists("bhavcopy.csv"):
-        return bhav_all
-    try:
-        with open("bhavcopy.csv", mode="r", encoding="utf-8", errors="ignore") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                cleaned_row = {k.strip().upper(): (v.strip() if v else "") for k, v in row.items() if k}
-                symbol = cleaned_row.get("TCKRSYMB") or cleaned_row.get("SYMBOL") or cleaned_row.get("FININSTRNM") or ""
-                if "NIFTY" not in symbol.upper():
-                    continue
-
-                strike_raw = cleaned_row.get("STRKPRIC") or cleaned_row.get("STRIKEPRIC") or cleaned_row.get("STRIKE_PR") or cleaned_row.get("STRIKE") or "0"
-                try:
-                    row_strike = int(round(float(strike_raw)))
-                except ValueError:
-                    continue
-
-                opt_type_raw = cleaned_row.get("OPTNTP") or cleaned_row.get("OPTION_TYP") or cleaned_row.get("OPTIONTYPE") or ""
-                opt_type = "CE" if "CE" in opt_type_raw.upper() else "PE" if "PE" in opt_type_raw.upper() else ""
-                if not opt_type:
-                    continue
-
-                expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or cleaned_row.get("EXPIRY") or "").strip().upper()
-                if not expiry_raw:
-                    continue
-
-                close = float(cleaned_row.get("CLSPRIC") or cleaned_row.get("CLOSE") or cleaned_row.get("SETTLE_PR") or 0.0)
-                if close > 0:
-                    bhav_all[(row_strike, opt_type, expiry_raw)] = close
-    except Exception as e:
-        print(f"Error reading all bhavcopy expiries: {e}")
-    return bhav_all
-
-
-def find_monthly_expiry(expiry_strings, target_date_str):
-    parsed_expiries = []
-    for exp_str in expiry_strings:
-        for fmt in ("%Y-%m-%d", "%d-%b-%Y", "%d-%B-%Y", "%d%b%Y", "%d%b%y"):
-            try:
-                dt = datetime.datetime.strptime(exp_str, fmt).date()
-                parsed_expiries.append((dt, exp_str))
-                break
-            except ValueError:
-                continue
-    
-    parsed_expiries = sorted(list(set(parsed_expiries)), key=lambda x: x[0])
-    if not parsed_expiries:
-        return target_date_str
-
-    try:
-        target_dt = datetime.datetime.strptime(target_date_str.strip(), "%Y-%m-%d").date()
-    except Exception:
-        target_dt = datetime.date.today()
-
-    month_expiries = [exp for dt, exp in parsed_expiries if dt.year == target_dt.year and dt.month == target_dt.month]
-    if month_expiries:
-        return month_expiries[-1]
-    
-    return target_date_str
 
 
 def fetch_option_chain_data(access_token, expiry_date):
@@ -452,36 +378,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     max_supply_val = round(hlc_atm_strike + (ce_close + pe_close), 2)
     max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
 
-    # -------------------------------------------------------------
-    # CALCULATE WEEKLY & MONTHLY ZONES (ROW 1 ONLY)
-    # -------------------------------------------------------------
-    wl = math.floor(hlc_atm_strike / 100) * 100
-
-    # Weekly Zone Calculation (Row 1: WL + Sum1 and WL - Sum1)
-    ce1_weekly = bhav_map.get((wl, "CE"), {}).get("close", 0.0)
-    pe1_weekly = bhav_map.get((wl, "PE"), {}).get("close", 0.0)
-    sum1_weekly = ce1_weekly + pe1_weekly
-    weekly_high = round(wl + sum1_weekly, 2)
-    weekly_low = round(wl - sum1_weekly, 2)
-
-    # Monthly Zone Calculation (Row 1: WL + MonthlySum1 and WL - MonthlySum1)
-    bhav_all = load_all_bhavcopy_expiries()
-    all_expiries = list(set([k[2] for k in bhav_all.keys()]))
-    monthly_expiry_str = find_monthly_expiry(all_expiries, expiry_date_str)
-
-    ce1_monthly = 0.0
-    pe1_monthly = 0.0
-    for (s, o, exp), val in bhav_all.items():
-        if s == wl and monthly_expiry_str in exp:
-            if o == "CE":
-                ce1_monthly = val
-            elif o == "PE":
-                pe1_monthly = val
-
-    sum1_monthly = ce1_monthly + pe1_monthly
-    monthly_high = round(wl + sum1_monthly, 2)
-    monthly_low = round(wl - sum1_monthly, 2)
-
     payload = {
         "dataStatus": "SUCCESS",
         "bhavcopyReady": bhavcopy_is_ready,
@@ -508,10 +404,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         "minDemand": min_demand_val,
         "maxSupply": max_supply_val,
         "maxDemand": max_demand_val,
-        "weeklyHigh": weekly_high,
-        "weeklyLow": weekly_low,
-        "monthlyHigh": monthly_high,
-        "monthlyLow": monthly_low,
         "spotHigh": spot,
         "spotLow": spot,
         "sniper1": {
