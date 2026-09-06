@@ -99,7 +99,6 @@ def get_current_expiry(access_token):
 
 
 def download_today_bhavcopy():
-    """Attempts to download ONLY TODAY's Bhavcopy from NSE."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
@@ -149,7 +148,6 @@ def download_today_bhavcopy():
 
 
 def load_bhavcopy_dict(target_expiry_str):
-    """Loads Bhavcopy into a dictionary with OHLC, Close, and OI metrics"""
     bhav_map = {}
     if not os.path.exists("bhavcopy.csv"):
         return bhav_map
@@ -243,7 +241,6 @@ def get_strike_close_price(bhav_map, item, strike, opt_type):
 
 
 def get_market_sentiment_tag(data_dict):
-    """Determines if the option is driven by Buyers, Sellers, or Neutral"""
     if not data_dict:
         return "NEUTRAL", "tag-neutral"
     
@@ -370,13 +367,16 @@ def process_and_save_data(res_json, spot, expiry_date_str):
     sniper1_val = round((s1_ce_val + s1_pe_val) / 2.0, 2)
     sniper2_val = round((s2_ce_val + s2_pe_val) / 2.0, 2)
 
-    # -------------------------------------------------------------
-    # CALCULATE MINIMUM & MAXIMUM SUPPLY / DEMAND VALUES
-    # -------------------------------------------------------------
     min_supply_val = round(hlc_atm_strike + ce_close, 2)
     min_demand_val = round(hlc_atm_strike - pe_close, 2)
     max_supply_val = round(hlc_atm_strike + (ce_close + pe_close), 2)
     max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
+
+    # Weekly and Monthly zone computations
+    weekly_high = round(spot * 1.011, 2)
+    weekly_low = round(spot * 0.989, 2)
+    monthly_high = round(spot * 1.025, 2)
+    monthly_low = round(spot * 0.975, 2)
 
     payload = {
         "dataStatus": "SUCCESS",
@@ -404,6 +404,10 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         "minDemand": min_demand_val,
         "maxSupply": max_supply_val,
         "maxDemand": max_demand_val,
+        "weeklyHigh": weekly_high,
+        "weeklyLow": weekly_low,
+        "monthlyHigh": monthly_high,
+        "monthlyLow": monthly_low,
         "spotHigh": spot,
         "spotLow": spot,
         "sniper1": {
