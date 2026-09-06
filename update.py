@@ -89,7 +89,6 @@ def get_expiries(access_token):
                     future_exp = [e for e in expiry_list if e >= today_str]
                     w_exp = future_exp[0] if future_exp else expiry_list[-1]
                     
-                    # Find monthly expiry (last expiry of the current month or matching string)
                     m_exp = [e for e in expiry_list if e.startswith(today_str[:7])]
                     m_exp = m_exp[-1] if m_exp else w_exp
                     return w_exp, m_exp
@@ -190,7 +189,6 @@ def load_bhavcopy_dict(target_expiry_str):
                 expiry_raw = (cleaned_row.get("XPRYDT") or cleaned_row.get("EXPIRY_DT") or 
                               cleaned_row.get("EXPIRY") or "").strip().upper()
                 
-                # FIXED: Changed from substring matching (in) to exact matching (==) to prevent cross-contamination
                 if any(expiry_raw == exp for exp in possible_expiries):
                     open_p = float(cleaned_row.get("OPENPRIC") or cleaned_row.get("OPEN") or 0.0)
                     high = float(cleaned_row.get("HGHPRIC") or cleaned_row.get("HIGH") or 0.0)
@@ -254,7 +252,7 @@ def get_market_sentiment_tag(data_dict):
     return "NEUTRAL", "tag-neutral"
 
 
-def calculate_zone_row_one(wl, wh, bhav_map, chain_data):
+def calculate_zone_row_one(spot, bhav_map, chain_data):
     def get_p(s, t):
         p = bhav_map.get((s, t), {}).get("close", 0.0)
         if p > 0: return p
@@ -265,12 +263,16 @@ def calculate_zone_row_one(wl, wh, bhav_map, chain_data):
                 return float(opts.get("market_data", {}).get("close_price") or opts.get("last_price") or 0.0)
         return 0.0
 
-    ce1, pe1 = get_p(wl, "CE"), get_p(wl, "PE")
-    ce2, pe2 = get_p(wh, "CE"), get_p(wh, "PE")
+    # Row 1 Strikes (immediate floor/ceil)
+    wl = int(math.floor(spot / 100.0) * 100)
+    wh = int(math.ceil(spot / 100.0) * 100)
+    
+    ce2 = get_p(wh, "CE")
+    pe1 = get_p(wl, "PE")
 
     return {
-        "line1": round(wh + ce2, 2),  # Upper Zone value (Red)
-        "line2": round(wl - pe1, 2)   # Lower Zone value (Green)
+        "line1": round(wh + ce2, 2),  # Upper Zone (Red Line)
+        "line2": round(wl - pe1, 2)   # Lower Zone (Green Line)
     }
 
 
@@ -368,14 +370,11 @@ def process_and_save_data(res_json, spot, w_exp, m_exp, access_token):
     max_supply_val = round(hlc_atm_strike + (ce_close + pe_close), 2)
     max_demand_val = round(hlc_atm_strike - (ce_close + pe_close), 2)
 
-    # Compute Row 1 Weekly and Monthly Zones based on floor/ceil strikes
-    wl = int(math.floor(spot / 100.0) * 100)
-    wh = int(math.ceil(spot / 100.0) * 100)
-
-    weekly_zones = calculate_zone_row_one(wl, wh, w_bhav, res_json)
+    # Compute Row 1 Weekly and Monthly Zones only
+    weekly_zones = calculate_zone_row_one(spot, w_bhav, res_json)
     
     m_res = res_json if m_exp == w_exp else fetch_option_chain_data(access_token, m_exp)
-    monthly_zones = calculate_zone_row_one(wl, wh, m_bhav, m_res)
+    monthly_zones = calculate_zone_row_one(spot, m_bhav, m_res)
 
     payload = {
         "dataStatus": "SUCCESS",
