@@ -15,6 +15,10 @@
         "close": 79.9,
         "low": 63.55
     },
+    "ceTag": "NEUTRAL",
+    "ceClass": "tag-neutral",
+    "peTag": "NEUTRAL",
+    "peClass": "tag-neutral",
     "bannerTotal": 174.05,
     "spotHigh": 23897.7,
     "spotLow": 23897.7,
