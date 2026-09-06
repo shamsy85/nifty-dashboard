@@ -24,7 +24,8 @@
         "otmCeStrike": 24000,
         "otmPeStrike": 23800,
         "otmCe": 69.05,
-        "otmPe": 31.8
+        "otmPe": 31.8,
+        "value": 50.42
     },
     "sniper2": {
         "strike": 23950,
@@ -33,6 +34,7 @@
         "otmCeStrike": 24050,
         "otmPeStrike": 23850,
         "otmCe": 49.45,
-        "otmPe": 43.7
+        "otmPe": 43.7,
+        "value": 46.58
     }
 }
