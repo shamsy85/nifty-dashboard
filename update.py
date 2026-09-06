@@ -239,6 +239,22 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         print("Invalid data or spot price received.")
         return
 
+    now_ist = datetime.datetime.now(IST)
+    today_str = now_ist.strftime("%d %b %Y").upper()
+
+    # Check if today's data is already successfully processed from Bhavcopy
+    if os.path.exists("data.json"):
+        try:
+            with open("data.json", "r") as f:
+                existing_data = json.load(f)
+                if existing_data.get("currentDate") == today_str and existing_data.get("bannerTotal", 0) > 0:
+                    bhav_map = load_bhavcopy_dict(expiry_date_str)
+                    if bhav_map:
+                        print(f"Bhavcopy for {today_str} is already successfully processed. Skipping redundant run.")
+                        return
+        except Exception as e:
+            print(f"Notice: Could not parse existing data.json: {e}")
+
     download_nse_bhavcopy()
     bhav_map = load_bhavcopy_dict(expiry_date_str)
 
@@ -341,11 +357,9 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         elif s_val == target_s2_pe_strike:
             s2_pe_val = pe_ltp
 
-    now_ist = datetime.datetime.now(IST)
-
     payload = {
         "dataStatus": "SUCCESS",
-        "currentDate": now_ist.strftime("%d %b %Y").upper(),
+        "currentDate": today_str,
         "expiryDate": datetime.datetime.strptime(expiry_date_str, "%Y-%m-%d").strftime("%d-%b-%Y").upper(),
         "spotPrice": spot,
         "hlcAtmStrike": hlc_atm_strike,
