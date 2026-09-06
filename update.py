@@ -89,9 +89,7 @@ def get_current_expiry(access_token):
                     if today_str in expiry_list and not market_closed:
                         return today_str
                     for exp in expiry_list:
-                        if exp > today_str:
-                            return exp
-                        elif exp == today_str and not market_closed:
+                        if exp >= today_str:
                             return exp
                     return expiry_list[-1]
     except Exception as e:
@@ -233,6 +231,16 @@ def fetch_option_chain_data(access_token, expiry_date):
     return None
 
 
+def get_strike_close_price(bhav_map, item, strike, opt_type):
+    """Helper to fetch Close Price from Bhavcopy first, with API fallback."""
+    if (strike, opt_type) in bhav_map:
+        return bhav_map[(strike, opt_type)][2]
+    
+    opts = item.get("call_options", {}) if opt_type == "CE" else item.get("put_options", {})
+    m_data = opts.get("market_data", {})
+    return float(opts.get("last_price") or m_data.get("close_price") or m_data.get("ltp") or 0.0)
+
+
 def process_and_save_data(res_json, spot, expiry_date_str):
     data = res_json.get("data", [])
     if not data or spot <= 0:
@@ -241,19 +249,6 @@ def process_and_save_data(res_json, spot, expiry_date_str):
 
     now_ist = datetime.datetime.now(IST)
     today_str = now_ist.strftime("%d %b %Y").upper()
-
-    # Check if today's data is already successfully processed from Bhavcopy
-    if os.path.exists("data.json"):
-        try:
-            with open("data.json", "r") as f:
-                existing_data = json.load(f)
-                if existing_data.get("currentDate") == today_str and existing_data.get("bannerTotal", 0) > 0:
-                    bhav_map = load_bhavcopy_dict(expiry_date_str)
-                    if bhav_map:
-                        print(f"Bhavcopy for {today_str} is already successfully processed. Skipping redundant run.")
-                        return
-        except Exception as e:
-            print(f"Notice: Could not parse existing data.json: {e}")
 
     download_nse_bhavcopy()
     bhav_map = load_bhavcopy_dict(expiry_date_str)
@@ -270,16 +265,8 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         if abs(s_val - spot) > 500:
             continue
 
-        call_opts = item.get("call_options", {})
-        put_opts = item.get("put_options", {})
-        
-        ce_close = bhav_map.get((s_val, "CE"), (0.0, 0.0, 0.0))[2]
-        pe_close = bhav_map.get((s_val, "PE"), (0.0, 0.0, 0.0))[2]
-
-        if ce_close == 0.0:
-            ce_close = float(call_opts.get("last_price") or call_opts.get("market_data", {}).get("ltp") or 0.0)
-        if pe_close == 0.0:
-            pe_close = float(put_opts.get("last_price") or put_opts.get("market_data", {}).get("ltp") or 0.0)
+        ce_close = get_strike_close_price(bhav_map, item, s_val, "CE")
+        pe_close = get_strike_close_price(bhav_map, item, s_val, "PE")
 
         if ce_close > 0 and pe_close > 0:
             diff = abs(ce_close - pe_close)
@@ -313,49 +300,40 @@ def process_and_save_data(res_json, spot, expiry_date_str):
         
         call_opts = item.get("call_options", {})
         put_opts = item.get("put_options", {})
-        
         m_call = call_opts.get("market_data", {})
         m_put = put_opts.get("market_data", {})
-        
-        ce_ltp = float(call_opts.get("last_price") or m_call.get("ltp") or 0.0)
-        pe_ltp = float(put_opts.get("last_price") or m_put.get("ltp") or 0.0)
 
         if s_val == hlc_atm_strike:
-            ce_h = float(m_call.get("high_price") or call_opts.get("high_price") or 0.0)
-            ce_l = float(m_call.get("low_price") or call_opts.get("low_price") or 0.0)
-            ce_c = float(m_call.get("close_price") or call_opts.get("close_price") or ce_ltp)
-
-            pe_h = float(m_put.get("high_price") or put_opts.get("high_price") or 0.0)
-            pe_l = float(m_put.get("low_price") or put_opts.get("low_price") or 0.0)
-            pe_c = float(m_put.get("close_price") or put_opts.get("close_price") or pe_ltp)
-
             if ce_close == 0.0:
-                ce_close = ce_c
+                ce_close = float(m_call.get("close_price") or call_opts.get("last_price") or 0.0)
             if ce_high == 0.0:
-                ce_high = ce_h if ce_h > 0 else ce_close
+                ce_high = float(m_call.get("high_price") or ce_close)
             if ce_low == 0.0:
-                ce_low = ce_l if ce_l > 0 else ce_close
+                ce_low = float(m_call.get("low_price") or ce_close)
 
             if pe_close == 0.0:
-                pe_close = pe_c
+                pe_close = float(m_put.get("close_price") or put_opts.get("last_price") or 0.0)
             if pe_high == 0.0:
-                pe_high = pe_h if pe_h > 0 else pe_close
+                pe_high = float(m_put.get("high_price") or pe_close)
             if pe_low == 0.0:
-                pe_low = pe_l if pe_l > 0 else pe_close
+                pe_low = float(m_put.get("low_price") or pe_close)
 
+        # Fix: Fetch Bhavcopy values for Snipers first
         if s_val == sniper1_atm_strike:
-            s1_atm_ce_val, s1_atm_pe_val = ce_ltp, pe_ltp
+            s1_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
+            s1_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
         elif s_val == target_s1_ce_strike:
-            s1_ce_val = ce_ltp
+            s1_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
         elif s_val == target_s1_pe_strike:
-            s1_pe_val = pe_ltp
+            s1_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
 
         if s_val == sniper2_atm_strike:
-            s2_atm_ce_val, s2_atm_pe_val = ce_ltp, pe_ltp
+            s2_atm_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
+            s2_atm_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
         elif s_val == target_s2_ce_strike:
-            s2_ce_val = ce_ltp
+            s2_ce_val = get_strike_close_price(bhav_map, item, s_val, "CE")
         elif s_val == target_s2_pe_strike:
-            s2_pe_val = pe_ltp
+            s2_pe_val = get_strike_close_price(bhav_map, item, s_val, "PE")
 
     payload = {
         "dataStatus": "SUCCESS",
