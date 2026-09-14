@@ -1,7 +1,7 @@
 {
     "dataStatus": "SUCCESS",
-    "bhavcopyReady": true,
-    "currentDate": "11 SEP 2026",
+    "bhavcopyReady": false,
+    "currentDate": "14 SEP 2026",
     "expiryDate": "15-SEP-2026",
     "spotPrice": 23398.1,
     "hlcAtmStrike": 23450,
