@@ -1,57 +1,57 @@
 {
     "dataStatus": "SUCCESS",
-    "bhavcopyReady": false,
+    "bhavcopyReady": true,
     "currentDate": "16 SEP 2026",
     "expiryDate": "22-SEP-2026",
     "spotPrice": 23217.6,
-    "hlcAtmStrike": 23200,
+    "hlcAtmStrike": 23250,
     "ce": {
-        "high": 381.0,
-        "close": 167.4,
-        "low": 147.3
+        "high": 199.0,
+        "close": 149.25,
+        "low": 128.2
     },
     "pe": {
-        "high": 196.8,
-        "close": 173.0,
-        "low": 56.4
+        "high": 210.9,
+        "close": 155.45,
+        "low": 126.25
     },
     "ceTag": "NEUTRAL",
     "ceClass": "tag-neutral",
     "peTag": "NEUTRAL",
     "peClass": "tag-neutral",
-    "bannerTotal": 340.4,
-    "minSupply": 23367.4,
-    "minDemand": 23027.0,
-    "maxSupply": 23540.4,
-    "maxDemand": 22859.6,
+    "bannerTotal": 304.7,
+    "minSupply": 23399.25,
+    "minDemand": 23094.55,
+    "maxSupply": 23554.7,
+    "maxDemand": 22945.3,
     "weeklyZones": {
-        "line1": 23419.15,
-        "line2": 23027.0
+        "line1": 23423.6,
+        "line2": 23065.9
     },
     "monthlyZones": {
         "line1": 25200.0,
-        "line2": 23186.0
+        "line2": 23189.25
     },
     "spotHigh": 23217.6,
     "spotLow": 23217.6,
     "sniper1": {
         "strike": 23200,
-        "ce": 167.4,
-        "pe": 173.0,
+        "ce": 177.5,
+        "pe": 134.1,
         "otmCeStrike": 23300,
         "otmPeStrike": 23100,
-        "otmCe": 119.15,
-        "otmPe": 132.3,
-        "value": 125.73
+        "otmCe": 123.6,
+        "otmPe": 99.15,
+        "value": 111.38
     },
     "sniper2": {
-        "strike": 23200,
-        "ce": 167.4,
-        "pe": 173.0,
-        "otmCeStrike": 23300,
-        "otmPeStrike": 23100,
-        "otmCe": 119.15,
-        "otmPe": 132.3,
-        "value": 125.73
+        "strike": 23250,
+        "ce": 149.25,
+        "pe": 155.45,
+        "otmCeStrike": 23350,
+        "otmPeStrike": 23150,
+        "otmCe": 100.8,
+        "otmPe": 115.8,
+        "value": 108.3
     }
 }
