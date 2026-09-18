@@ -1,57 +1,57 @@
 {
     "dataStatus": "SUCCESS",
-    "bhavcopyReady": false,
+    "bhavcopyReady": true,
     "currentDate": "18 SEP 2026",
     "expiryDate": "22-SEP-2026",
     "spotPrice": 23346.4,
-    "hlcAtmStrike": 23300,
+    "hlcAtmStrike": 23350,
     "ce": {
-        "high": 175.0,
-        "close": 120.55,
-        "low": 91.0
+        "high": 119.0,
+        "close": 91.5,
+        "low": 73.7
     },
     "pe": {
-        "high": 192.85,
-        "close": 109.55,
-        "low": 88.1
+        "high": 138.8,
+        "close": 85.6,
+        "low": 71.4
     },
     "ceTag": "NEUTRAL",
     "ceClass": "tag-neutral",
     "peTag": "NEUTRAL",
     "peClass": "tag-neutral",
-    "bannerTotal": 230.1,
-    "minSupply": 23420.55,
-    "minDemand": 23190.45,
-    "maxSupply": 23530.1,
-    "maxDemand": 23069.9,
+    "bannerTotal": 177.1,
+    "minSupply": 23441.5,
+    "minDemand": 23264.4,
+    "maxSupply": 23527.1,
+    "maxDemand": 23172.9,
     "weeklyZones": {
-        "line1": 23472.4,
-        "line2": 23190.45
+        "line1": 23466.7,
+        "line2": 23234.55
     },
     "monthlyZones": {
         "line1": 27030.85,
-        "line2": 23293.75
+        "line2": 23296.15
     },
     "spotHigh": 23346.4,
     "spotLow": 23346.4,
     "sniper1": {
         "strike": 23300,
-        "ce": 120.55,
-        "pe": 109.55,
+        "ce": 120.7,
+        "pe": 65.45,
         "otmCeStrike": 23400,
         "otmPeStrike": 23200,
-        "otmCe": 72.4,
-        "otmPe": 72.35,
-        "value": 72.38
+        "otmCe": 66.7,
+        "otmPe": 37.1,
+        "value": 51.9
     },
     "sniper2": {
-        "strike": 23300,
-        "ce": 120.55,
-        "pe": 109.55,
-        "otmCeStrike": 23400,
-        "otmPeStrike": 23200,
-        "otmCe": 72.4,
-        "otmPe": 72.35,
-        "value": 72.38
+        "strike": 23350,
+        "ce": 91.5,
+        "pe": 85.6,
+        "otmCeStrike": 23450,
+        "otmPeStrike": 23250,
+        "otmCe": 46.65,
+        "otmPe": 49.4,
+        "value": 48.02
     }
 }
