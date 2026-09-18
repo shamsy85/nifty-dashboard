@@ -1,9 +1,9 @@
 {
     "dataStatus": "SUCCESS",
-    "bhavcopyReady": true,
-    "currentDate": "17 SEP 2026",
+    "bhavcopyReady": false,
+    "currentDate": "18 SEP 2026",
     "expiryDate": "22-SEP-2026",
-    "spotPrice": 23270.6,
+    "spotPrice": 23346.4,
     "hlcAtmStrike": 23300,
     "ce": {
         "high": 175.0,
@@ -25,15 +25,15 @@
     "maxSupply": 23530.1,
     "maxDemand": 23069.9,
     "weeklyZones": {
-        "line1": 23420.55,
-        "line2": 23127.65
+        "line1": 23472.4,
+        "line2": 23190.45
     },
     "monthlyZones": {
-        "line1": 25200.0,
-        "line2": 23189.25
+        "line1": 27030.85,
+        "line2": 23293.75
     },
-    "spotHigh": 23270.6,
-    "spotLow": 23270.6,
+    "spotHigh": 23346.4,
+    "spotLow": 23346.4,
     "sniper1": {
         "strike": 23300,
         "ce": 120.55,
